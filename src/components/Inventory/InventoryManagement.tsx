@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { Constants } from '@/integrations/supabase/types';
 import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
@@ -69,6 +70,7 @@ type SortDirection = 'asc' | 'desc';
 
 export const InventoryManagement = () => {
   const { toast } = useToast();
+  const { profile } = useAuth();
   const isMobile = useIsMobile();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -340,6 +342,7 @@ export const InventoryManagement = () => {
       const { error: movementError } = await supabase
         .from('stock_movements')
         .insert({
+          company_id: profile?.company_id || '',
           product_id: product.id,
           movement_type: movementType,
           quantity: qty,

@@ -14,6 +14,7 @@ import { Layers, Plus, Edit, Trash2, Settings, GripVertical } from 'lucide-react
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useCategories, useSousCategories, SousCategorie } from '@/hooks/useCategories';
+import { useAuth } from '@/hooks/useAuth';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -107,6 +108,7 @@ export const SubcategoryManagement = ({
   onSelectCategory,
   onSelectSubcategory 
 }: SubcategoryManagementProps) => {
+  const { profile } = useAuth();
   const { categories } = useCategories();
   const { sousCategories, loading, refetch } = useSousCategories(selectedCategoryId || undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -203,6 +205,7 @@ export const SubcategoryManagement = ({
         const { data: newSubcat, error } = await supabase
           .from('sous_categories')
           .insert({
+            company_id: profile?.company_id || '',
             categorie_id: formData.categorie_id,
             nom: formData.nom,
             description: formData.description || null,
