@@ -156,7 +156,7 @@ export const useAuth = () => {
         return { error };
       }
 
-      // Log successful signup
+      // Log successful signup (company_id not yet available at signup time)
       if (data.user) {
         await (supabase as any).from('activity_logs').insert({
           user_id: data.user.id,
@@ -216,8 +216,11 @@ export const useAuth = () => {
 
       // Log successful login
       if (data.user) {
+        // Fetch company_id for logging
+        const { data: profileData } = await supabase.from('profiles').select('company_id').eq('user_id', data.user.id).maybeSingle();
         await (supabase as any).from('activity_logs').insert({
           user_id: data.user.id,
+          company_id: profileData?.company_id || null,
           action_type: 'user_login',
           entity_type: 'auth',
           description: `Connexion réussie`,
@@ -252,6 +255,7 @@ export const useAuth = () => {
       if (currentUser) {
         await (supabase as any).from('activity_logs').insert({
           user_id: currentUser.id,
+          company_id: profile?.company_id || null,
           action_type: 'user_logout',
           entity_type: 'auth',
           description: `Déconnexion`,

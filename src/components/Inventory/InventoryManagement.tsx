@@ -416,8 +416,9 @@ export const InventoryManagement = () => {
 
   const exportToPDF = async () => {
     const { data: settings } = await supabase
-      .from('company_settings')
+      .from('companies')
       .select('*')
+      .limit(1)
       .single();
     
     if (!settings) {

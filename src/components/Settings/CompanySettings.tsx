@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { Building2, Save, Loader2, DollarSign, Image, MapPin, CreditCard, ChevronDown, Settings2, Check, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -31,6 +32,7 @@ interface CompanySettings {
 }
 
 export const CompanySettings = () => {
+  const { profile } = useAuth();
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [originalSettings, setOriginalSettings] = useState<CompanySettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export const CompanySettings = () => {
 
   useEffect(() => {
     fetchSettings();
-  }, []);
+  }, [profile?.company_id]);
 
   // Auto-save with 2 second debounce
   useEffect(() => {
@@ -106,15 +108,33 @@ export const CompanySettings = () => {
 
   const fetchSettings = async () => {
     try {
+      if (!profile?.company_id) {
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
-        .from('company_settings')
+        .from('companies')
         .select('*')
-        .limit(1)
+        .eq('id', profile.company_id)
         .single();
 
       if (error) throw error;
-      const settingsData = {
-        ...data,
+      const settingsData: CompanySettings = {
+        id: data.id,
+        company_name: data.name || '',
+        company_description: data.company_description || '',
+        address: data.address || '',
+        city: data.city || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        tva_rate: data.tva_rate || 10,
+        payment_terms: data.payment_terms || '',
+        logo_url: data.logo_url,
+        logo_position_x: data.logo_position_x,
+        logo_position_y: data.logo_position_y,
+        logo_width: data.logo_width,
+        logo_height: data.logo_height,
+        usd_htg_rate: data.usd_htg_rate,
         default_display_currency: (data.default_display_currency as 'USD' | 'HTG') || 'HTG'
       };
       setSettings(settingsData);
@@ -174,7 +194,7 @@ export const CompanySettings = () => {
         .getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
-        .from('company_settings')
+        .from('companies')
         .update({ logo_url: publicUrl })
         .eq('id', settings.id);
 
@@ -204,9 +224,9 @@ export const CompanySettings = () => {
     setSaving(true);
     try {
       const { error } = await supabase
-        .from('company_settings')
+        .from('companies')
         .update({
-          company_name: settings.company_name,
+          name: settings.company_name,
           company_description: settings.company_description,
           address: settings.address,
           city: settings.city,

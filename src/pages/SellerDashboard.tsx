@@ -8,6 +8,8 @@ import { StockAlerts } from '@/components/Notifications/StockAlerts';
 import { ProductManagement } from '@/components/Products/ProductManagement';
 import { SaleDetailsDialog } from '@/components/Sales/SaleDetailsDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSubscription } from '@/hooks/useSubscription';
+import { ExpiredScreen } from '@/components/Subscription/ExpiredScreen';
 import { 
   TrendingUp,
   Receipt,
@@ -60,8 +62,13 @@ interface ProformaCartItem {
 }
 
 const SellerDashboard = () => {
-  const { user, loading: authLoading, role } = useAuth();
+  const { user, loading: authLoading, role, signOut } = useAuth();
   const saleCalc = useSaleCalculations();
+  const { isExpired, plan, companyName, loading: subLoading } = useSubscription();
+
+  if (!subLoading && isExpired) {
+    return <ExpiredScreen companyName={companyName} currentPlan={plan} onLogout={signOut} />;
+  }
   const [sales, setSales] = useState<EnrichedSale[]>([]);
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [isApproved, setIsApproved] = useState<boolean | null>(null);

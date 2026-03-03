@@ -75,11 +75,24 @@ Deno.serve(async (req) => {
 
     console.log('Starting sale deletion for sale:', saleId);
 
+    // Verify sale belongs to user's company
+    const { data: saleData, error: saleCheckError } = await supabase
+      .from('sales')
+      .select('id, company_id')
+      .eq('id', saleId)
+      .eq('company_id', companyId)
+      .single();
+
+    if (saleCheckError || !saleData) {
+      throw new Error('Vente introuvable ou non autorisée');
+    }
+
     // 1. Get all sale items for this sale
     const { data: saleItems, error: itemsError } = await supabase
       .from('sale_items')
       .select('id, product_id, quantity, product_name')
-      .eq('sale_id', saleId);
+      .eq('sale_id', saleId)
+      .eq('company_id', companyId);
 
     if (itemsError) {
       console.error('Error fetching sale items:', itemsError);

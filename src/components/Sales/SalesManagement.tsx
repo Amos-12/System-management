@@ -160,11 +160,12 @@ export const SalesManagement = () => {
 
   const fetchCompanySettings = async () => {
     const { data } = await supabase
-      .from('company_settings')
+      .from('companies')
       .select('*')
+      .limit(1)
       .maybeSingle();
     if (data) {
-      setCompanySettings(data);
+      setCompanySettings({ ...data, company_name: data.name });
     }
   };
 
@@ -232,7 +233,7 @@ export const SalesManagement = () => {
       const [salesResult, itemsResult, settingsResult] = await Promise.all([
         supabase.from('sales').select('*').order('created_at', { ascending: false }),
         supabase.from('sale_items').select('sale_id, subtotal, currency'),
-        supabase.from('company_settings').select('tva_rate').single()
+        supabase.from('companies').select('tva_rate').limit(1).single()
       ]);
 
       if (salesResult.error) throw salesResult.error;
