@@ -329,7 +329,7 @@ export const InventoryHistory = () => {
         reason: m.reason,
         userName: m.user_name || 'Système'
       })),
-      settings as CompanySettings,
+      { ...settings, company_name: settings.name } as unknown as CompanySettings,
       stats,
       dateRange
     );

@@ -445,7 +445,7 @@ export const InventoryManagement = () => {
       };
     });
 
-    generateInventoryStockPDF(pdfProducts, settings as CompanySettings, {
+    generateInventoryStockPDF(pdfProducts, { ...settings, company_name: settings.name } as unknown as CompanySettings, {
       totalValueUSD: stats.totalValueUSD,
       totalValueHTG: stats.totalValueHTG,
       alertProducts: stats.alerteCount,
