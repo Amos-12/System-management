@@ -13,6 +13,7 @@ import { Settings, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useSousCategories, useSpecificationsModeles, SpecificationModele } from '@/hooks/useCategories';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SpecificationFieldsManagerProps {
   selectedSousCategorieId: string | null;
@@ -23,6 +24,7 @@ export const SpecificationFieldsManager = ({
   selectedSousCategorieId,
   onSelectSousCategorie
 }: SpecificationFieldsManagerProps) => {
+  const { profile } = useAuth();
   const { sousCategories } = useSousCategories();
   const { specifications, loading, refetch } = useSpecificationsModeles(selectedSousCategorieId || undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -107,6 +109,7 @@ export const SpecificationFieldsManager = ({
         const { error } = await supabase
           .from('specifications_modeles')
           .insert({
+            company_id: profile?.company_id || '',
             sous_categorie_id: selectedSousCategorieId,
             nom_champ,
             type_champ: formData.type_champ,

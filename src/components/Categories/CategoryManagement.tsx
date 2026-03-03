@@ -14,6 +14,7 @@ import { FolderTree, Plus, Edit, Trash2, Layers, Settings, GripVertical } from '
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useCategories, useSousCategories, Category, SousCategorie } from '@/hooks/useCategories';
+import { useAuth } from '@/hooks/useAuth';
 import { SubcategoryManagement } from './SubcategoryManagement';
 import { SpecificationFieldsManager } from './SpecificationFieldsManager';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -92,6 +93,7 @@ const SortableCategoryRow = ({ category, getSousCategoriesCount, onEdit, onDelet
 };
 
 export const CategoryManagement = () => {
+  const { profile } = useAuth();
   const { categories, loading, refetch } = useCategories();
   const { sousCategories, refetch: refetchSousCategories } = useSousCategories();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -176,6 +178,7 @@ export const CategoryManagement = () => {
         const { data: newCategory, error } = await supabase
           .from('categories')
           .insert({
+            company_id: profile?.company_id || '',
             nom: formData.nom,
             description: formData.description || null,
             slug,

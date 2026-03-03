@@ -14,6 +14,7 @@ import { Users, UserCheck, UserX, Mail, Calendar, Search, UserPlus, RefreshCcw, 
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -60,6 +61,7 @@ const getAvatarColor = (role: string, isActive: boolean) => {
 
 
 export const UserManagementPanel = () => {
+  const { profile } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -268,7 +270,8 @@ export const UserManagementPanel = () => {
       if (categories.length > 0) {
         const rows = categories.map(cat => ({
           user_id: userId,
-          category: cat as any
+          category: cat as any,
+          company_id: profile?.company_id || ''
         }));
 
         const { error } = await supabase

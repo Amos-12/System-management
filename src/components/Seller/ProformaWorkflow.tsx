@@ -536,6 +536,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
       const { error } = await supabase
         .from('proformas')
         .insert({
+          company_id: profile?.company_id || '',
           proforma_number: proformaNumber,
           seller_id: user.id,
           customer_name: customerName || null,
