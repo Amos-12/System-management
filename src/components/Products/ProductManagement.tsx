@@ -87,7 +87,7 @@ interface Product {
 type ProductCategory = 'alimentaires' | 'boissons' | 'gazeuses' | 'electronique' | 'autres' | 'ceramique' | 'fer' | 'materiaux_de_construction' | 'energie' | 'blocs' | 'vetements' | 'electromenager';
 
 export const ProductManagement = () => {
-  const { user, role } = useAuth();
+  const { user, role, profile } = useAuth();
   const isAdmin = role === 'admin';
   const isMobile = useIsMobile();
   const { categories: dynamicCategories } = useCategories();
@@ -658,6 +658,7 @@ export const ProductManagement = () => {
     }
 
     try {
+      const companyId = (profile as any)?.company_id || '';
       const productData: any = {
         name: formData.name,
         barcode: formData.barcode || null,
@@ -668,6 +669,7 @@ export const ProductManagement = () => {
         is_active: formData.is_active,
         sale_type: formData.sale_type,
         created_by: user.id,
+        company_id: companyId,
         decimal_autorise: formData.decimal_autorise,
         puissance: formData.puissance ? parseFloat(formData.puissance) : null,
         voltage: formData.voltage ? parseFloat(formData.voltage) : null,
@@ -740,6 +742,7 @@ export const ProductManagement = () => {
         // Log the activity
         await (supabase as any).from('activity_logs').insert({
           user_id: user.id,
+          company_id: companyId,
           action_type: 'product_updated',
           entity_type: 'product',
           entity_id: editingProduct.id,
@@ -768,6 +771,7 @@ export const ProductManagement = () => {
         // Log the activity
         await (supabase as any).from('activity_logs').insert({
           user_id: user.id,
+          company_id: companyId,
           action_type: 'product_added',
           entity_type: 'product',
           entity_id: newProduct.id,
@@ -848,6 +852,7 @@ export const ProductManagement = () => {
         // Log deactivation
         await (supabase as any).from('activity_logs').insert({
           user_id: user.id,
+          company_id: (profile as any)?.company_id || '',
           action_type: 'product_deactivated',
           entity_type: 'product',
           entity_id: productId,
@@ -871,6 +876,7 @@ export const ProductManagement = () => {
         // Log deletion
         await (supabase as any).from('activity_logs').insert({
           user_id: user.id,
+          company_id: (profile as any)?.company_id || '',
           action_type: 'product_deleted',
           entity_type: 'product',
           entity_id: productId,

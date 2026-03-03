@@ -152,8 +152,9 @@ export const AnalyticsDashboard = () => {
 
     // Fetch company settings for rate and currency
     const { data: settings } = await supabase
-      .from('company_settings')
+      .from('companies')
       .select('usd_htg_rate, default_display_currency')
+      .limit(1)
       .single();
     const rate = settings?.usd_htg_rate || 132;
     setUsdHtgRate(rate);

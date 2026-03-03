@@ -14,10 +14,19 @@ import { ActivityLogPanel } from '@/components/ActivityLog/ActivityLogPanel';
 import { DatabaseMonitoring } from '@/components/Settings/DatabaseMonitoring';
 import { SellerPerformanceReport } from '@/components/Reports/SellerPerformanceReport';
 import { CategoryManagement } from '@/components/Categories/CategoryManagement';
+import { useSubscription } from '@/hooks/useSubscription';
+import { ExpiredScreen } from '@/components/Subscription/ExpiredScreen';
+import { useAuth } from '@/hooks/useAuth';
 
 const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
   const [currentSection, setCurrentSection] = useState(searchParams.get('section') || 'dashboard');
+  const { isExpired, plan, companyName, loading: subLoading } = useSubscription();
+  const { signOut } = useAuth();
+
+  if (!subLoading && isExpired) {
+    return <ExpiredScreen companyName={companyName} currentPlan={plan} onLogout={signOut} />;
+  }
   
   const renderContent = () => {
     switch (currentSection) {

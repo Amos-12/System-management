@@ -132,12 +132,12 @@ export const QuickInventoryMode = () => {
   useEffect(() => {
     const fetchCompanySettings = async () => {
       const { data } = await supabase
-        .from('company_settings')
+        .from('companies')
         .select('*')
         .limit(1)
         .maybeSingle();
       if (data) {
-        setCompanySettings(data as CompanySettings);
+        setCompanySettings({ ...data, company_name: data.name } as CompanySettings);
       }
     };
     fetchCompanySettings();

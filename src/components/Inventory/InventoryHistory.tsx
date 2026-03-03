@@ -303,8 +303,9 @@ export const InventoryHistory = () => {
 
   const exportToPDF = async () => {
     const { data: settings } = await supabase
-      .from('company_settings')
+      .from('companies')
       .select('*')
+      .limit(1)
       .single();
     
     if (!settings) {
@@ -328,7 +329,7 @@ export const InventoryHistory = () => {
         reason: m.reason,
         userName: m.user_name || 'Système'
       })),
-      settings as CompanySettings,
+      { ...settings, company_name: settings.name } as unknown as CompanySettings,
       stats,
       dateRange
     );

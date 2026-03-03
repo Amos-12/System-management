@@ -51,8 +51,9 @@ export const SellerPerformanceReport = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       const { data } = await supabase
-        .from('company_settings')
+        .from('companies')
         .select('usd_htg_rate, default_display_currency')
+        .limit(1)
         .single();
       if (data) {
         setCompanySettings({

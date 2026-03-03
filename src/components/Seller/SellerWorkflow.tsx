@@ -319,12 +319,12 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
   const fetchCompanySettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('company_settings')
+        .from('companies')
         .select('*')
         .limit(1)
         .single();
       
-      if (data) setCompanySettings(data);
+      if (data) setCompanySettings({ ...data, company_name: data.name });
     } catch (error) {
       console.error('Error fetching company settings:', error);
     }
