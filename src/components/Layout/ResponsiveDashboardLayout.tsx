@@ -128,7 +128,7 @@ export const ResponsiveDashboardLayout = ({
     { icon: ClipboardList, label: "Logs", value: 'activity' },
     { icon: Bell, label: 'Notifications', value: 'notifications' },
     { icon: Settings, label: 'Paramètres', value: 'settings' },
-    { icon: Database, label: 'Base de données', value: 'database' },
+    ...(authRole === 'super_admin' ? [{ icon: Database, label: 'Base de données', value: 'database' }] : []),
     { icon: HelpCircle, label: 'Aide', value: 'help', route: '/help' }
   ];
 
