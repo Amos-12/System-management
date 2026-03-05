@@ -600,7 +600,7 @@ export const AdminDashboardCharts = () => {
   const handleExportPdf = async () => {
     try {
       const { data: companyData } = await supabase
-        .from('company_settings')
+        .from('companies')
         .select('*')
         .single();
 
@@ -623,7 +623,7 @@ export const AdminDashboardCharts = () => {
         categoryData,
         topSellers,
         {
-          company_name: companyData?.company_name || 'Mon Entreprise',
+          company_name: companyData?.name || 'Mon Entreprise',
           address: companyData?.address || '',
           city: companyData?.city || '',
           phone: companyData?.phone || '',
