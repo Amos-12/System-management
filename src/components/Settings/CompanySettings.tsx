@@ -41,6 +41,8 @@ export const CompanySettings = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
     logo: true,
