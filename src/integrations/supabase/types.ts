@@ -202,69 +202,6 @@ export type Database = {
         }
         Relationships: []
       }
-      company_settings: {
-        Row: {
-          address: string
-          city: string
-          company_description: string | null
-          company_name: string
-          created_at: string | null
-          default_display_currency: string | null
-          email: string
-          id: string
-          logo_height: number | null
-          logo_position_x: number | null
-          logo_position_y: number | null
-          logo_url: string | null
-          logo_width: number | null
-          payment_terms: string | null
-          phone: string
-          tva_rate: number
-          updated_at: string | null
-          usd_htg_rate: number | null
-        }
-        Insert: {
-          address?: string
-          city?: string
-          company_description?: string | null
-          company_name?: string
-          created_at?: string | null
-          default_display_currency?: string | null
-          email?: string
-          id?: string
-          logo_height?: number | null
-          logo_position_x?: number | null
-          logo_position_y?: number | null
-          logo_url?: string | null
-          logo_width?: number | null
-          payment_terms?: string | null
-          phone?: string
-          tva_rate?: number
-          updated_at?: string | null
-          usd_htg_rate?: number | null
-        }
-        Update: {
-          address?: string
-          city?: string
-          company_description?: string | null
-          company_name?: string
-          created_at?: string | null
-          default_display_currency?: string | null
-          email?: string
-          id?: string
-          logo_height?: number | null
-          logo_position_x?: number | null
-          logo_position_y?: number | null
-          logo_url?: string | null
-          logo_width?: number | null
-          payment_terms?: string | null
-          phone?: string
-          tva_rate?: number
-          updated_at?: string | null
-          usd_htg_rate?: number | null
-        }
-        Relationships: []
-      }
       database_size_history: {
         Row: {
           id: string
