@@ -490,6 +490,42 @@ export const CompanySettings = () => {
         </Collapsible>
       </Card>
 
+      {/* Invitation Code Section */}
+      {invitationCode && (
+        <Card>
+          <CardHeader className="py-3 sm:py-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <CardTitle className="text-sm sm:text-base">Code d'invitation</CardTitle>
+            </div>
+            <CardDescription className="text-xs">
+              Partagez ce code avec vos vendeurs pour qu'ils rejoignent votre entreprise
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-muted rounded-md px-4 py-2.5 font-mono text-lg tracking-widest text-center select-all">
+                {invitationCode}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 shrink-0"
+                onClick={() => {
+                  navigator.clipboard.writeText(invitationCode);
+                  setCodeCopied(true);
+                  setTimeout(() => setCodeCopied(false), 2000);
+                  toast({ title: 'Code copié', description: invitationCode });
+                }}
+              >
+                {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {codeCopied ? 'Copié' : 'Copier'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Address Section */}
       <Card>
         <Collapsible open={openSections.address} onOpenChange={() => toggleSection('address')}>
