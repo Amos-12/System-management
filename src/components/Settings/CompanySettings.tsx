@@ -144,6 +144,7 @@ export const CompanySettings = () => {
       if (data.logo_url) {
         setLogoPreview(data.logo_url);
       }
+      setInvitationCode(data.invitation_code || null);
     } catch (error) {
       console.error('Error fetching company settings:', error);
       toast({
