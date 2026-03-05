@@ -46,7 +46,7 @@ export const ResponsiveDashboardLayout = ({
   currentSection = 'dashboard',
   onSectionChange 
 }: ResponsiveDashboardLayoutProps) => {
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, role: authRole } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -128,7 +128,7 @@ export const ResponsiveDashboardLayout = ({
     { icon: ClipboardList, label: "Logs", value: 'activity' },
     { icon: Bell, label: 'Notifications', value: 'notifications' },
     { icon: Settings, label: 'Paramètres', value: 'settings' },
-    { icon: Database, label: 'Base de données', value: 'database' },
+    ...(authRole === 'super_admin' ? [{ icon: Database, label: 'Base de données', value: 'database' }] : []),
     { icon: HelpCircle, label: 'Aide', value: 'help', route: '/help' }
   ];
 
