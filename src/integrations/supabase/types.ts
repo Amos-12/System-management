@@ -983,7 +983,7 @@ export type Database = {
         | "subcategory_deleted"
         | "sale_deleted"
         | "sale_cancelled"
-      app_role: "admin" | "seller"
+      app_role: "admin" | "seller" | "super_admin"
       product_category:
         | "alimentaires"
         | "boissons"
@@ -1151,7 +1151,7 @@ export const Constants = {
         "sale_deleted",
         "sale_cancelled",
       ],
-      app_role: ["admin", "seller"],
+      app_role: ["admin", "seller", "super_admin"],
       product_category: [
         "alimentaires",
         "boissons",
