@@ -572,13 +572,31 @@ export const CompanySettings = () => {
                 variant="outline"
                 size="sm"
                 className="gap-1.5 shrink-0"
-                onClick={handleRegenerateCode}
+                onClick={() => setShowRegenerateConfirm(true)}
                 disabled={regenerating}
               >
                 <RefreshCw className={`h-4 w-4 ${regenerating ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">Régénérer</span>
               </Button>
             </div>
+
+            {/* Regenerate Confirmation Dialog */}
+            <AlertDialog open={showRegenerateConfirm} onOpenChange={setShowRegenerateConfirm}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Régénérer le code d'invitation ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    L'ancien code ne fonctionnera plus. Les vendeurs qui n'ont pas encore rejoint devront utiliser le nouveau code.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { setShowRegenerateConfirm(false); handleRegenerateCode(); }}>
+                    Régénérer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       )}
