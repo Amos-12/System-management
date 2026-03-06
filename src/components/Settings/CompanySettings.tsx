@@ -9,10 +9,20 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, Save, Loader2, DollarSign, Image, MapPin, CreditCard, ChevronDown, Settings2, Check, AlertCircle, Copy, Users, RefreshCw, Crown, Mail, Package, UserCheck } from 'lucide-react';
+import { Building2, Save, Loader2, DollarSign, Image, MapPin, CreditCard, ChevronDown, Settings2, Check, AlertCircle, Copy, Users, RefreshCw, Crown, Mail, Package, UserCheck, Zap, Lock, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useSubscription } from '@/hooks/useSubscription';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface CompanySettings {
   id: string;
@@ -47,6 +57,7 @@ export const CompanySettings = () => {
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
@@ -561,13 +572,31 @@ export const CompanySettings = () => {
                 variant="outline"
                 size="sm"
                 className="gap-1.5 shrink-0"
-                onClick={handleRegenerateCode}
+                onClick={() => setShowRegenerateConfirm(true)}
                 disabled={regenerating}
               >
                 <RefreshCw className={`h-4 w-4 ${regenerating ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">Régénérer</span>
               </Button>
             </div>
+
+            {/* Regenerate Confirmation Dialog */}
+            <AlertDialog open={showRegenerateConfirm} onOpenChange={setShowRegenerateConfirm}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Régénérer le code d'invitation ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    L'ancien code ne fonctionnera plus. Les vendeurs qui n'ont pas encore rejoint devront utiliser le nouveau code.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { setShowRegenerateConfirm(false); handleRegenerateCode(); }}>
+                    Régénérer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       )}
@@ -789,6 +818,11 @@ export const CompanySettings = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {subscriptionPlans.map((plan: any) => {
                       const isCurrent = plan.id === subscription.plan;
+                      const planOrder = ['trial', 'basic', 'pro', 'premium'];
+                      const currentIndex = planOrder.indexOf(subscription.plan);
+                      const planIndex = planOrder.indexOf(plan.id);
+                      const isUpgrade = planIndex > currentIndex;
+                      const features = Array.isArray(plan.features) ? plan.features : [];
                       return (
                         <div 
                           key={plan.id} 
@@ -803,9 +837,34 @@ export const CompanySettings = () => {
                             {plan.price_monthly > 0 && <span className="text-xs text-muted-foreground font-normal">/mois</span>}
                           </p>
                           <div className="space-y-1 text-muted-foreground text-xs">
-                            <p>{plan.max_users === 999 ? 'Utilisateurs illimités' : `${plan.max_users} utilisateurs`}</p>
-                            <p>{plan.max_products === 999999 ? 'Produits illimités' : `${plan.max_products} produits`}</p>
+                            <p>{plan.max_users >= 999 ? 'Utilisateurs illimités' : `${plan.max_users} utilisateurs`}</p>
+                            <p>{plan.max_products >= 999999 ? 'Produits illimités' : `${plan.max_products} produits`}</p>
+                            <p>{plan.max_sales_monthly >= 999999 ? 'Ventes illimitées' : `${plan.max_sales_monthly} ventes/mois`}</p>
                           </div>
+                          
+                          {/* Feature list */}
+                          {features.length > 0 && (
+                            <div className="space-y-0.5 pt-1 border-t">
+                              {features.map((f: string, i: number) => (
+                                <div key={i} className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                                  <CheckCircle2 className="h-3 w-3 shrink-0 text-primary" />
+                                  <span>{f}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Upgrade button */}
+                          {isUpgrade && (
+                            <Button
+                              size="sm"
+                              className="w-full gap-1.5 mt-2"
+                              onClick={() => window.open(`mailto:contact@systemmanagement.sn?subject=Upgrade vers ${plan.name}&body=Bonjour, je souhaite passer au plan ${plan.name} ($${plan.price_monthly}/mois) pour mon entreprise "${subscription.companyName}".`, '_blank')}
+                            >
+                              <Zap className="h-3.5 w-3.5" />
+                              Passer au {plan.name}
+                            </Button>
+                          )}
                         </div>
                       );
                     })}
@@ -813,16 +872,42 @@ export const CompanySettings = () => {
                 </div>
               )}
 
+              {/* Restrictions du plan gratuit */}
+              {subscription.plan === 'trial' && (
+                <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Lock className="h-4 w-4 text-amber-600" />
+                    <span className="text-xs sm:text-sm font-medium text-amber-700 dark:text-amber-400">Restrictions du plan gratuit</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-muted-foreground">
+                    <p>🔒 Statistiques avancées</p>
+                    <p>🔒 Facture A4 personnalisée</p>
+                    <p>🔒 Logo personnalisé</p>
+                    <p>🔒 Export Excel / PDF</p>
+                    <p>🔒 Catégories avancées (fer, céramique...)</p>
+                    <p>🔒 Multi-boutiques</p>
+                  </div>
+                </div>
+              )}
+
               {/* Contact CTA */}
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <Button
+                  size="sm"
+                  className="gap-1.5 flex-1"
+                  onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Upgrade abonnement&body=Bonjour, je souhaite upgrader mon plan pour "' + subscription.companyName + '".', '_blank')}
+                >
+                  <Zap className="h-4 w-4" />
+                  Upgrader mon plan
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="gap-1.5 flex-1"
-                  onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Upgrade abonnement', '_blank')}
+                  onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Question abonnement', '_blank')}
                 >
                   <Mail className="h-4 w-4" />
-                  Contacter pour upgrader
+                  Nous contacter
                 </Button>
               </div>
             </CardContent>

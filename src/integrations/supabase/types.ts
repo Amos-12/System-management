@@ -866,6 +866,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           max_products: number
+          max_sales_monthly: number
           max_users: number
           name: string
           price_monthly: number
@@ -876,6 +877,7 @@ export type Database = {
           id: string
           is_active?: boolean | null
           max_products?: number
+          max_sales_monthly?: number
           max_users?: number
           name: string
           price_monthly?: number
@@ -886,6 +888,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_products?: number
+          max_sales_monthly?: number
           max_users?: number
           name?: string
           price_monthly?: number
