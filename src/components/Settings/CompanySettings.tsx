@@ -9,8 +9,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, Save, Loader2, DollarSign, Image, MapPin, CreditCard, ChevronDown, Settings2, Check, AlertCircle, Copy, Users } from 'lucide-react';
+import { Building2, Save, Loader2, DollarSign, Image, MapPin, CreditCard, ChevronDown, Settings2, Check, AlertCircle, Copy, Users, RefreshCw, Crown, Mail, Package, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface CompanySettings {
   id: string;
@@ -32,6 +34,7 @@ interface CompanySettings {
 }
 
 export const CompanySettings = () => {
+  const subscription = useSubscription();
   const { profile } = useAuth();
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [originalSettings, setOriginalSettings] = useState<CompanySettings | null>(null);
@@ -43,6 +46,8 @@ export const CompanySettings = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
     logo: true,
@@ -50,6 +55,7 @@ export const CompanySettings = () => {
     address: false,
     currency: false,
     payment: false,
+    subscription: false,
   });
 
   // Check if there are unsaved changes
@@ -73,7 +79,37 @@ export const CompanySettings = () => {
 
   useEffect(() => {
     fetchSettings();
+    fetchSubscriptionPlans();
   }, [profile?.company_id]);
+
+  const fetchSubscriptionPlans = async () => {
+    const { data } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('price_monthly', { ascending: true });
+    if (data) setSubscriptionPlans(data);
+  };
+
+  const handleRegenerateCode = async () => {
+    if (!settings) return;
+    setRegenerating(true);
+    try {
+      const newCode = crypto.randomUUID().substring(0, 8);
+      const { error } = await supabase
+        .from('companies')
+        .update({ invitation_code: newCode })
+        .eq('id', settings.id);
+      if (error) throw error;
+      setInvitationCode(newCode);
+      toast({ title: 'Code régénéré', description: `Nouveau code : ${newCode}` });
+    } catch (error) {
+      console.error('Error regenerating code:', error);
+      toast({ title: 'Erreur', description: 'Impossible de régénérer le code', variant: 'destructive' });
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   // Auto-save with 2 second debounce
   useEffect(() => {
@@ -503,7 +539,7 @@ export const CompanySettings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="flex items-center gap-2">
+             <div className="flex items-center gap-2">
               <div className="flex-1 bg-muted rounded-md px-4 py-2.5 font-mono text-lg tracking-widest text-center select-all">
                 {invitationCode}
               </div>
@@ -520,6 +556,16 @@ export const CompanySettings = () => {
               >
                 {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 {codeCopied ? 'Copié' : 'Copier'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 shrink-0"
+                onClick={handleRegenerateCode}
+                disabled={regenerating}
+              >
+                <RefreshCw className={`h-4 w-4 ${regenerating ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Régénérer</span>
               </Button>
             </div>
           </CardContent>
@@ -669,6 +715,115 @@ export const CompanySettings = () => {
                   rows={2}
                   className="text-sm resize-none"
                 />
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      {/* Subscription Section */}
+      <Card>
+        <Collapsible open={openSections.subscription} onOpenChange={() => toggleSection('subscription')}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3 sm:py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <CardTitle className="text-sm sm:text-base">Abonnement</CardTitle>
+                  <Badge variant={subscription.isExpired ? 'destructive' : 'default'} className="text-[10px] px-1.5">
+                    {subscription.plan.toUpperCase()}
+                  </Badge>
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSections.subscription ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
+            <CardContent className="pt-0 space-y-4">
+              {/* Current Plan Status */}
+              <div className="p-3 rounded-lg border bg-muted/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs sm:text-sm font-medium">Statut</span>
+                  <Badge variant={subscription.isActive && !subscription.isExpired ? 'default' : 'destructive'}>
+                    {subscription.isActive && !subscription.isExpired ? 'Actif' : 'Expiré'}
+                  </Badge>
+                </div>
+                
+                {subscription.subscriptionEnd && (
+                  <>
+                    <div className="flex items-center justify-between text-xs sm:text-sm">
+                      <span className="text-muted-foreground">Expiration</span>
+                      <span className="font-mono">{new Date(subscription.subscriptionEnd).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{subscription.daysRemaining} jours restants</span>
+                        <span className="text-muted-foreground">{Math.min(100, Math.round((subscription.daysRemaining / 30) * 100))}%</span>
+                      </div>
+                      <Progress 
+                        value={Math.min(100, Math.round((subscription.daysRemaining / 30) * 100))} 
+                        className="h-2"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+                    <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Utilisateurs max:</span>
+                    <span className="font-medium">{subscription.maxUsers === 999 ? '∞' : subscription.maxUsers}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Produits max:</span>
+                    <span className="font-medium">{subscription.maxProducts === 999999 ? '∞' : subscription.maxProducts}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plans Grid */}
+              {subscriptionPlans.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs sm:text-sm font-medium">Plans disponibles</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {subscriptionPlans.map((plan: any) => {
+                      const isCurrent = plan.id === subscription.plan;
+                      return (
+                        <div 
+                          key={plan.id} 
+                          className={`p-3 rounded-lg border text-xs sm:text-sm space-y-2 ${isCurrent ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'bg-muted/20'}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">{plan.name}</span>
+                            {isCurrent && <Badge className="text-[10px] px-1.5">Actuel</Badge>}
+                          </div>
+                          <p className="text-lg font-bold">
+                            {plan.price_monthly === 0 ? 'Gratuit' : `$${plan.price_monthly}`}
+                            {plan.price_monthly > 0 && <span className="text-xs text-muted-foreground font-normal">/mois</span>}
+                          </p>
+                          <div className="space-y-1 text-muted-foreground text-xs">
+                            <p>{plan.max_users === 999 ? 'Utilisateurs illimités' : `${plan.max_users} utilisateurs`}</p>
+                            <p>{plan.max_products === 999999 ? 'Produits illimités' : `${plan.max_products} produits`}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Contact CTA */}
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 flex-1"
+                  onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Upgrade abonnement', '_blank')}
+                >
+                  <Mail className="h-4 w-4" />
+                  Contacter pour upgrader
+                </Button>
               </div>
             </CardContent>
           </CollapsibleContent>
