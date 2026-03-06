@@ -46,6 +46,8 @@ export const CompanySettings = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
     logo: true,
@@ -53,6 +55,7 @@ export const CompanySettings = () => {
     address: false,
     currency: false,
     payment: false,
+    subscription: false,
   });
 
   // Check if there are unsaved changes
