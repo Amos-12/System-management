@@ -721,6 +721,115 @@ export const CompanySettings = () => {
         </Collapsible>
       </Card>
 
+      {/* Subscription Section */}
+      <Card>
+        <Collapsible open={openSections.subscription} onOpenChange={() => toggleSection('subscription')}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3 sm:py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <CardTitle className="text-sm sm:text-base">Abonnement</CardTitle>
+                  <Badge variant={subscription.isExpired ? 'destructive' : 'default'} className="text-[10px] px-1.5">
+                    {subscription.plan.toUpperCase()}
+                  </Badge>
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSections.subscription ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
+            <CardContent className="pt-0 space-y-4">
+              {/* Current Plan Status */}
+              <div className="p-3 rounded-lg border bg-muted/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs sm:text-sm font-medium">Statut</span>
+                  <Badge variant={subscription.isActive && !subscription.isExpired ? 'default' : 'destructive'}>
+                    {subscription.isActive && !subscription.isExpired ? 'Actif' : 'Expiré'}
+                  </Badge>
+                </div>
+                
+                {subscription.subscriptionEnd && (
+                  <>
+                    <div className="flex items-center justify-between text-xs sm:text-sm">
+                      <span className="text-muted-foreground">Expiration</span>
+                      <span className="font-mono">{new Date(subscription.subscriptionEnd).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{subscription.daysRemaining} jours restants</span>
+                        <span className="text-muted-foreground">{Math.min(100, Math.round((subscription.daysRemaining / 30) * 100))}%</span>
+                      </div>
+                      <Progress 
+                        value={Math.min(100, Math.round((subscription.daysRemaining / 30) * 100))} 
+                        className="h-2"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+                    <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Utilisateurs max:</span>
+                    <span className="font-medium">{subscription.maxUsers === 999 ? '∞' : subscription.maxUsers}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Produits max:</span>
+                    <span className="font-medium">{subscription.maxProducts === 999999 ? '∞' : subscription.maxProducts}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plans Grid */}
+              {subscriptionPlans.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs sm:text-sm font-medium">Plans disponibles</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {subscriptionPlans.map((plan: any) => {
+                      const isCurrent = plan.id === subscription.plan;
+                      return (
+                        <div 
+                          key={plan.id} 
+                          className={`p-3 rounded-lg border text-xs sm:text-sm space-y-2 ${isCurrent ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'bg-muted/20'}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">{plan.name}</span>
+                            {isCurrent && <Badge className="text-[10px] px-1.5">Actuel</Badge>}
+                          </div>
+                          <p className="text-lg font-bold">
+                            {plan.price_monthly === 0 ? 'Gratuit' : `$${plan.price_monthly}`}
+                            {plan.price_monthly > 0 && <span className="text-xs text-muted-foreground font-normal">/mois</span>}
+                          </p>
+                          <div className="space-y-1 text-muted-foreground text-xs">
+                            <p>{plan.max_users === 999 ? 'Utilisateurs illimités' : `${plan.max_users} utilisateurs`}</p>
+                            <p>{plan.max_products === 999999 ? 'Produits illimités' : `${plan.max_products} produits`}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Contact CTA */}
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 flex-1"
+                  onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Upgrade abonnement', '_blank')}
+                >
+                  <Mail className="h-4 w-4" />
+                  Contacter pour upgrader
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
     </div>
   );
 };
