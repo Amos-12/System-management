@@ -539,7 +539,7 @@ export const CompanySettings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="flex items-center gap-2">
+             <div className="flex items-center gap-2">
               <div className="flex-1 bg-muted rounded-md px-4 py-2.5 font-mono text-lg tracking-widest text-center select-all">
                 {invitationCode}
               </div>
@@ -556,6 +556,16 @@ export const CompanySettings = () => {
               >
                 {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 {codeCopied ? 'Copié' : 'Copier'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 shrink-0"
+                onClick={handleRegenerateCode}
+                disabled={regenerating}
+              >
+                <RefreshCw className={`h-4 w-4 ${regenerating ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Régénérer</span>
               </Button>
             </div>
           </CardContent>
