@@ -79,7 +79,37 @@ export const CompanySettings = () => {
 
   useEffect(() => {
     fetchSettings();
+    fetchSubscriptionPlans();
   }, [profile?.company_id]);
+
+  const fetchSubscriptionPlans = async () => {
+    const { data } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('price_monthly', { ascending: true });
+    if (data) setSubscriptionPlans(data);
+  };
+
+  const handleRegenerateCode = async () => {
+    if (!settings) return;
+    setRegenerating(true);
+    try {
+      const newCode = crypto.randomUUID().substring(0, 8);
+      const { error } = await supabase
+        .from('companies')
+        .update({ invitation_code: newCode })
+        .eq('id', settings.id);
+      if (error) throw error;
+      setInvitationCode(newCode);
+      toast({ title: 'Code régénéré', description: `Nouveau code : ${newCode}` });
+    } catch (error) {
+      console.error('Error regenerating code:', error);
+      toast({ title: 'Erreur', description: 'Impossible de régénérer le code', variant: 'destructive' });
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   // Auto-save with 2 second debounce
   useEffect(() => {
