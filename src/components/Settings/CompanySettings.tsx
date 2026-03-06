@@ -34,6 +34,7 @@ interface CompanySettings {
 }
 
 export const CompanySettings = () => {
+  const subscription = useSubscription();
   const { profile } = useAuth();
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [originalSettings, setOriginalSettings] = useState<CompanySettings | null>(null);
