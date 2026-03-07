@@ -67,7 +67,8 @@ export const useAuth = () => {
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
-        if (isMounted) {
+        // Don't show error toast for super_admin who may not have a profile row
+        if (isMounted && roleData?.role !== 'super_admin') {
           toast({
             title: "Erreur",
             description: "Impossible de charger le profil utilisateur",

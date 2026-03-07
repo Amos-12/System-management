@@ -27,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCategories, useSousCategories, useSpecificationsModeles } from '@/hooks/useCategories';
 import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
+import { useSubscription } from '@/hooks/useSubscription';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 
@@ -571,6 +572,8 @@ export const ProductManagement = () => {
     setIsDialogOpen(true);
   };
 
+  const { maxProducts, plan } = useSubscription();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -580,6 +583,16 @@ export const ProductManagement = () => {
       toast({
         title: "Action non autorisée",
         description: "Seuls les administrateurs peuvent gérer les produits",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check product limit for new products (not edits)
+    if (!editingProduct && products.length >= maxProducts) {
+      toast({
+        title: "Limite de produits atteinte",
+        description: `Votre plan ${plan === 'trial' ? 'gratuit' : plan} est limité à ${maxProducts} produits. Passez à un plan supérieur pour en ajouter davantage.`,
         variant: "destructive"
       });
       return;
