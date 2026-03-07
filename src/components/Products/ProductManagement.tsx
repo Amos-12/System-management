@@ -356,6 +356,10 @@ export const ProductManagement = () => {
 
   // Export to Excel
   const exportToExcel = () => {
+    if (plan === 'trial') {
+      toast({ title: "Fonctionnalité Premium", description: "L'export Excel est disponible dans les plans payants.", variant: "destructive" });
+      return;
+    }
     const exportData = filteredProducts.map(p => {
       const stock = getStockDisplay(p);
       return {
@@ -379,6 +383,10 @@ export const ProductManagement = () => {
 
   // Export to PDF
   const exportToPDF = async () => {
+    if (plan === 'trial') {
+      toast({ title: "Fonctionnalité Premium", description: "L'export PDF est disponible dans les plans payants.", variant: "destructive" });
+      return;
+    }
     const pdf = new jsPDF('l', 'mm', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
     
