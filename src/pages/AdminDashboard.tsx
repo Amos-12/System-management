@@ -16,6 +16,7 @@ import { SellerPerformanceReport } from '@/components/Reports/SellerPerformanceR
 import { CategoryManagement } from '@/components/Categories/CategoryManagement';
 import { useSubscription } from '@/hooks/useSubscription';
 import { ExpiredScreen } from '@/components/Subscription/ExpiredScreen';
+import { LockedFeature } from '@/components/Subscription/LockedFeature';
 import { useAuth } from '@/hooks/useAuth';
 
 const AdminDashboard = () => {
@@ -33,6 +34,7 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <AdminDashboardCharts />;
       case 'analytics':
+        if (plan === 'trial') return <LockedFeature title="Analyses avancées" description="Les analyses détaillées, tendances annuelles et indicateurs de rentabilité sont disponibles dans les plans payants." requiredPlan="Pro" />;
         return <AnalyticsDashboard />;
       case 'categories':
         return <CategoryManagement />;
@@ -43,10 +45,13 @@ const AdminDashboard = () => {
       case 'users':
         return <UserManagementPanel />;
       case 'seller-reports':
+        if (plan === 'trial') return <LockedFeature title="Rapports vendeurs" description="Les rapports de performance des vendeurs sont disponibles dans les plans payants." requiredPlan="Pro" />;
         return <SellerPerformanceReport />;
       case 'reports':
+        if (plan === 'trial') return <LockedFeature title="Rapports avancés" description="Les rapports avancés et exports sont disponibles dans les plans payants." requiredPlan="Pro" />;
         return <AdvancedReports />;
       case 'tva-report':
+        if (plan === 'trial') return <LockedFeature title="Rapport TVA" description="Le rapport TVA détaillé est disponible dans les plans payants." requiredPlan="Basic" />;
         return <TvaReport />;
       case 'activity':
         return <ActivityLogPanel />;

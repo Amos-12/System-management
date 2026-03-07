@@ -988,6 +988,42 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
     setIsProcessing(true);
 
     try {
+      // === CHECK MONTHLY SALES LIMIT ===
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { count: monthlySalesCount, error: countError } = await supabase
+        .from('sales')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', startOfMonth.toISOString());
+
+      if (!countError && monthlySalesCount !== null) {
+        // Fetch plan limits
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('subscription_plan')
+          .limit(1)
+          .maybeSingle();
+
+        if (companyData?.subscription_plan) {
+          const { data: planData } = await supabase
+            .from('subscription_plans')
+            .select('max_sales_monthly')
+            .eq('id', companyData.subscription_plan)
+            .maybeSingle();
+
+          if (planData && monthlySalesCount >= planData.max_sales_monthly) {
+            toast({
+              title: "Limite de ventes mensuelles atteinte",
+              description: `Votre plan est limité à ${planData.max_sales_monthly} ventes par mois. Passez à un plan supérieur pour continuer.`,
+              variant: "destructive"
+            });
+            setIsProcessing(false);
+            return;
+          }
+        }
+      }
       // Use unified total (properly converted to display currency) for all calculations
       const { amount: unifiedSubtotal, currency: displayCurrency } = getUnifiedTotal();
       const discountAmount = getDiscountAmount();

@@ -25,6 +25,7 @@ export const useAuth = () => {
     let isMounted = true;
 
     const fetchProfile = async (userId: string) => {
+      let fetchedRole: string | null = null;
       try {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -41,6 +42,8 @@ export const useAuth = () => {
           .maybeSingle();
 
         if (roleError) throw roleError;
+
+        fetchedRole = roleData?.role ?? null;
 
         if (!isMounted) return;
 
@@ -67,7 +70,8 @@ export const useAuth = () => {
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
-        if (isMounted) {
+        // Don't show error toast for super_admin who may not have a profile row
+        if (isMounted && fetchedRole !== 'super_admin') {
           toast({
             title: "Erreur",
             description: "Impossible de charger le profil utilisateur",
