@@ -9,6 +9,7 @@ export interface SubscriptionStatus {
   subscriptionEnd: string | null;
   maxUsers: number;
   maxProducts: number;
+  maxSalesMonthly: number;
   companyName: string;
 }
 
@@ -20,6 +21,7 @@ const DEFAULT_STATUS: SubscriptionStatus = {
   subscriptionEnd: null,
   maxUsers: 3,
   maxProducts: 50,
+  maxSalesMonthly: 100,
   companyName: '',
 };
 
@@ -41,6 +43,19 @@ export function useSubscription() {
           return;
         }
 
+        // Fetch plan limits from subscription_plans
+        let maxSalesMonthly = 100;
+        if (data.subscription_plan) {
+          const { data: planData } = await supabase
+            .from('subscription_plans')
+            .select('max_sales_monthly')
+            .eq('id', data.subscription_plan)
+            .maybeSingle();
+          if (planData?.max_sales_monthly) {
+            maxSalesMonthly = planData.max_sales_monthly;
+          }
+        }
+
         const today = new Date().toISOString().split('T')[0];
         const isExpired = data.subscription_end ? data.subscription_end < today : false;
         const daysRemaining = data.subscription_end
@@ -55,6 +70,7 @@ export function useSubscription() {
           subscriptionEnd: data.subscription_end,
           maxUsers: data.max_users ?? 3,
           maxProducts: data.max_products ?? 50,
+          maxSalesMonthly,
           companyName: data.name || '',
         });
       } catch (err) {
