@@ -398,7 +398,7 @@ export const CompanySettings = () => {
           </CollapsibleTrigger>
           <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
             <CardContent className="pt-0 space-y-3">
-              {plan === 'trial' ? (
+              {subscription.plan === 'trial' ? (
                 <div className="flex flex-col items-center py-6 text-center">
                   <Lock className="w-8 h-8 text-muted-foreground mb-2" />
                   <p className="text-sm font-medium mb-1">Logo personnalisé</p>
