@@ -398,39 +398,50 @@ export const CompanySettings = () => {
           </CollapsibleTrigger>
           <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
             <CardContent className="pt-0 space-y-3">
-              {logoPreview && (
-                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
-                  <img src={logoPreview} alt="Logo" className="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium truncate">Logo actuel</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">PNG, JPG (max 2MB)</p>
-                  </div>
+              {subscription.plan === 'trial' ? (
+                <div className="flex flex-col items-center py-6 text-center">
+                  <Lock className="w-8 h-8 text-muted-foreground mb-2" />
+                  <p className="text-sm font-medium mb-1">Logo personnalisé</p>
+                  <p className="text-xs text-muted-foreground mb-3">Disponible dans les plans payants. Le logo par défaut sera utilisé.</p>
+                  <Badge variant="secondary">Plan gratuit</Badge>
                 </div>
-              )}
+              ) : (
+                <>
+                  {logoPreview && (
+                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                      <img src={logoPreview} alt="Logo" className="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium truncate">Logo actuel</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">PNG, JPG (max 2MB)</p>
+                      </div>
+                    </div>
+                  )}
 
-              <div className="flex gap-2">
-                <Input
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={handleLogoChange}
-                  className="flex-1 text-xs sm:text-sm h-9"
-                />
-                {logoFile && (
-                  <Button 
-                    onClick={handleLogoUpload} 
-                    disabled={uploading}
-                    size="sm"
-                    className="gap-1.5 shrink-0"
-                  >
-                    {uploading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Save className="h-3.5 w-3.5" />
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      onChange={handleLogoChange}
+                      className="flex-1 text-xs sm:text-sm h-9"
+                    />
+                    {logoFile && (
+                      <Button 
+                        onClick={handleLogoUpload} 
+                        disabled={uploading}
+                        size="sm"
+                        className="gap-1.5 shrink-0"
+                      >
+                        {uploading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5" />
+                        )}
+                        <span className="hidden sm:inline">Upload</span>
+                      </Button>
                     )}
-                    <span className="hidden sm:inline">Upload</span>
-                  </Button>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
 
               {settings?.logo_url && (
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
