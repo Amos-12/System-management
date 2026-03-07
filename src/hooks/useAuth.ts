@@ -31,6 +31,7 @@ export const useAuth = () => {
           .from('profiles')
           .select('*')
           .eq('user_id', userId)
+          .limit(1)
           .maybeSingle();
 
         if (profileError) throw profileError;
