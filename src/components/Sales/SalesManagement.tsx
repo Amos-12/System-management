@@ -451,7 +451,6 @@ export const SalesManagement = () => {
 
 
   // Export functions
-  const { plan: subPlan } = useSubscription();
 
   const exportToExcel = () => {
     if (subPlan === 'trial') {
