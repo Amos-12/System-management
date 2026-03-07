@@ -85,6 +85,7 @@ export const SalesManagement = () => {
   // Centralized hooks
   const { settings: companySettingsHook } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
+  const { plan: subPlan } = useSubscription();
   
   const [sales, setSales] = useState<Sale[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
