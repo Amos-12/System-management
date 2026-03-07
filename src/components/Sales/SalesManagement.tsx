@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import { useCurrencyCalculations, currencyUtils } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useSubscription } from '@/hooks/useSubscription';
 
 import { 
   AlertDialog, 
@@ -449,7 +450,13 @@ export const SalesManagement = () => {
 
 
   // Export functions
+  const { plan: subPlan } = useSubscription();
+
   const exportToExcel = () => {
+    if (subPlan === 'trial') {
+      toast({ title: "Fonctionnalité Premium", description: "L'export Excel est disponible dans les plans payants.", variant: "destructive" });
+      return;
+    }
     const rate = companySettings?.usd_htg_rate || 132;
     const displayCurrency = (companySettings?.default_display_currency || 'HTG') as 'USD' | 'HTG';
     
@@ -480,6 +487,10 @@ export const SalesManagement = () => {
   };
 
   const exportToPDF = async () => {
+    if (subPlan === 'trial') {
+      toast({ title: "Fonctionnalité Premium", description: "L'export PDF est disponible dans les plans payants.", variant: "destructive" });
+      return;
+    }
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.getWidth();
     let yPos = 15;
