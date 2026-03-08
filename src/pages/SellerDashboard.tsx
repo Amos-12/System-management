@@ -10,6 +10,7 @@ import { SaleDetailsDialog } from '@/components/Sales/SaleDetailsDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSubscription } from '@/hooks/useSubscription';
 import { ExpiredScreen } from '@/components/Subscription/ExpiredScreen';
+import { UpgradeBanner } from '@/components/Subscription/UpgradeBanner';
 import { 
   TrendingUp,
   Receipt,

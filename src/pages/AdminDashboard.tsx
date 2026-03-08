@@ -75,6 +75,7 @@ const AdminDashboard = () => {
       onSectionChange={setCurrentSection}
     >
       <div className="space-y-6">
+        <UpgradeBanner />
         {renderContent()}
       </div>
     </ResponsiveDashboardLayout>
