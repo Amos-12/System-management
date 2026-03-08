@@ -441,6 +441,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
   };
 
   const handlePrintProforma = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "L'impression des proformas est disponible dans les plans payants.", variant: "destructive" }); return; }
     if (cart.length === 0) {
       toast({
         title: "Panier vide",

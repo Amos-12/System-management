@@ -599,6 +599,7 @@ export const AdminDashboardCharts = () => {
   const stockTurnover = 2.5; // Placeholder - would need historical data to calculate
 
   const handleExportPdf = async () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     try {
       const { data: companyData } = await supabase
         .from('companies')

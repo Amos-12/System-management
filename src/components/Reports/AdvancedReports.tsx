@@ -517,6 +517,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
   };
 
   const exportToPDF = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!reportData || !companySettings) {
       toast({
         title: "Erreur",

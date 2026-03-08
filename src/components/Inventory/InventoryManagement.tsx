@@ -417,6 +417,7 @@ export const InventoryManagement = () => {
   };
 
   const exportToPDF = async () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const { data: settings } = await supabase
       .from('companies')
       .select('*')

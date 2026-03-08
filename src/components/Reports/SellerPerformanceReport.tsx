@@ -228,6 +228,7 @@ export const SellerPerformanceReport = () => {
   const displayCurrency = companySettings.default_display_currency as 'USD' | 'HTG';
 
   const exportToExcel = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const data = sellers.map((s, index) => ({
       'Rang': index + 1,
       'Vendeur': s.seller_name,
