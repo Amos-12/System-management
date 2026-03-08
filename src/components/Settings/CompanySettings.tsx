@@ -62,6 +62,8 @@ export const CompanySettings = () => {
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [isAnnual, setIsAnnual] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'stripe' | 'moncash'>('stripe');
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
     logo: true,
