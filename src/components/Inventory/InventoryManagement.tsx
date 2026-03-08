@@ -73,7 +73,7 @@ export const InventoryManagement = () => {
   const { toast } = useToast();
   const { profile } = useAuth();
   const isMobile = useIsMobile();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
