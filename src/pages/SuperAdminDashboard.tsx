@@ -85,6 +85,10 @@ const SuperAdminDashboard = () => {
               <Database className="w-4 h-4" />
               <span className="hidden sm:inline">Base de données</span>
             </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-1.5">
+              <Wallet className="w-4 h-4" />
+              <span className="hidden sm:inline">Paiements</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies" className="mt-6">
