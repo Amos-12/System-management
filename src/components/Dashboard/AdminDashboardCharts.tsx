@@ -45,6 +45,7 @@ import { generateAdminDashboardPdf } from '@/lib/adminDashboardPdf';
 import { useSaleCalculations } from '@/hooks/useSaleCalculations';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface RevenueData {
   date: string;
