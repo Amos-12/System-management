@@ -59,7 +59,7 @@ const SuperAdminDashboard = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <SaasKPIs />
 
         <Tabs defaultValue="companies" className="w-full">
