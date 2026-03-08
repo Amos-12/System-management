@@ -30,12 +30,25 @@ serve(async (req) => {
       throw new Error("plan_id and payment_method are required");
     }
 
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData } = await supabaseClient.auth.getUser(token);
+    // Authenticate user via auth header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new Error("User not authenticated - no auth header");
+    }
+
+    // Create a user-scoped client to validate the JWT
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: userData, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !userData?.user?.email) {
+      console.error("Auth error:", authError?.message);
+      throw new Error("User not authenticated - invalid or expired session. Please log in again.");
+    }
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated");
 
     // Get user's company
     const { data: profile } = await supabaseClient
