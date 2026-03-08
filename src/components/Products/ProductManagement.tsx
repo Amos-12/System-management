@@ -19,7 +19,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Package, Plus, Edit, Trash2, AlertCircle, Search, Filter, LayoutGrid, List, Download, FileText, DollarSign, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, AlertCircle, Search, Filter, LayoutGrid, List, Download, FileText, DollarSign, CheckCircle, XCircle, RotateCcw, Lock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';

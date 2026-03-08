@@ -33,7 +33,8 @@ import {
   Coffee,
   CircleDot,
   Save,
-  History
+  History,
+  Lock
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';

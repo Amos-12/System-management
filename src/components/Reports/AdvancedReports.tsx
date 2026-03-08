@@ -23,7 +23,8 @@ import {
   ChevronDown,
   FileSpreadsheet,
   FileText,
-  FileDown
+  FileDown,
+  Lock
 } from 'lucide-react';
 import { generateAdvancedReportPDF, CompanySettings } from '@/lib/pdfGenerator';
 import * as XLSX from 'xlsx';

@@ -18,7 +18,8 @@ import {
   ChevronUp,
   Download,
   RefreshCw,
-  Package
+  Package,
+  Lock
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';

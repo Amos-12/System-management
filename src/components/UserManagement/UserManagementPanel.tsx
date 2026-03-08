@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, UserCheck, UserX, Mail, Calendar, Search, UserPlus, RefreshCcw, Settings, Trash2, LayoutGrid, List, Shield, User, Crown, Download } from 'lucide-react';
+import { Users, UserCheck, UserX, Mail, Calendar, Search, UserPlus, RefreshCcw, Settings, Trash2, LayoutGrid, List, Shield, User, Crown, Download, Lock } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';

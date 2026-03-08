@@ -38,7 +38,8 @@ import {
   Info,
   LayoutGrid,
   List,
-  ScanLine
+  ScanLine,
+  Lock
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
