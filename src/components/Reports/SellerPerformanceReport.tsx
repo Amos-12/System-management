@@ -22,6 +22,7 @@ import {
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface SellerStats {
   seller_id: string;
