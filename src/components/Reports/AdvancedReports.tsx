@@ -744,7 +744,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" disabled={!reportData} size="sm" className="gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm">
-                  <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                  {isFreePlan ? <Lock className="w-3 h-3 sm:w-4 sm:h-4" /> : <Download className="w-3 h-3 sm:w-4 sm:h-4" />}
                   <span className="hidden sm:inline">Exporter</span>
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>

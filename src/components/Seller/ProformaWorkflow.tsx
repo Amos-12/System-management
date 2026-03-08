@@ -973,7 +973,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
             <span className="hidden sm:inline">{isSaving ? 'Sauvegarde...' : 'Sauvegarder'}</span>
           </Button>
           <Button size="sm" onClick={handlePrintProforma} className="h-9">
-            <Printer className="w-4 h-4 sm:mr-2" />
+            {isFreePlan ? <Lock className="w-4 h-4 sm:mr-2" /> : <Printer className="w-4 h-4 sm:mr-2" />}
             <span className="hidden sm:inline">Imprimer PDF</span>
           </Button>
         </div>

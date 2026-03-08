@@ -307,7 +307,8 @@ export const TvaReport = () => {
             </Button>
             {salesData.length > 0 && (
               <Button variant="outline" onClick={handleExportPDF} className="h-8 sm:h-10 text-xs sm:text-sm">
-                <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                {isFreePlan ? <Lock className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" /> : <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />}
+                <span className="hidden sm:inline">Export PDF</span>
                 <span className="hidden sm:inline">Export PDF</span>
               </Button>
             )}

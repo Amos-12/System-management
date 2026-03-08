@@ -501,12 +501,12 @@ export const InventoryManagement = () => {
             <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
           <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm" onClick={exportToExcel}>
-            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            {isFreePlan ? <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />}
             <span className="hidden sm:inline">Excel</span>
             <span className="sm:hidden">XLS</span>
           </Button>
           <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm" onClick={exportToPDF}>
-            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            {isFreePlan ? <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />}
             PDF
           </Button>
         </div>

@@ -719,11 +719,11 @@ export const SalesManagement = () => {
             </CardTitle>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={exportToExcel} className="h-8">
-                <Download className="w-4 h-4 mr-1" />
+                {isFreePlan ? <Lock className="w-4 h-4 mr-1" /> : <Download className="w-4 h-4 mr-1" />}
                 <span className="hidden sm:inline">Excel</span>
               </Button>
               <Button variant="outline" size="sm" onClick={exportToPDF} className="h-8">
-                <FileText className="w-4 h-4 mr-1" />
+                {isFreePlan ? <Lock className="w-4 h-4 mr-1" /> : <FileText className="w-4 h-4 mr-1" />}
                 <span className="hidden sm:inline">PDF</span>
               </Button>
             </div>

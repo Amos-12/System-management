@@ -1871,7 +1871,7 @@ export const ProductManagement = () => {
                 className="h-7 sm:h-8 px-2 text-[10px] sm:text-xs"
                 title="Exporter en PDF"
               >
-                <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                {isFreePlan ? <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
                 <span className="hidden sm:inline ml-1">PDF</span>
               </Button>
             </div>

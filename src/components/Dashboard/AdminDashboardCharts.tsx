@@ -685,7 +685,7 @@ export const AdminDashboardCharts = () => {
               className="h-7 w-7 sm:h-8 sm:w-8"
               onClick={handleExportPdf}
             >
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+              {isFreePlan ? <Lock className="h-3 w-3 sm:h-4 sm:w-4" /> : <FileText className="h-3 w-3 sm:h-4 sm:w-4" />}
             </Button>
             <Button variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={fetchData} disabled={loading}>
               <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${loading ? 'animate-spin' : ''}`} />

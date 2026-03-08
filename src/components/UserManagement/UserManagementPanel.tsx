@@ -641,7 +641,7 @@ export const UserManagementPanel = () => {
                 <RefreshCcw className="w-4 h-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={exportToExcel} title="Exporter Excel">
-                <Download className="w-4 h-4 mr-1" />
+                {isFreePlan ? <Lock className="w-4 h-4 mr-1" /> : <Download className="w-4 h-4 mr-1" />}
                 <span className="hidden sm:inline">Export</span>
               </Button>
               <Dialog>

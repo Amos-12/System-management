@@ -51,7 +51,7 @@ const AdminDashboard = () => {
         if (isFreePlan) return <LockedFeature title="Rapports avancés" description="Les rapports avancés et exports sont disponibles dans les plans payants." requiredPlan="Pro" />;
         return <AdvancedReports />;
       case 'tva-report':
-        if (plan === 'trial') return <LockedFeature title="Rapport TVA" description="Le rapport TVA détaillé est disponible dans les plans payants." requiredPlan="Basic" />;
+        if (isFreePlan) return <LockedFeature title="Rapport TVA" description="Le rapport TVA détaillé est disponible dans les plans payants." requiredPlan="Basic" />;
         return <TvaReport />;
       case 'activity':
         return <ActivityLogPanel />;

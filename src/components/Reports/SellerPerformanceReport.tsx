@@ -300,7 +300,7 @@ export const SellerPerformanceReport = () => {
             <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
           <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={exportToExcel} disabled={sellers.length === 0}>
-            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+            {isFreePlan ? <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />}
             <span className="hidden sm:inline">Export</span>
           </Button>
         </div>
