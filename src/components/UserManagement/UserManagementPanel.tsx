@@ -78,7 +78,7 @@ export const UserManagementPanel = () => {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const isMobile = useIsMobile();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
 
   // Auto-switch to cards on mobile
   const effectiveViewMode = isMobile ? 'cards' : viewMode;
