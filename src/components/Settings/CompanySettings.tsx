@@ -977,15 +977,32 @@ export const CompanySettings = () => {
                 </div>
               )}
 
+              {/* Payment method selector */}
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs sm:text-sm font-medium">Mode de paiement</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedPaymentMethod === 'stripe' ? 'default' : 'outline'}
+                    size="sm"
+                    className="gap-1.5 flex-1"
+                    onClick={() => setSelectedPaymentMethod('stripe')}
+                  >
+                    <CreditCard className="h-3.5 w-3.5" />
+                    Carte bancaire
+                  </Button>
+                  <Button
+                    variant={selectedPaymentMethod === 'moncash' ? 'default' : 'outline'}
+                    size="sm"
+                    className="gap-1.5 flex-1"
+                    onClick={() => setSelectedPaymentMethod('moncash')}
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                    MonCash
+                  </Button>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                <Button
-                  size="sm"
-                  className="gap-1.5 flex-1"
-                  onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Upgrade abonnement&body=Bonjour, je souhaite upgrader mon plan pour "' + subscription.companyName + '".', '_blank')}
-                >
-                  <Zap className="h-4 w-4" />
-                  Upgrader mon plan
-                </Button>
                 <Button
                   variant="outline"
                   size="sm"
