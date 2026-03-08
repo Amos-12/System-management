@@ -192,7 +192,7 @@ export const TvaReport = () => {
   };
 
   const handleExportPDF = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!companySettings) return;
     
     // Convert hook settings to pdfGenerator format
