@@ -884,7 +884,7 @@ export const CompanySettings = () => {
               )}
 
               {/* Restrictions du plan gratuit */}
-              {subscription.plan === 'trial' && (
+              {subscription.isFreePlan && (
                 <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 space-y-2">
                   <div className="flex items-center gap-1.5">
                     <Lock className="h-4 w-4 text-amber-600" />
