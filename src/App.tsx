@@ -15,6 +15,7 @@ import InventoryPage from "./pages/InventoryPage";
 import HelpPage from "./pages/HelpPage";
 import Profile from "./pages/Profile";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
