@@ -17,6 +17,7 @@ import { CategoryManagement } from '@/components/Categories/CategoryManagement';
 import { useSubscription } from '@/hooks/useSubscription';
 import { ExpiredScreen } from '@/components/Subscription/ExpiredScreen';
 import { LockedFeature } from '@/components/Subscription/LockedFeature';
+import { UpgradeBanner } from '@/components/Subscription/UpgradeBanner';
 import { useAuth } from '@/hooks/useAuth';
 
 const AdminDashboard = () => {
@@ -74,6 +75,7 @@ const AdminDashboard = () => {
       onSectionChange={setCurrentSection}
     >
       <div className="space-y-6">
+        <UpgradeBanner />
         {renderContent()}
       </div>
     </ResponsiveDashboardLayout>
