@@ -258,35 +258,45 @@ export const useAuth = () => {
     try {
       const currentUser = user;
       
-      // Log logout before signing out
+      // Log logout before signing out (best-effort, don't block on failure)
       if (currentUser) {
-        await (supabase as any).from('activity_logs').insert({
-          user_id: currentUser.id,
-          company_id: profile?.company_id || null,
-          action_type: 'user_logout',
-          entity_type: 'auth',
-          description: `Déconnexion`,
-          metadata: { email: currentUser.email }
-        });
+        try {
+          await (supabase as any).from('activity_logs').insert({
+            user_id: currentUser.id,
+            company_id: profile?.company_id || null,
+            action_type: 'user_logout',
+            entity_type: 'auth',
+            description: `Déconnexion`,
+            metadata: { email: currentUser.email }
+          });
+        } catch (logErr) {
+          console.warn('Could not log logout activity:', logErr);
+        }
       }
 
       const { error } = await supabase.auth.signOut();
+      
+      // Even if signOut returns an error (e.g. session missing), clear local state and redirect
       if (error) {
-        toast({
-          title: "Erreur de déconnexion",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Déconnexion réussie",
-          description: "À bientôt !",
-        });
-        // Redirect to auth page after successful sign out
-        window.location.href = '/auth';
+        console.warn('signOut error (proceeding anyway):', error.message);
       }
+
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setRole(null);
+
+      toast({
+        title: "Déconnexion réussie",
+        description: "À bientôt !",
+      });
+
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Signout error:', error);
+      // Force redirect even on unexpected errors
+      window.location.href = '/auth';
     }
   };
 
