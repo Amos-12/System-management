@@ -94,6 +94,7 @@ export const CompanySettings = () => {
   useEffect(() => {
     fetchSettings();
     fetchSubscriptionPlans();
+    fetchPaymentHistory();
   }, [profile?.company_id]);
 
   const fetchSubscriptionPlans = async () => {
