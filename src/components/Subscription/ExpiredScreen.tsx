@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Crown, Mail } from 'lucide-react';
+import { AlertTriangle, Crown, CreditCard, Smartphone, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface Plan {
   id: string;
@@ -23,6 +26,31 @@ interface ExpiredScreenProps {
 }
 
 export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScreenProps) => {
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<'stripe' | 'moncash'>('stripe');
+
+  const handleCheckout = async (planId: string) => {
+    setLoadingPlan(planId);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan_id: planId, payment_method: selectedMethod },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Erreur',
+        description: err.message || 'Impossible de créer la session de paiement',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-3xl w-full space-y-6">
@@ -34,9 +62,31 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
             {currentPlan === 'trial' ? 'Votre période d\'essai est terminée' : 'Votre abonnement a expiré'}
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            L'accès à <span className="font-semibold">{companyName}</span> est temporairement suspendu. 
+            L'accès à <span className="font-semibold">{companyName}</span> est temporairement suspendu.
             Choisissez un plan pour continuer.
           </p>
+        </div>
+
+        {/* Payment method selector */}
+        <div className="flex justify-center gap-3">
+          <Button
+            variant={selectedMethod === 'stripe' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedMethod('stripe')}
+            className="gap-2"
+          >
+            <CreditCard className="w-4 h-4" />
+            Carte bancaire
+          </Button>
+          <Button
+            variant={selectedMethod === 'moncash' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedMethod('moncash')}
+            className="gap-2"
+          >
+            <Smartphone className="w-4 h-4" />
+            MonCash
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -63,19 +113,27 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full" variant={plan.id === 'pro' ? 'default' : 'outline'} disabled>
-                  Bientôt disponible
+                <Button
+                  className="w-full gap-2"
+                  variant={plan.id === 'pro' ? 'default' : 'outline'}
+                  onClick={() => handleCheckout(plan.id)}
+                  disabled={!!loadingPlan}
+                >
+                  {loadingPlan === plan.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      {selectedMethod === 'stripe' ? <CreditCard className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
+                      Choisir {plan.name}
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="text-center space-y-3">
-          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-            <Mail className="w-4 h-4" />
-            Contactez-nous pour activer votre abonnement manuellement
-          </p>
+        <div className="text-center">
           <Button variant="outline" onClick={onLogout}>
             Se déconnecter
           </Button>
