@@ -32,6 +32,20 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
   const handleCheckout = async (planId: string) => {
     setLoadingPlan(planId);
     try {
+      // Ensure we have a valid session before calling the edge function
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          toast({
+            title: 'Session expirée',
+            description: 'Veuillez vous reconnecter pour continuer.',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { plan_id: planId, payment_method: selectedMethod },
       });

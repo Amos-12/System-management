@@ -14,6 +14,16 @@ export const UpgradeBanner = () => {
   const handleUpgrade = async () => {
     setUpgrading(true);
     try {
+      // Ensure valid session
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          toast({ title: 'Session expirée', description: 'Veuillez vous reconnecter.', variant: 'destructive' });
+          return;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { plan_id: 'pro', payment_method: 'stripe' },
       });
