@@ -937,7 +937,32 @@ export const CompanySettings = () => {
                 </div>
               )}
 
-              {/* Contact CTA */}
+              {/* Historique des paiements */}
+              {paymentHistory.length > 0 && (
+                <div className="space-y-2 pt-2 border-t">
+                  <p className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
+                    <CreditCard className="h-3.5 w-3.5" />
+                    Historique des paiements
+                  </p>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {paymentHistory.map((item: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between text-xs p-2 rounded-md bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {item.type === 'invoice' ? item.invoice_number : (item.plan_id || item.plan_name || '-')}
+                          </Badge>
+                          <span className="text-muted-foreground capitalize">{item.payment_method || 'stripe'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{item.amount} {item.currency}</span>
+                          <span className="text-muted-foreground">{new Date(item.created_at).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
                 <Button
                   size="sm"
