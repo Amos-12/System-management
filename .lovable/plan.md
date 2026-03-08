@@ -26,9 +26,9 @@
 - [ ] Configurer secrets MonCash (`MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET`)
 - [ ] Configurer secrets NatCash (`NATCASH_MERCHANT_ID`, `NATCASH_API_KEY`)
 - [ ] Implémenter NatCash dans create-checkout
-- [ ] Configurer Stripe webhook URL dans le dashboard Stripe
+- [ ] Configurer Stripe webhook URL dans le dashboard Stripe → `https://xngppwphedaexwkgfjdv.supabase.co/functions/v1/payment-webhook`
 - [ ] Configurer `STRIPE_WEBHOOK_SECRET`
-- [ ] Cron job pour `subscription-reminders` (pg_cron)
+- [x] Cron job pour `subscription-reminders` (pg_cron) — quotidien à 8h UTC
 - [x] Historique paiements dans CompanySettings
 - [x] Onglet Paiements dans Super Admin (PaymentsPanel avec KPIs, table paiements/factures)
 - [ ] Factures PDF téléchargeables
