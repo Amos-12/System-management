@@ -487,7 +487,7 @@ export const SalesManagement = () => {
   };
 
   const exportToPDF = async () => {
-    if (subPlan === 'trial') {
+    if (isFreePlan) {
       toast({ title: "Fonctionnalité Premium", description: "L'export PDF est disponible dans les plans payants.", variant: "destructive" });
       return;
     }
