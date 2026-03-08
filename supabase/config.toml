@@ -11,3 +11,12 @@ verify_jwt = true
 
 [functions.validate-invitation]
 verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.payment-webhook]
+verify_jwt = false
+
+[functions.subscription-reminders]
+verify_jwt = false

@@ -1,11 +1,36 @@
-import { Crown, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { Crown, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/hooks/useSubscription';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export const UpgradeBanner = () => {
   const { isFreePlan, daysRemaining, loading } = useSubscription();
+  const [upgrading, setUpgrading] = useState(false);
 
   if (loading || !isFreePlan) return null;
+
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan_id: 'pro', payment_method: 'stripe' },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Erreur',
+        description: err.message || 'Impossible de créer la session de paiement',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 px-3 py-2 mb-4">
@@ -26,15 +51,18 @@ export const UpgradeBanner = () => {
         <Button
           size="sm"
           className="gap-1 flex-shrink-0 h-7 text-xs px-2.5"
-          onClick={() => {
-            const email = 'support@stockmanager.app';
-            const subject = encodeURIComponent('Demande de mise à niveau');
-            window.open(`mailto:${email}?subject=${subject}`, '_blank');
-          }}
+          onClick={handleUpgrade}
+          disabled={upgrading}
         >
-          <Crown className="w-3 h-3" />
-          Upgrade
-          <ArrowRight className="w-3 h-3" />
+          {upgrading ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <>
+              <Crown className="w-3 h-3" />
+              Upgrade
+              <ArrowRight className="w-3 h-3" />
+            </>
+          )}
         </Button>
       </div>
     </div>

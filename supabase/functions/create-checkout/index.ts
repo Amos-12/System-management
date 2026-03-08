@@ -1,0 +1,180 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const STRIPE_PLANS: Record<string, { price_id: string; name: string }> = {
+  basic: { price_id: "price_1T8mnKAOoIXoYDc8xUbIfLlU", name: "Basic" },
+  pro: { price_id: "price_1T8mnuAOoIXoYDc8iRjrdyIC", name: "Pro" },
+  premium: { price_id: "price_1T8mq4AOoIXoYDc8SRmqM10l", name: "Premium" },
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  );
+
+  try {
+    const { plan_id, payment_method } = await req.json();
+
+    if (!plan_id || !payment_method) {
+      throw new Error("plan_id and payment_method are required");
+    }
+
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization")!;
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData } = await supabaseClient.auth.getUser(token);
+    const user = userData.user;
+    if (!user?.email) throw new Error("User not authenticated");
+
+    // Get user's company
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("company_id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!profile?.company_id) throw new Error("No company found");
+
+    const origin = req.headers.get("origin") || "https://id-preview--964f3753-4441-40ac-acf5-cd66e737e71f.lovable.app";
+
+    if (payment_method === "stripe") {
+      const plan = STRIPE_PLANS[plan_id];
+      if (!plan) throw new Error(`Invalid plan: ${plan_id}`);
+
+      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+        apiVersion: "2025-08-27.basil",
+      });
+
+      // Check for existing Stripe customer
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      let customerId: string | undefined;
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_email: customerId ? undefined : user.email,
+        line_items: [{ price: plan.price_id, quantity: 1 }],
+        mode: "subscription",
+        success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${plan_id}`,
+        cancel_url: `${origin}/`,
+        metadata: {
+          company_id: profile.company_id,
+          plan_id: plan_id,
+          user_id: user.id,
+        },
+      });
+
+      // Create pending payment record using service role
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+
+      await supabaseAdmin.from("payments").insert({
+        company_id: profile.company_id,
+        amount: plan_id === "basic" ? 19 : plan_id === "pro" ? 39 : 59,
+        currency: "USD",
+        payment_method: "stripe",
+        payment_reference: session.id,
+        status: "pending",
+        plan_id: plan_id,
+        billing_period: "monthly",
+      });
+
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    if (payment_method === "moncash") {
+      // MonCash integration
+      const clientId = Deno.env.get("MONCASH_CLIENT_ID");
+      const clientSecret = Deno.env.get("MONCASH_CLIENT_SECRET");
+
+      if (!clientId || !clientSecret) {
+        throw new Error("MonCash credentials not configured");
+      }
+
+      // Get access token
+      const authResponse = await fetch("https://sandbox.moncashbutton.digicelgroup.com/Api/oauth/token", {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: "scope=read,write&grant_type=client_credentials",
+      });
+      const authData = await authResponse.json();
+
+      if (!authData.access_token) throw new Error("Failed to get MonCash token");
+
+      const amount = plan_id === "basic" ? 19 : plan_id === "pro" ? 39 : 59;
+      const orderId = `SM-${profile.company_id.slice(0, 8)}-${Date.now()}`;
+
+      // Create payment
+      const paymentResponse = await fetch("https://sandbox.moncashbutton.digicelgroup.com/Api/v1/CreatePayment", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${authData.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ amount, orderId }),
+      });
+      const paymentData = await paymentResponse.json();
+
+      if (!paymentData.payment_token) throw new Error("Failed to create MonCash payment");
+
+      // Store pending payment
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+
+      await supabaseAdmin.from("payments").insert({
+        company_id: profile.company_id,
+        amount,
+        currency: "HTG",
+        payment_method: "moncash",
+        payment_reference: orderId,
+        status: "pending",
+        plan_id: plan_id,
+        billing_period: "monthly",
+        metadata: { payment_token: paymentData.payment_token },
+      });
+
+      const redirectUrl = `https://sandbox.moncashbutton.digicelgroup.com/Moncash-middleware/Payment/Redirect?token=${paymentData.payment_token}`;
+
+      return new Response(JSON.stringify({ url: redirectUrl }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    if (payment_method === "natcash") {
+      // NatCash - placeholder for when API credentials are available
+      throw new Error("NatCash integration coming soon. Please use Stripe or MonCash.");
+    }
+
+    throw new Error(`Unknown payment method: ${payment_method}`);
+  } catch (error) {
+    console.error("Error in create-checkout:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});
