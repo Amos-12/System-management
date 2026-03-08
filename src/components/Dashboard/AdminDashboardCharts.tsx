@@ -80,7 +80,7 @@ export const AdminDashboardCharts = () => {
   const { settings: companySettingsHook } = useCompanySettings();
   const saleCalc = useSaleCalculations();
   const currencyCalc = useCurrencyCalculations();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
   
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
