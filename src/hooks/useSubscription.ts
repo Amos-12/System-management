@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export const FREE_PLANS = ['trial', 'free', 'gratuit', ''];
+
 export interface SubscriptionStatus {
   plan: string;
+  isFreePlan: boolean;
   isActive: boolean;
   isExpired: boolean;
   daysRemaining: number;
@@ -15,6 +18,7 @@ export interface SubscriptionStatus {
 
 const DEFAULT_STATUS: SubscriptionStatus = {
   plan: 'trial',
+  isFreePlan: true,
   isActive: true,
   isExpired: false,
   daysRemaining: 30,
@@ -62,8 +66,12 @@ export function useSubscription() {
           ? Math.max(0, Math.ceil((new Date(data.subscription_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
           : 0;
 
+        const planValue = data.subscription_plan || 'trial';
+        const isFreePlan = FREE_PLANS.includes(planValue.toLowerCase());
+
         setStatus({
-          plan: data.subscription_plan || 'trial',
+          plan: planValue,
+          isFreePlan,
           isActive: data.is_active ?? true,
           isExpired,
           daysRemaining,

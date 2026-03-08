@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Download, Calculator, RefreshCw } from 'lucide-react';
+import { FileText, Download, Calculator, RefreshCw, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { usePagination } from '@/hooks/usePagination';
@@ -61,7 +61,7 @@ export const TvaReport = () => {
   // Use centralized hooks
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
 
   const { 
     paginatedItems, 
@@ -192,7 +192,7 @@ export const TvaReport = () => {
   };
 
   const handleExportPDF = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!companySettings) return;
     
     // Convert hook settings to pdfGenerator format
@@ -307,7 +307,8 @@ export const TvaReport = () => {
             </Button>
             {salesData.length > 0 && (
               <Button variant="outline" onClick={handleExportPDF} className="h-8 sm:h-10 text-xs sm:text-sm">
-                <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                {isFreePlan ? <Lock className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" /> : <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />}
+                <span className="hidden sm:inline">Export PDF</span>
                 <span className="hidden sm:inline">Export PDF</span>
               </Button>
             )}

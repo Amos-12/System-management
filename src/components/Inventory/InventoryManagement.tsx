@@ -38,7 +38,8 @@ import {
   Info,
   LayoutGrid,
   List,
-  ScanLine
+  ScanLine,
+  Lock
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -73,7 +74,7 @@ export const InventoryManagement = () => {
   const { toast } = useToast();
   const { profile } = useAuth();
   const isMobile = useIsMobile();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -394,7 +395,7 @@ export const InventoryManagement = () => {
   };
 
   const exportToExcel = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const data = filteredProducts.map(p => {
       const stock = getStockDisplay(p);
       return {
@@ -418,7 +419,7 @@ export const InventoryManagement = () => {
   };
 
   const exportToPDF = async () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const { data: settings } = await supabase
       .from('companies')
       .select('*')
@@ -501,12 +502,12 @@ export const InventoryManagement = () => {
             <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
           <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm" onClick={exportToExcel}>
-            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            {isFreePlan ? <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />}
             <span className="hidden sm:inline">Excel</span>
             <span className="sm:hidden">XLS</span>
           </Button>
           <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm" onClick={exportToPDF}>
-            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            {isFreePlan ? <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />}
             PDF
           </Button>
         </div>

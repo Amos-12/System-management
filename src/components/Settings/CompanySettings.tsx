@@ -398,7 +398,7 @@ export const CompanySettings = () => {
           </CollapsibleTrigger>
           <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
             <CardContent className="pt-0 space-y-3">
-              {subscription.plan === 'trial' ? (
+              {subscription.isFreePlan ? (
                 <div className="flex flex-col items-center py-6 text-center">
                   <Lock className="w-8 h-8 text-muted-foreground mb-2" />
                   <p className="text-sm font-medium mb-1">Logo personnalisé</p>
@@ -884,7 +884,7 @@ export const CompanySettings = () => {
               )}
 
               {/* Restrictions du plan gratuit */}
-              {subscription.plan === 'trial' && (
+              {subscription.isFreePlan && (
                 <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 space-y-2">
                   <div className="flex items-center gap-1.5">
                     <Lock className="h-4 w-4 text-amber-600" />

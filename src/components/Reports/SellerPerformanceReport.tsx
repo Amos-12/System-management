@@ -18,7 +18,8 @@ import {
   ChevronUp,
   Download,
   RefreshCw,
-  Package
+  Package,
+  Lock
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -49,7 +50,7 @@ export const SellerPerformanceReport = () => {
   const [period, setPeriod] = useState('30');
   const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
   const [companySettings, setCompanySettings] = useState<CompanySettings>({ usd_htg_rate: 132, default_display_currency: 'HTG' });
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -230,7 +231,7 @@ export const SellerPerformanceReport = () => {
   const displayCurrency = companySettings.default_display_currency as 'USD' | 'HTG';
 
   const exportToExcel = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const data = sellers.map((s, index) => ({
       'Rang': index + 1,
       'Vendeur': s.seller_name,
@@ -300,7 +301,7 @@ export const SellerPerformanceReport = () => {
             <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
           <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={exportToExcel} disabled={sellers.length === 0}>
-            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+            {isFreePlan ? <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />}
             <span className="hidden sm:inline">Export</span>
           </Button>
         </div>

@@ -23,7 +23,8 @@ import {
   ChevronDown,
   FileSpreadsheet,
   FileText,
-  FileDown
+  FileDown,
+  Lock
 } from 'lucide-react';
 import { generateAdvancedReportPDF, CompanySettings } from '@/lib/pdfGenerator';
 import * as XLSX from 'xlsx';
@@ -83,7 +84,7 @@ export const AdvancedReports = () => {
   // Use centralized hooks
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
   
   const displayCurrency = companySettings?.displayCurrency || 'HTG';
   const usdHtgRate = companySettings?.usdHtgRate || 132;
@@ -384,7 +385,7 @@ export const AdvancedReports = () => {
   };
 
   const exportReport = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!reportData) return;
 
     const csvContent = `
@@ -423,7 +424,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
   };
 
   const exportToExcel = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!reportData) return;
 
     // Sheet 1: Résumé
@@ -518,7 +519,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
   };
 
   const exportToPDF = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!reportData || !companySettings) {
       toast({
         title: "Erreur",
@@ -744,7 +745,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" disabled={!reportData} size="sm" className="gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm">
-                  <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                  {isFreePlan ? <Lock className="w-3 h-3 sm:w-4 sm:h-4" /> : <Download className="w-3 h-3 sm:w-4 sm:h-4" />}
                   <span className="hidden sm:inline">Exporter</span>
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>

@@ -19,7 +19,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Package, Plus, Edit, Trash2, AlertCircle, Search, Filter, LayoutGrid, List, Download, FileText, DollarSign, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, AlertCircle, Search, Filter, LayoutGrid, List, Download, FileText, DollarSign, CheckCircle, XCircle, RotateCcw, Lock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -356,7 +356,7 @@ export const ProductManagement = () => {
 
   // Export to Excel
   const exportToExcel = () => {
-    if (plan === 'trial') {
+    if (isFreePlan) {
       toast({ title: "Fonctionnalité Premium", description: "L'export Excel est disponible dans les plans payants.", variant: "destructive" });
       return;
     }
@@ -383,7 +383,7 @@ export const ProductManagement = () => {
 
   // Export to PDF
   const exportToPDF = async () => {
-    if (plan === 'trial') {
+    if (isFreePlan) {
       toast({ title: "Fonctionnalité Premium", description: "L'export PDF est disponible dans les plans payants.", variant: "destructive" });
       return;
     }
@@ -580,7 +580,7 @@ export const ProductManagement = () => {
     setIsDialogOpen(true);
   };
 
-  const { maxProducts, plan } = useSubscription();
+  const { maxProducts, plan, isFreePlan } = useSubscription();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -600,7 +600,7 @@ export const ProductManagement = () => {
     if (!editingProduct && products.length >= maxProducts) {
       toast({
         title: "Limite de produits atteinte",
-        description: `Votre plan ${plan === 'trial' ? 'gratuit' : plan} est limité à ${maxProducts} produits. Passez à un plan supérieur pour en ajouter davantage.`,
+        description: `Votre plan ${isFreePlan ? 'gratuit' : plan} est limité à ${maxProducts} produits. Passez à un plan supérieur pour en ajouter davantage.`,
         variant: "destructive"
       });
       return;
@@ -1861,7 +1861,7 @@ export const ProductManagement = () => {
                 className="h-7 sm:h-8 px-2 text-[10px] sm:text-xs"
                 title="Exporter en Excel"
               >
-                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                {isFreePlan ? <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
                 <span className="hidden sm:inline ml-1">Excel</span>
               </Button>
               <Button
@@ -1871,7 +1871,7 @@ export const ProductManagement = () => {
                 className="h-7 sm:h-8 px-2 text-[10px] sm:text-xs"
                 title="Exporter en PDF"
               >
-                <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                {isFreePlan ? <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
                 <span className="hidden sm:inline ml-1">PDF</span>
               </Button>
             </div>

@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, UserCheck, UserX, Mail, Calendar, Search, UserPlus, RefreshCcw, Settings, Trash2, LayoutGrid, List, Shield, User, Crown, Download } from 'lucide-react';
+import { Users, UserCheck, UserX, Mail, Calendar, Search, UserPlus, RefreshCcw, Settings, Trash2, LayoutGrid, List, Shield, User, Crown, Download, Lock } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -78,7 +78,7 @@ export const UserManagementPanel = () => {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const isMobile = useIsMobile();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
 
   // Auto-switch to cards on mobile
   const effectiveViewMode = isMobile ? 'cards' : viewMode;
@@ -405,7 +405,7 @@ export const UserManagementPanel = () => {
   const inactiveUsers = users.filter(u => u.role === 'seller' && !u.is_active).length;
 
   const exportToExcel = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const exportData = filteredUsers.map(user => ({
       'Nom Complet': user.full_name,
       'Email': user.email || 'N/A',
@@ -641,7 +641,7 @@ export const UserManagementPanel = () => {
                 <RefreshCcw className="w-4 h-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={exportToExcel} title="Exporter Excel">
-                <Download className="w-4 h-4 mr-1" />
+                {isFreePlan ? <Lock className="w-4 h-4 mr-1" /> : <Download className="w-4 h-4 mr-1" />}
                 <span className="hidden sm:inline">Export</span>
               </Button>
               <Dialog>

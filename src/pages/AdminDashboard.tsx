@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
   const [currentSection, setCurrentSection] = useState(searchParams.get('section') || 'dashboard');
-  const { isExpired, plan, companyName, loading: subLoading } = useSubscription();
+  const { isExpired, plan, isFreePlan, companyName, loading: subLoading } = useSubscription();
   const { signOut } = useAuth();
 
   if (!subLoading && isExpired) {
@@ -34,7 +34,7 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <AdminDashboardCharts />;
       case 'analytics':
-        if (plan === 'trial') return <LockedFeature title="Analyses avancées" description="Les analyses détaillées, tendances annuelles et indicateurs de rentabilité sont disponibles dans les plans payants." requiredPlan="Pro" />;
+        if (isFreePlan) return <LockedFeature title="Analyses avancées" description="Les analyses détaillées, tendances annuelles et indicateurs de rentabilité sont disponibles dans les plans payants." requiredPlan="Pro" />;
         return <AnalyticsDashboard />;
       case 'categories':
         return <CategoryManagement />;
@@ -45,13 +45,13 @@ const AdminDashboard = () => {
       case 'users':
         return <UserManagementPanel />;
       case 'seller-reports':
-        if (plan === 'trial') return <LockedFeature title="Rapports vendeurs" description="Les rapports de performance des vendeurs sont disponibles dans les plans payants." requiredPlan="Pro" />;
+        if (isFreePlan) return <LockedFeature title="Rapports vendeurs" description="Les rapports de performance des vendeurs sont disponibles dans les plans payants." requiredPlan="Pro" />;
         return <SellerPerformanceReport />;
       case 'reports':
-        if (plan === 'trial') return <LockedFeature title="Rapports avancés" description="Les rapports avancés et exports sont disponibles dans les plans payants." requiredPlan="Pro" />;
+        if (isFreePlan) return <LockedFeature title="Rapports avancés" description="Les rapports avancés et exports sont disponibles dans les plans payants." requiredPlan="Pro" />;
         return <AdvancedReports />;
       case 'tva-report':
-        if (plan === 'trial') return <LockedFeature title="Rapport TVA" description="Le rapport TVA détaillé est disponible dans les plans payants." requiredPlan="Basic" />;
+        if (isFreePlan) return <LockedFeature title="Rapport TVA" description="Le rapport TVA détaillé est disponible dans les plans payants." requiredPlan="Basic" />;
         return <TvaReport />;
       case 'activity':
         return <ActivityLogPanel />;

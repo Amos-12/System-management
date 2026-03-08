@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShoppingCart, Search, TrendingUp, Calendar, Eye, Trash2, Receipt, DollarSign, LayoutGrid, List, Download, FileText, Users, RotateCcw } from 'lucide-react';
+import { ShoppingCart, Search, TrendingUp, Calendar, Eye, Trash2, Receipt, DollarSign, LayoutGrid, List, Download, FileText, Users, RotateCcw, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { SaleDetailsDialog } from './SaleDetailsDialog';
@@ -85,7 +85,7 @@ export const SalesManagement = () => {
   // Centralized hooks
   const { settings: companySettingsHook } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
-  const { plan: subPlan } = useSubscription();
+  const { plan: subPlan, isFreePlan } = useSubscription();
   
   const [sales, setSales] = useState<Sale[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
@@ -453,7 +453,7 @@ export const SalesManagement = () => {
   // Export functions
 
   const exportToExcel = () => {
-    if (subPlan === 'trial') {
+    if (isFreePlan) {
       toast({ title: "Fonctionnalité Premium", description: "L'export Excel est disponible dans les plans payants.", variant: "destructive" });
       return;
     }
@@ -487,7 +487,7 @@ export const SalesManagement = () => {
   };
 
   const exportToPDF = async () => {
-    if (subPlan === 'trial') {
+    if (isFreePlan) {
       toast({ title: "Fonctionnalité Premium", description: "L'export PDF est disponible dans les plans payants.", variant: "destructive" });
       return;
     }
@@ -719,11 +719,11 @@ export const SalesManagement = () => {
             </CardTitle>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={exportToExcel} className="h-8">
-                <Download className="w-4 h-4 mr-1" />
+                {isFreePlan ? <Lock className="w-4 h-4 mr-1" /> : <Download className="w-4 h-4 mr-1" />}
                 <span className="hidden sm:inline">Excel</span>
               </Button>
               <Button variant="outline" size="sm" onClick={exportToPDF} className="h-8">
-                <FileText className="w-4 h-4 mr-1" />
+                {isFreePlan ? <Lock className="w-4 h-4 mr-1" /> : <FileText className="w-4 h-4 mr-1" />}
                 <span className="hidden sm:inline">PDF</span>
               </Button>
             </div>

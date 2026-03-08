@@ -64,7 +64,7 @@ interface ProformaCartItem {
 const SellerDashboard = () => {
   const { user, loading: authLoading, role, signOut } = useAuth();
   const saleCalc = useSaleCalculations();
-  const { isExpired, plan, companyName, loading: subLoading } = useSubscription();
+  const { isExpired, plan, isFreePlan, companyName, loading: subLoading } = useSubscription();
 
   if (!subLoading && isExpired) {
     return <ExpiredScreen companyName={companyName} currentPlan={plan} onLogout={signOut} />;

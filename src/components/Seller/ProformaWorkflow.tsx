@@ -33,7 +33,8 @@ import {
   Coffee,
   CircleDot,
   Save,
-  History
+  History,
+  Lock
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
@@ -159,7 +160,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
   const { sousCategories: dynamicSousCategories } = useSousCategories();
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
 
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('products');
   const [activeTab, setActiveTab] = useState<'new' | 'saved'>('new');
@@ -443,7 +444,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
   };
 
   const handlePrintProforma = () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "L'impression des proformas est disponible dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "L'impression des proformas est disponible dans les plans payants.", variant: "destructive" }); return; }
     if (cart.length === 0) {
       toast({
         title: "Panier vide",
@@ -973,7 +974,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
             <span className="hidden sm:inline">{isSaving ? 'Sauvegarde...' : 'Sauvegarder'}</span>
           </Button>
           <Button size="sm" onClick={handlePrintProforma} className="h-9">
-            <Printer className="w-4 h-4 sm:mr-2" />
+            {isFreePlan ? <Lock className="w-4 h-4 sm:mr-2" /> : <Printer className="w-4 h-4 sm:mr-2" />}
             <span className="hidden sm:inline">Imprimer PDF</span>
           </Button>
         </div>

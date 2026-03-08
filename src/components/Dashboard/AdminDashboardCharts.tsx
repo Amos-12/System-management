@@ -32,7 +32,8 @@ import {
   Wallet,
   BarChart3,
   Download,
-  FileText
+  FileText,
+  Lock
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -80,7 +81,7 @@ export const AdminDashboardCharts = () => {
   const { settings: companySettingsHook } = useCompanySettings();
   const saleCalc = useSaleCalculations();
   const currencyCalc = useCurrencyCalculations();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
   
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
@@ -600,7 +601,7 @@ export const AdminDashboardCharts = () => {
   const stockTurnover = 2.5; // Placeholder - would need historical data to calculate
 
   const handleExportPdf = async () => {
-    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     try {
       const { data: companyData } = await supabase
         .from('companies')
@@ -685,7 +686,7 @@ export const AdminDashboardCharts = () => {
               className="h-7 w-7 sm:h-8 sm:w-8"
               onClick={handleExportPdf}
             >
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+              {isFreePlan ? <Lock className="h-3 w-3 sm:h-4 sm:w-4" /> : <FileText className="h-3 w-3 sm:h-4 sm:w-4" />}
             </Button>
             <Button variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={fetchData} disabled={loading}>
               <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${loading ? 'animate-spin' : ''}`} />
