@@ -7,10 +7,11 @@ import { GlobalUsersPanel } from '@/components/SuperAdmin/GlobalUsersPanel';
 import { GlobalActivityLogs } from '@/components/SuperAdmin/GlobalActivityLogs';
 import { SuperAdminDbMonitoring } from '@/components/SuperAdmin/SuperAdminDbMonitoring';
 import { SubscriptionPlansManager } from '@/components/SuperAdmin/SubscriptionPlansManager';
+import { PaymentsPanel } from '@/components/SuperAdmin/PaymentsPanel';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Shield, Building2, Users, Activity, Database, CreditCard } from 'lucide-react';
+import { LogOut, Shield, Building2, Users, Activity, Database, CreditCard, Wallet } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 const SuperAdminDashboard = () => {
@@ -84,6 +85,10 @@ const SuperAdminDashboard = () => {
               <Database className="w-4 h-4" />
               <span className="hidden sm:inline">Base de données</span>
             </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-1.5">
+              <Wallet className="w-4 h-4" />
+              <span className="hidden sm:inline">Paiements</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies" className="mt-6">
@@ -100,6 +105,9 @@ const SuperAdminDashboard = () => {
           </TabsContent>
           <TabsContent value="database" className="mt-6">
             <SuperAdminDbMonitoring />
+          </TabsContent>
+          <TabsContent value="payments" className="mt-6">
+            <PaymentsPanel />
           </TabsContent>
         </Tabs>
       </main>

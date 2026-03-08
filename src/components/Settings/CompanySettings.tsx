@@ -60,6 +60,7 @@ export const CompanySettings = () => {
   const [regenerating, setRegenerating] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [isAnnual, setIsAnnual] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
@@ -93,6 +94,7 @@ export const CompanySettings = () => {
   useEffect(() => {
     fetchSettings();
     fetchSubscriptionPlans();
+    fetchPaymentHistory();
   }, [profile?.company_id]);
 
   const fetchSubscriptionPlans = async () => {
@@ -102,6 +104,19 @@ export const CompanySettings = () => {
       .eq('is_active', true)
       .order('price_monthly', { ascending: true });
     if (data) setSubscriptionPlans(data);
+  };
+
+  const fetchPaymentHistory = async () => {
+    if (!profile?.company_id) return;
+    const [paymentsRes, invoicesRes] = await Promise.all([
+      supabase.from('payments').select('*').eq('status', 'completed').order('created_at', { ascending: false }).limit(10),
+      supabase.from('subscription_invoices').select('*').order('created_at', { ascending: false }).limit(10),
+    ]);
+    const combined = [
+      ...(paymentsRes.data || []).map((p: any) => ({ type: 'payment', ...p })),
+      ...(invoicesRes.data || []).map((i: any) => ({ type: 'invoice', ...i, amount: i.amount, currency: i.currency || 'USD' })),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setPaymentHistory(combined);
   };
 
   const handleRegenerateCode = async () => {
@@ -922,7 +937,32 @@ export const CompanySettings = () => {
                 </div>
               )}
 
-              {/* Contact CTA */}
+              {/* Historique des paiements */}
+              {paymentHistory.length > 0 && (
+                <div className="space-y-2 pt-2 border-t">
+                  <p className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
+                    <CreditCard className="h-3.5 w-3.5" />
+                    Historique des paiements
+                  </p>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {paymentHistory.map((item: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between text-xs p-2 rounded-md bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {item.type === 'invoice' ? item.invoice_number : (item.plan_id || item.plan_name || '-')}
+                          </Badge>
+                          <span className="text-muted-foreground capitalize">{item.payment_method || 'stripe'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{item.amount} {item.currency}</span>
+                          <span className="text-muted-foreground">{new Date(item.created_at).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
                 <Button
                   size="sm"
