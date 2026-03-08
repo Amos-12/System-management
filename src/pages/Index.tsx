@@ -147,8 +147,8 @@ const Index = () => {
     );
   }
 
-  // Show inactive account message
-  if (user && !isActive) {
+  // Show inactive account message (super_admin bypasses this)
+  if (user && !isActive && profile?.role !== 'super_admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background p-4 pt-[calc(16px+var(--safe-area-top,0px))] pb-[calc(16px+var(--safe-area-bottom,0px))]">
         {/* Safe area background */}
