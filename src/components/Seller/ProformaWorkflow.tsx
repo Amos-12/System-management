@@ -43,6 +43,7 @@ import { generateProforma } from '@/lib/pdfGenerator';
 import { useCategories, useSousCategories } from '@/hooks/useCategories';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useSubscription } from '@/hooks/useSubscription';
 import { SavedProformasList } from './SavedProformasList';
 
 interface SavedProforma {
@@ -158,6 +159,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
   const { sousCategories: dynamicSousCategories } = useSousCategories();
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
+  const { plan } = useSubscription();
 
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('products');
   const [activeTab, setActiveTab] = useState<'new' | 'saved'>('new');
@@ -441,6 +443,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
   };
 
   const handlePrintProforma = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "L'impression des proformas est disponible dans les plans payants.", variant: "destructive" }); return; }
     if (cart.length === 0) {
       toast({
         title: "Panier vide",

@@ -13,6 +13,7 @@ import { TablePagination } from '@/components/ui/table-pagination';
 import { generateTvaReportPDF } from '@/lib/pdfGenerator';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface TvaSaleData {
   id: string;
@@ -60,6 +61,7 @@ export const TvaReport = () => {
   // Use centralized hooks
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
+  const { plan } = useSubscription();
 
   const { 
     paginatedItems, 
@@ -190,6 +192,7 @@ export const TvaReport = () => {
   };
 
   const handleExportPDF = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!companySettings) return;
     
     // Convert hook settings to pdfGenerator format

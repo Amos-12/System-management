@@ -18,6 +18,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatNumber } from '@/lib/utils';
+import { useSubscription } from '@/hooks/useSubscription';
 import { 
   Package, 
   Search, 
@@ -72,6 +73,7 @@ export const InventoryManagement = () => {
   const { toast } = useToast();
   const { profile } = useAuth();
   const isMobile = useIsMobile();
+  const { plan } = useSubscription();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -392,6 +394,7 @@ export const InventoryManagement = () => {
   };
 
   const exportToExcel = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const data = filteredProducts.map(p => {
       const stock = getStockDisplay(p);
       return {
@@ -415,6 +418,7 @@ export const InventoryManagement = () => {
   };
 
   const exportToPDF = async () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const { data: settings } = await supabase
       .from('companies')
       .select('*')

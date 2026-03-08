@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -22,6 +23,7 @@ import {
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface SellerStats {
   seller_id: string;
@@ -47,6 +49,7 @@ export const SellerPerformanceReport = () => {
   const [period, setPeriod] = useState('30');
   const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
   const [companySettings, setCompanySettings] = useState<CompanySettings>({ usd_htg_rate: 132, default_display_currency: 'HTG' });
+  const { plan } = useSubscription();
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -227,6 +230,7 @@ export const SellerPerformanceReport = () => {
   const displayCurrency = companySettings.default_display_currency as 'USD' | 'HTG';
 
   const exportToExcel = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const data = sellers.map((s, index) => ({
       'Rang': index + 1,
       'Vendeur': s.seller_name,

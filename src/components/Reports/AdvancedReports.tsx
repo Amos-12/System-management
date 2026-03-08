@@ -34,6 +34,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn, formatNumber } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface SalesData {
   date: string;
@@ -82,6 +83,7 @@ export const AdvancedReports = () => {
   // Use centralized hooks
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
+  const { plan } = useSubscription();
   
   const displayCurrency = companySettings?.displayCurrency || 'HTG';
   const usdHtgRate = companySettings?.usdHtgRate || 132;
@@ -382,6 +384,7 @@ export const AdvancedReports = () => {
   };
 
   const exportReport = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!reportData) return;
 
     const csvContent = `
@@ -420,6 +423,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
   };
 
   const exportToExcel = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!reportData) return;
 
     // Sheet 1: Résumé
@@ -514,6 +518,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
   };
 
   const exportToPDF = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     if (!reportData || !companySettings) {
       toast({
         title: "Erreur",

@@ -45,6 +45,7 @@ import { generateAdminDashboardPdf } from '@/lib/adminDashboardPdf';
 import { useSaleCalculations } from '@/hooks/useSaleCalculations';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface RevenueData {
   date: string;
@@ -79,6 +80,7 @@ export const AdminDashboardCharts = () => {
   const { settings: companySettingsHook } = useCompanySettings();
   const saleCalc = useSaleCalculations();
   const currencyCalc = useCurrencyCalculations();
+  const { plan } = useSubscription();
   
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
@@ -598,6 +600,7 @@ export const AdminDashboardCharts = () => {
   const stockTurnover = 2.5; // Placeholder - would need historical data to calculate
 
   const handleExportPdf = async () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     try {
       const { data: companyData } = await supabase
         .from('companies')

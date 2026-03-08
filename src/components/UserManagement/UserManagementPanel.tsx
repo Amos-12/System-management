@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface User {
   id: string;
@@ -77,6 +78,7 @@ export const UserManagementPanel = () => {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const isMobile = useIsMobile();
+  const { plan } = useSubscription();
 
   // Auto-switch to cards on mobile
   const effectiveViewMode = isMobile ? 'cards' : viewMode;
@@ -403,6 +405,7 @@ export const UserManagementPanel = () => {
   const inactiveUsers = users.filter(u => u.role === 'seller' && !u.is_active).length;
 
   const exportToExcel = () => {
+    if (plan === 'trial') { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
     const exportData = filteredUsers.map(user => ({
       'Nom Complet': user.full_name,
       'Email': user.email || 'N/A',
