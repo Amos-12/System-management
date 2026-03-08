@@ -274,29 +274,26 @@ export const useAuth = () => {
         }
       }
 
-      const { error } = await supabase.auth.signOut();
-      
-      // Even if signOut returns an error (e.g. session missing), clear local state and redirect
-      if (error) {
-        console.warn('signOut error (proceeding anyway):', error.message);
-      }
-
-      // Clear local state
+      // Clear local state FIRST to prevent auto-redirect
       setUser(null);
       setSession(null);
       setProfile(null);
       setRole(null);
+
+      // Sign out from Supabase (clears localStorage tokens)
+      await supabase.auth.signOut().catch(() => {});
 
       toast({
         title: "Déconnexion réussie",
         description: "À bientôt !",
       });
 
-      window.location.href = '/auth';
+      // Hard redirect to /auth to fully reset app state
+      window.location.replace('/auth');
     } catch (error) {
       console.error('Signout error:', error);
       // Force redirect even on unexpected errors
-      window.location.href = '/auth';
+      window.location.replace('/auth');
     }
   };
 
