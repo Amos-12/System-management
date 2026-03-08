@@ -837,7 +837,7 @@ export const CompanySettings = () => {
                       </span>
                     </div>
                   </div>
-                    {subscriptionPlans.map((plan: any) => {
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       const isCurrent = plan.id === subscription.plan;
                       const planOrder = ['trial', 'basic', 'pro', 'premium'];
                       const currentIndex = planOrder.indexOf(subscription.plan);
