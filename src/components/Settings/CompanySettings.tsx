@@ -60,6 +60,7 @@ export const CompanySettings = () => {
   const [regenerating, setRegenerating] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
+  const [isAnnual, setIsAnnual] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
     logo: true,
