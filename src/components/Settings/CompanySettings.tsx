@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Building2, Save, Loader2, DollarSign, Image, MapPin, CreditCard, ChevronDown, Settings2, Check, AlertCircle, Copy, Users, RefreshCw, Crown, Mail, Package, UserCheck, Zap, Lock, CheckCircle2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -59,6 +60,7 @@ export const CompanySettings = () => {
   const [regenerating, setRegenerating] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
+  const [isAnnual, setIsAnnual] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
     logo: true,
@@ -825,7 +827,16 @@ export const CompanySettings = () => {
               {/* Plans Grid */}
               {subscriptionPlans.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs sm:text-sm font-medium">Plans disponibles</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs sm:text-sm font-medium">Plans disponibles</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${!isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>Mensuel</span>
+                      <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
+                      <span className={`text-xs ${isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                        Annuel <span className="text-primary font-medium">-20%</span>
+                      </span>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {subscriptionPlans.map((plan: any) => {
                       const isCurrent = plan.id === subscription.plan;
@@ -834,6 +845,9 @@ export const CompanySettings = () => {
                       const planIndex = planOrder.indexOf(plan.id);
                       const isUpgrade = planIndex > currentIndex;
                       const features = Array.isArray(plan.features) ? plan.features : [];
+                      const monthlyPrice = plan.price_monthly;
+                      const annualPrice = Math.round(monthlyPrice * 12 * 0.8);
+                      const displayPrice = isAnnual ? Math.round(annualPrice / 12) : monthlyPrice;
                       return (
                         <div 
                           key={plan.id} 
@@ -844,16 +858,20 @@ export const CompanySettings = () => {
                             {isCurrent && <Badge className="text-[10px] px-1.5">Actuel</Badge>}
                           </div>
                           <p className="text-lg font-bold">
-                            {plan.price_monthly === 0 ? 'Gratuit' : `$${plan.price_monthly}`}
-                            {plan.price_monthly > 0 && <span className="text-xs text-muted-foreground font-normal">/mois</span>}
+                            {monthlyPrice === 0 ? 'Gratuit' : `$${displayPrice}`}
+                            {monthlyPrice > 0 && <span className="text-xs text-muted-foreground font-normal">{isAnnual ? '/mois (facturé annuellement)' : '/mois'}</span>}
                           </p>
+                          {isAnnual && monthlyPrice > 0 && (
+                            <p className="text-xs text-muted-foreground line-through">
+                              ${monthlyPrice}/mois
+                            </p>
+                          )}
                           <div className="space-y-1 text-muted-foreground text-xs">
                             <p>{plan.max_users >= 999 ? 'Utilisateurs illimités' : `${plan.max_users} utilisateurs`}</p>
                             <p>{plan.max_products >= 999999 ? 'Produits illimités' : `${plan.max_products} produits`}</p>
                             <p>{plan.max_sales_monthly >= 999999 ? 'Ventes illimitées' : `${plan.max_sales_monthly} ventes/mois`}</p>
                           </div>
                           
-                          {/* Feature list */}
                           {features.length > 0 && (
                             <div className="space-y-0.5 pt-1 border-t">
                               {features.map((f: string, i: number) => (
@@ -865,12 +883,15 @@ export const CompanySettings = () => {
                             </div>
                           )}
 
-                          {/* Upgrade button */}
                           {isUpgrade && (
                             <Button
                               size="sm"
                               className="w-full gap-1.5 mt-2"
-                              onClick={() => window.open(`mailto:contact@systemmanagement.sn?subject=Upgrade vers ${plan.name}&body=Bonjour, je souhaite passer au plan ${plan.name} ($${plan.price_monthly}/mois) pour mon entreprise "${subscription.companyName}".`, '_blank')}
+                              onClick={() => {
+                                const billingType = isAnnual ? 'annuel' : 'mensuel';
+                                const price = isAnnual ? `$${annualPrice}/an` : `$${monthlyPrice}/mois`;
+                                window.open(`mailto:contact@systemmanagement.sn?subject=Upgrade vers ${plan.name} (${billingType})&body=Bonjour, je souhaite passer au plan ${plan.name} (${price}) pour mon entreprise "${subscription.companyName}".`, '_blank');
+                              }}
                             >
                               <Zap className="h-3.5 w-3.5" />
                               Passer au {plan.name}
