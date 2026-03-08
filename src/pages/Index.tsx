@@ -203,15 +203,13 @@ const Index = () => {
             }} variant="outline" className="w-full">
               Actualiser
             </Button>
-            {/* <Button 
-              onClick={handleCreateAdmin} 
-              variant="default" 
+            <Button 
+              onClick={signOut} 
+              variant="destructive" 
               className="w-full"
-              disabled={isCreatingAdmin}
             >
-              <Shield className="w-4 h-4 mr-2" />
-              {isCreatingAdmin ? 'Création...' : 'Créer le compte admin'}
-            </Button> */}
+              Se déconnecter
+            </Button>
           </div>
         </CardContent>
       </Card>
