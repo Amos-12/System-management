@@ -13,6 +13,7 @@ import { TablePagination } from '@/components/ui/table-pagination';
 import { generateTvaReportPDF } from '@/lib/pdfGenerator';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface TvaSaleData {
   id: string;
