@@ -38,14 +38,14 @@ const SuperAdminDashboard = () => {
     <div className="min-h-screen bg-background">
       <header className="bg-background border-b border-border shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary" />
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-primary">Super Admin</h1>
-                <p className="text-xs text-muted-foreground">Gestion de la plateforme SaaS</p>
+                <h1 className="text-sm sm:text-lg font-bold text-primary">Super Admin</h1>
+                <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Gestion de la plateforme SaaS</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -59,7 +59,7 @@ const SuperAdminDashboard = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <SaasKPIs />
 
         <Tabs defaultValue="companies" className="w-full">
