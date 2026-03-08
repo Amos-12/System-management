@@ -827,8 +827,16 @@ export const CompanySettings = () => {
               {/* Plans Grid */}
               {subscriptionPlans.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs sm:text-sm font-medium">Plans disponibles</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs sm:text-sm font-medium">Plans disponibles</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${!isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>Mensuel</span>
+                      <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
+                      <span className={`text-xs ${isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                        Annuel <span className="text-primary font-medium">-20%</span>
+                      </span>
+                    </div>
+                  </div>
                     {subscriptionPlans.map((plan: any) => {
                       const isCurrent = plan.id === subscription.plan;
                       const planOrder = ['trial', 'basic', 'pro', 'premium'];
