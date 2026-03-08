@@ -1,11 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { SaasKPIs } from '@/components/SuperAdmin/SaasKPIs';
 import { CompanyList } from '@/components/SuperAdmin/CompanyList';
+import { GlobalUsersPanel } from '@/components/SuperAdmin/GlobalUsersPanel';
+import { GlobalActivityLogs } from '@/components/SuperAdmin/GlobalActivityLogs';
+import { SuperAdminDbMonitoring } from '@/components/SuperAdmin/SuperAdminDbMonitoring';
+import { SubscriptionPlansManager } from '@/components/SuperAdmin/SubscriptionPlansManager';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { LogOut, Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LogOut, Shield, Building2, Users, Activity, Database, CreditCard } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 const SuperAdminDashboard = () => {
@@ -13,7 +18,6 @@ const SuperAdminDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only redirect if we have finished loading AND role has been fetched (not null)
     if (!loading && role !== null && (!user || role !== 'super_admin')) {
       navigate('/auth');
     }
@@ -55,9 +59,49 @@ const SuperAdminDashboard = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <SaasKPIs />
-        <CompanyList />
+
+        <Tabs defaultValue="companies" className="w-full">
+          <TabsList className="w-full flex overflow-x-auto">
+            <TabsTrigger value="companies" className="flex items-center gap-1.5">
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Entreprises</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-1.5">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Utilisateurs</span>
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="flex items-center gap-1.5">
+              <CreditCard className="w-4 h-4" />
+              <span className="hidden sm:inline">Plans</span>
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="flex items-center gap-1.5">
+              <Activity className="w-4 h-4" />
+              <span className="hidden sm:inline">Activité</span>
+            </TabsTrigger>
+            <TabsTrigger value="database" className="flex items-center gap-1.5">
+              <Database className="w-4 h-4" />
+              <span className="hidden sm:inline">Base de données</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="companies" className="mt-6">
+            <CompanyList />
+          </TabsContent>
+          <TabsContent value="users" className="mt-6">
+            <GlobalUsersPanel />
+          </TabsContent>
+          <TabsContent value="plans" className="mt-6">
+            <SubscriptionPlansManager />
+          </TabsContent>
+          <TabsContent value="logs" className="mt-6">
+            <GlobalActivityLogs />
+          </TabsContent>
+          <TabsContent value="database" className="mt-6">
+            <SuperAdminDbMonitoring />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
