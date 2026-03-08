@@ -43,6 +43,7 @@ import { generateProforma } from '@/lib/pdfGenerator';
 import { useCategories, useSousCategories } from '@/hooks/useCategories';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useSubscription } from '@/hooks/useSubscription';
 import { SavedProformasList } from './SavedProformasList';
 
 interface SavedProforma {
