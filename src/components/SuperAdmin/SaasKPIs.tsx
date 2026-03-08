@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { Building2, Users, DollarSign, Clock } from 'lucide-react';
+import { KPICard } from '@/components/Dashboard/KPICard';
 
 interface SaasStats {
   totalCompanies: number;
@@ -64,52 +64,52 @@ export const SaasKPIs = () => {
     fetchStats();
   }, []);
 
-  const kpiCards = [
-    {
-      title: 'Entreprises',
-      icon: Building2,
-      value: stats.totalCompanies,
-      subtitle: `${stats.activeCompanies} actives`,
-    },
-    {
-      title: 'Utilisateurs',
-      icon: Users,
-      value: stats.totalUsers,
-      subtitle: 'sur la plateforme',
-    },
-    {
-      title: 'MRR',
-      icon: DollarSign,
-      value: `$${stats.mrr}`,
-      subtitle: 'revenus mensuels',
-    },
-    {
-      title: 'En essai',
-      icon: Clock,
-      value: stats.trialCompanies,
-      subtitle: `${stats.expiredCompanies} expirées`,
-    },
-  ];
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-20 sm:h-28 rounded-lg bg-muted animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {kpiCards.map((kpi) => {
-        const Icon = kpi.icon;
-        return (
-          <Card key={kpi.title}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Icon className="w-4 h-4" />
-                {kpi.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{loading ? '...' : kpi.value}</p>
-              <p className="text-xs text-muted-foreground">{kpi.subtitle}</p>
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      <KPICard
+        title="Entreprises"
+        value={stats.totalCompanies}
+        previousValue={stats.activeCompanies}
+        icon={Building2}
+        format="number"
+        colorScheme="admin-revenue"
+        size="sm"
+      />
+      <KPICard
+        title="Utilisateurs"
+        value={stats.totalUsers}
+        icon={Users}
+        format="number"
+        colorScheme="admin-sellers"
+        size="sm"
+      />
+      <KPICard
+        title="MRR"
+        value={stats.mrr}
+        icon={DollarSign}
+        format="currency"
+        currency="USD"
+        colorScheme="admin-profit"
+        size="sm"
+      />
+      <KPICard
+        title="En essai"
+        value={stats.trialCompanies}
+        icon={Clock}
+        format="number"
+        colorScheme="warning"
+        size="sm"
+      />
     </div>
   );
 };

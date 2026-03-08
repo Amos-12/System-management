@@ -166,7 +166,7 @@ export const CompanyList = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 sm:p-6 pt-0">
         {loading ? (
           <p className="text-center text-muted-foreground py-8">Chargement...</p>
         ) : (
@@ -174,12 +174,12 @@ export const CompanyList = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Entreprise</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Expiration</TableHead>
-                  <TableHead>Code invitation</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Entreprise</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Plan</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Statut</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Expiration</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden md:table-cell">Code invitation</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -187,33 +187,33 @@ export const CompanyList = () => {
                   const isExpired = company.subscription_end < today;
                   return (
                     <TableRow key={company.id}>
-                      <TableCell>
+                      <TableCell className="p-2 sm:p-4">
                         <div>
-                          <p className="font-medium">{company.name}</p>
-                          <p className="text-xs text-muted-foreground">{company.email || company.slug}</p>
+                          <p className="font-medium text-xs sm:text-sm">{company.name}</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">{company.email || company.slug}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{getPlanBadge(company.subscription_plan)}</TableCell>
-                      <TableCell>
+                      <TableCell className="p-2 sm:p-4">{getPlanBadge(company.subscription_plan)}</TableCell>
+                      <TableCell className="p-2 sm:p-4">
                         {!company.is_active ? (
-                          <Badge variant="destructive">Suspendue</Badge>
+                          <Badge variant="destructive" className="text-[10px] sm:text-xs">Suspendue</Badge>
                         ) : isExpired ? (
-                          <Badge variant="outline" className="border-destructive text-destructive">Expirée</Badge>
+                          <Badge variant="outline" className="border-destructive text-destructive text-[10px] sm:text-xs">Expirée</Badge>
                         ) : (
-                          <Badge variant="outline" className="border-green-500 text-green-600">Active</Badge>
+                          <Badge variant="outline" className="border-green-500 text-green-600 text-[10px] sm:text-xs">Active</Badge>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <span className={isExpired ? 'text-destructive font-medium' : ''}>
+                      <TableCell className="p-2 sm:p-4 hidden sm:table-cell">
+                        <span className={`text-xs sm:text-sm ${isExpired ? 'text-destructive font-medium' : ''}`}>
                           {format(new Date(company.subscription_end), 'dd MMM yyyy', { locale: fr })}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2 sm:p-4 hidden md:table-cell">
                         {company.invitation_code && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="font-mono text-xs"
+                            className="font-mono text-[10px] sm:text-xs h-7"
                             onClick={() => copyInvitationCode(company.invitation_code!, company.id)}
                           >
                             {copiedId === company.id ? (
@@ -224,11 +224,12 @@ export const CompanyList = () => {
                           </Button>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2 sm:p-4">
                         <div className="flex items-center gap-1 flex-wrap">
                           <Button
                             variant={company.is_active ? 'outline' : 'default'}
                             size="sm"
+                            className="text-[10px] sm:text-xs h-7 px-2 sm:px-3"
                             onClick={() => handleToggleActive(company.id, company.is_active)}
                           >
                             {company.is_active ? 'Suspendre' : 'Activer'}
@@ -237,7 +238,7 @@ export const CompanyList = () => {
                             value={company.subscription_plan}
                             onValueChange={(v) => handleChangePlan(company.id, v)}
                           >
-                            <SelectTrigger className="w-24 h-8 text-xs">
+                            <SelectTrigger className="w-20 sm:w-24 h-7 sm:h-8 text-[10px] sm:text-xs">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -247,7 +248,7 @@ export const CompanyList = () => {
                               <SelectItem value="premium">Premium</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button variant="ghost" size="sm" onClick={() => handleExtendTrial(company.id)}>
+                          <Button variant="ghost" size="sm" className="h-7 text-[10px] sm:text-xs px-1.5 sm:px-3" onClick={() => handleExtendTrial(company.id)}>
                             +30j
                           </Button>
                         </div>
@@ -257,7 +258,7 @@ export const CompanyList = () => {
                 })}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8 text-xs sm:text-sm">
                       Aucune entreprise trouvée
                     </TableCell>
                   </TableRow>
