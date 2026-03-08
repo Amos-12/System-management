@@ -159,7 +159,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
   const { sousCategories: dynamicSousCategories } = useSousCategories();
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
 
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('products');
   const [activeTab, setActiveTab] = useState<'new' | 'saved'>('new');
