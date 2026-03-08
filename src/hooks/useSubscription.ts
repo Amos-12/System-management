@@ -18,6 +18,7 @@ export interface SubscriptionStatus {
 
 const DEFAULT_STATUS: SubscriptionStatus = {
   plan: 'trial',
+  isFreePlan: true,
   isActive: true,
   isExpired: false,
   daysRemaining: 30,
