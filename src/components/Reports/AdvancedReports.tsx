@@ -34,6 +34,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn, formatNumber } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface SalesData {
   date: string;
