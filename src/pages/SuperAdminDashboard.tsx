@@ -106,6 +106,9 @@ const SuperAdminDashboard = () => {
           <TabsContent value="database" className="mt-6">
             <SuperAdminDbMonitoring />
           </TabsContent>
+          <TabsContent value="payments" className="mt-6">
+            <PaymentsPanel />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
