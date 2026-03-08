@@ -18,6 +18,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatNumber } from '@/lib/utils';
+import { useSubscription } from '@/hooks/useSubscription';
 import { 
   Package, 
   Search, 
