@@ -40,6 +40,7 @@ export const useAuth = () => {
           .from('user_roles')
           .select('role, is_active')
           .eq('user_id', userId)
+          .order('role', { ascending: true })
           .limit(1)
           .maybeSingle();
 
