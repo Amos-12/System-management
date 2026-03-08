@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
   const [currentSection, setCurrentSection] = useState(searchParams.get('section') || 'dashboard');
-  const { isExpired, plan, companyName, loading: subLoading } = useSubscription();
+  const { isExpired, plan, isFreePlan, companyName, loading: subLoading } = useSubscription();
   const { signOut } = useAuth();
 
   if (!subLoading && isExpired) {
