@@ -122,6 +122,7 @@ export type Database = {
           id: string
           invitation_code: string | null
           is_active: boolean | null
+          last_reminder_sent: string | null
           logo_height: number | null
           logo_position_x: number | null
           logo_position_y: number | null
@@ -152,6 +153,7 @@ export type Database = {
           id?: string
           invitation_code?: string | null
           is_active?: boolean | null
+          last_reminder_sent?: string | null
           logo_height?: number | null
           logo_position_x?: number | null
           logo_position_y?: number | null
@@ -182,6 +184,7 @@ export type Database = {
           id?: string
           invitation_code?: string | null
           is_active?: boolean | null
+          last_reminder_sent?: string | null
           logo_height?: number | null
           logo_position_x?: number | null
           logo_position_y?: number | null
@@ -222,6 +225,69 @@ export type Database = {
           usage_percent?: number
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          billing_period: string | null
+          company_id: string
+          completed_at: string | null
+          created_at: string | null
+          currency: string
+          id: string
+          invoice_number: string | null
+          metadata: Json | null
+          payment_method: string
+          payment_reference: string | null
+          plan_id: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          billing_period?: string | null
+          company_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          currency?: string
+          id?: string
+          invoice_number?: string | null
+          metadata?: Json | null
+          payment_method: string
+          payment_reference?: string | null
+          plan_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          billing_period?: string | null
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          currency?: string
+          id?: string
+          invoice_number?: string | null
+          metadata?: Json | null
+          payment_method?: string
+          payment_reference?: string | null
+          plan_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -855,6 +921,66 @@ export type Database = {
             columns: ["sale_id"]
             isOneToOne: false
             referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_invoices: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string | null
+          currency: string | null
+          id: string
+          invoice_number: string
+          payment_id: string | null
+          pdf_url: string | null
+          period_end: string | null
+          period_start: string | null
+          plan_name: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          invoice_number: string
+          payment_id?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan_name?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          invoice_number?: string
+          payment_id?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan_name?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_invoices_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
             referencedColumns: ["id"]
           },
         ]
