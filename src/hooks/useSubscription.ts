@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export const FREE_PLANS = ['trial', 'free', 'gratuit', ''];
+
 export interface SubscriptionStatus {
   plan: string;
+  isFreePlan: boolean;
   isActive: boolean;
   isExpired: boolean;
   daysRemaining: number;
