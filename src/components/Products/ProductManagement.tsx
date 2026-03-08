@@ -383,7 +383,7 @@ export const ProductManagement = () => {
 
   // Export to PDF
   const exportToPDF = async () => {
-    if (plan === 'trial') {
+    if (isFreePlan) {
       toast({ title: "Fonctionnalité Premium", description: "L'export PDF est disponible dans les plans payants.", variant: "destructive" });
       return;
     }
