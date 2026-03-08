@@ -66,8 +66,12 @@ export function useSubscription() {
           ? Math.max(0, Math.ceil((new Date(data.subscription_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
           : 0;
 
+        const planValue = data.subscription_plan || 'trial';
+        const isFreePlan = FREE_PLANS.includes(planValue.toLowerCase());
+
         setStatus({
-          plan: data.subscription_plan || 'trial',
+          plan: planValue,
+          isFreePlan,
           isActive: data.is_active ?? true,
           isExpired,
           daysRemaining,
