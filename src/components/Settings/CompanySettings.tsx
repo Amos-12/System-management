@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, Save, Loader2, DollarSign, Image, MapPin, CreditCard, ChevronDown, Settings2, Check, AlertCircle, Copy, Users, RefreshCw, Crown, Mail, Package, UserCheck, Zap, Lock, CheckCircle2 } from 'lucide-react';
+import { Building2, Save, Loader2, DollarSign, Image, MapPin, CreditCard, ChevronDown, Settings2, Check, AlertCircle, Copy, Users, RefreshCw, Crown, Mail, Package, UserCheck, Zap, Lock, CheckCircle2, Smartphone } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -62,6 +62,8 @@ export const CompanySettings = () => {
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [isAnnual, setIsAnnual] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'stripe' | 'moncash'>('stripe');
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [openSections, setOpenSections] = useState({
     logo: true,
@@ -902,13 +904,25 @@ export const CompanySettings = () => {
                             <Button
                               size="sm"
                               className="w-full gap-1.5 mt-2"
-                              onClick={() => {
-                                const billingType = isAnnual ? 'annuel' : 'mensuel';
-                                const price = isAnnual ? `$${annualPrice}/an` : `$${monthlyPrice}/mois`;
-                                window.open(`mailto:contact@systemmanagement.sn?subject=Upgrade vers ${plan.name} (${billingType})&body=Bonjour, je souhaite passer au plan ${plan.name} (${price}) pour mon entreprise "${subscription.companyName}".`, '_blank');
+                              disabled={!!checkoutLoading}
+                              onClick={async () => {
+                                setCheckoutLoading(plan.id);
+                                try {
+                                  const { error: refreshError } = await supabase.auth.refreshSession();
+                                  if (refreshError) throw refreshError;
+                                  const { data, error } = await supabase.functions.invoke('create-checkout', {
+                                    body: { plan_id: plan.id, payment_method: selectedPaymentMethod, billing_period: isAnnual ? 'annual' : 'monthly' },
+                                  });
+                                  if (error) throw error;
+                                  if (data?.url) window.open(data.url, '_blank');
+                                } catch (err: any) {
+                                  toast({ title: 'Erreur', description: err.message || 'Impossible de créer la session de paiement', variant: 'destructive' });
+                                } finally {
+                                  setCheckoutLoading(null);
+                                }
                               }}
                             >
-                              <Zap className="h-3.5 w-3.5" />
+                              {checkoutLoading === plan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
                               Passer au {plan.name}
                             </Button>
                           )}
@@ -963,15 +977,32 @@ export const CompanySettings = () => {
                 </div>
               )}
 
+              {/* Payment method selector */}
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs sm:text-sm font-medium">Mode de paiement</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedPaymentMethod === 'stripe' ? 'default' : 'outline'}
+                    size="sm"
+                    className="gap-1.5 flex-1"
+                    onClick={() => setSelectedPaymentMethod('stripe')}
+                  >
+                    <CreditCard className="h-3.5 w-3.5" />
+                    Carte bancaire
+                  </Button>
+                  <Button
+                    variant={selectedPaymentMethod === 'moncash' ? 'default' : 'outline'}
+                    size="sm"
+                    className="gap-1.5 flex-1"
+                    onClick={() => setSelectedPaymentMethod('moncash')}
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                    MonCash
+                  </Button>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                <Button
-                  size="sm"
-                  className="gap-1.5 flex-1"
-                  onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Upgrade abonnement&body=Bonjour, je souhaite upgrader mon plan pour "' + subscription.companyName + '".', '_blank')}
-                >
-                  <Zap className="h-4 w-4" />
-                  Upgrader mon plan
-                </Button>
                 <Button
                   variant="outline"
                   size="sm"
