@@ -580,7 +580,7 @@ export const ProductManagement = () => {
     setIsDialogOpen(true);
   };
 
-  const { maxProducts, plan } = useSubscription();
+  const { maxProducts, plan, isFreePlan } = useSubscription();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
