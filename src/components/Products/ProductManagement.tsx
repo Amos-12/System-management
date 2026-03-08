@@ -1861,7 +1861,7 @@ export const ProductManagement = () => {
                 className="h-7 sm:h-8 px-2 text-[10px] sm:text-xs"
                 title="Exporter en Excel"
               >
-                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                {isFreePlan ? <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
                 <span className="hidden sm:inline ml-1">Excel</span>
               </Button>
               <Button
