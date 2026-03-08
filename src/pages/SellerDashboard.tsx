@@ -347,6 +347,7 @@ const SellerDashboard = () => {
       onSectionChange={setCurrentSection}
     >
       <div className="space-y-6">
+        <UpgradeBanner />
         {renderContent()}
       </div>
 
