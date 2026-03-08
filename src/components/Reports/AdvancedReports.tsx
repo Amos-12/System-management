@@ -83,7 +83,7 @@ export const AdvancedReports = () => {
   // Use centralized hooks
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
-  const { plan } = useSubscription();
+  const { plan, isFreePlan } = useSubscription();
   
   const displayCurrency = companySettings?.displayCurrency || 'HTG';
   const usdHtgRate = companySettings?.usdHtgRate || 132;
