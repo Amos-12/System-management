@@ -29,6 +29,6 @@
 - [ ] Configurer Stripe webhook URL dans le dashboard Stripe
 - [ ] Configurer `STRIPE_WEBHOOK_SECRET`
 - [ ] Cron job pour `subscription-reminders` (pg_cron)
-- [ ] Historique paiements dans CompanySettings
-- [ ] Onglet Paiements dans Super Admin
+- [x] Historique paiements dans CompanySettings
+- [x] Onglet Paiements dans Super Admin (PaymentsPanel avec KPIs, table paiements/factures)
 - [ ] Factures PDF téléchargeables
