@@ -356,7 +356,7 @@ export const ProductManagement = () => {
 
   // Export to Excel
   const exportToExcel = () => {
-    if (plan === 'trial') {
+    if (isFreePlan) {
       toast({ title: "Fonctionnalité Premium", description: "L'export Excel est disponible dans les plans payants.", variant: "destructive" });
       return;
     }
