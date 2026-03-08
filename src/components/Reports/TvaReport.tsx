@@ -61,6 +61,7 @@ export const TvaReport = () => {
   // Use centralized hooks
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
+  const { plan } = useSubscription();
 
   const { 
     paginatedItems, 

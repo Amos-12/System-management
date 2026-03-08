@@ -49,6 +49,7 @@ export const SellerPerformanceReport = () => {
   const [period, setPeriod] = useState('30');
   const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
   const [companySettings, setCompanySettings] = useState<CompanySettings>({ usd_htg_rate: 132, default_display_currency: 'HTG' });
+  const { plan } = useSubscription();
 
   useEffect(() => {
     const fetchSettings = async () => {
