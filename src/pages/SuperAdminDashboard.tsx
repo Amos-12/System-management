@@ -7,10 +7,11 @@ import { GlobalUsersPanel } from '@/components/SuperAdmin/GlobalUsersPanel';
 import { GlobalActivityLogs } from '@/components/SuperAdmin/GlobalActivityLogs';
 import { SuperAdminDbMonitoring } from '@/components/SuperAdmin/SuperAdminDbMonitoring';
 import { SubscriptionPlansManager } from '@/components/SuperAdmin/SubscriptionPlansManager';
+import { PaymentsPanel } from '@/components/SuperAdmin/PaymentsPanel';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Shield, Building2, Users, Activity, Database, CreditCard } from 'lucide-react';
+import { LogOut, Shield, Building2, Users, Activity, Database, CreditCard, Wallet } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 const SuperAdminDashboard = () => {
