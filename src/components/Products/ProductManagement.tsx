@@ -600,7 +600,7 @@ export const ProductManagement = () => {
     if (!editingProduct && products.length >= maxProducts) {
       toast({
         title: "Limite de produits atteinte",
-        description: `Votre plan ${plan === 'trial' ? 'gratuit' : plan} est limité à ${maxProducts} produits. Passez à un plan supérieur pour en ajouter davantage.`,
+        description: `Votre plan ${isFreePlan ? 'gratuit' : plan} est limité à ${maxProducts} produits. Passez à un plan supérieur pour en ajouter davantage.`,
         variant: "destructive"
       });
       return;
