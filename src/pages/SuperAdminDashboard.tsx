@@ -13,7 +13,8 @@ const SuperAdminDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && (!user || role !== 'super_admin')) {
+    // Only redirect if we have finished loading AND role has been fetched (not null)
+    if (!loading && role !== null && (!user || role !== 'super_admin')) {
       navigate('/auth');
     }
   }, [user, role, loading, navigate]);
