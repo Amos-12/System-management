@@ -34,7 +34,7 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <AdminDashboardCharts />;
       case 'analytics':
-        if (plan === 'trial') return <LockedFeature title="Analyses avancées" description="Les analyses détaillées, tendances annuelles et indicateurs de rentabilité sont disponibles dans les plans payants." requiredPlan="Pro" />;
+        if (isFreePlan) return <LockedFeature title="Analyses avancées" description="Les analyses détaillées, tendances annuelles et indicateurs de rentabilité sont disponibles dans les plans payants." requiredPlan="Pro" />;
         return <AnalyticsDashboard />;
       case 'categories':
         return <CategoryManagement />;
