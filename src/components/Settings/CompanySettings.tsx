@@ -106,6 +106,19 @@ export const CompanySettings = () => {
     if (data) setSubscriptionPlans(data);
   };
 
+  const fetchPaymentHistory = async () => {
+    if (!profile?.company_id) return;
+    const [paymentsRes, invoicesRes] = await Promise.all([
+      supabase.from('payments').select('*').eq('status', 'completed').order('created_at', { ascending: false }).limit(10),
+      supabase.from('subscription_invoices').select('*').order('created_at', { ascending: false }).limit(10),
+    ]);
+    const combined = [
+      ...(paymentsRes.data || []).map((p: any) => ({ type: 'payment', ...p })),
+      ...(invoicesRes.data || []).map((i: any) => ({ type: 'invoice', ...i, amount: i.amount, currency: i.currency || 'USD' })),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setPaymentHistory(combined);
+  };
+
   const handleRegenerateCode = async () => {
     if (!settings) return;
     setRegenerating(true);
