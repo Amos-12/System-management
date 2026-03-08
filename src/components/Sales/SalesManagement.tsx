@@ -453,7 +453,7 @@ export const SalesManagement = () => {
   // Export functions
 
   const exportToExcel = () => {
-    if (subPlan === 'trial') {
+    if (isFreePlan) {
       toast({ title: "Fonctionnalité Premium", description: "L'export Excel est disponible dans les plans payants.", variant: "destructive" });
       return;
     }
