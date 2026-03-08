@@ -904,13 +904,25 @@ export const CompanySettings = () => {
                             <Button
                               size="sm"
                               className="w-full gap-1.5 mt-2"
-                              onClick={() => {
-                                const billingType = isAnnual ? 'annuel' : 'mensuel';
-                                const price = isAnnual ? `$${annualPrice}/an` : `$${monthlyPrice}/mois`;
-                                window.open(`mailto:contact@systemmanagement.sn?subject=Upgrade vers ${plan.name} (${billingType})&body=Bonjour, je souhaite passer au plan ${plan.name} (${price}) pour mon entreprise "${subscription.companyName}".`, '_blank');
+                              disabled={!!checkoutLoading}
+                              onClick={async () => {
+                                setCheckoutLoading(plan.id);
+                                try {
+                                  const { error: refreshError } = await supabase.auth.refreshSession();
+                                  if (refreshError) throw refreshError;
+                                  const { data, error } = await supabase.functions.invoke('create-checkout', {
+                                    body: { plan_id: plan.id, payment_method: selectedPaymentMethod, billing_period: isAnnual ? 'annual' : 'monthly' },
+                                  });
+                                  if (error) throw error;
+                                  if (data?.url) window.open(data.url, '_blank');
+                                } catch (err: any) {
+                                  toast({ title: 'Erreur', description: err.message || 'Impossible de créer la session de paiement', variant: 'destructive' });
+                                } finally {
+                                  setCheckoutLoading(null);
+                                }
                               }}
                             >
-                              <Zap className="h-3.5 w-3.5" />
+                              {checkoutLoading === plan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
                               Passer au {plan.name}
                             </Button>
                           )}
