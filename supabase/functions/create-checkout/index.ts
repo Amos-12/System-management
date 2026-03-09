@@ -132,25 +132,67 @@ serve(async (req) => {
         throw new Error("MonCash credentials not configured");
       }
 
-      // Get access token
-      const authResponse = await fetch("https://sandbox.moncashbutton.digicelgroup.com/Api/oauth/token", {
-        method: "POST",
-        headers: {
-          "Authorization": `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: "scope=read,write&grant_type=client_credentials",
-      });
-      const authData = await authResponse.json();
+      // Check for cached valid token
+      const { data: cachedToken } = await supabaseClient
+        .from("saas_settings")
+        .select("setting_value")
+        .eq("setting_key", "moncash_token_cache")
+        .single();
 
-      console.log("MonCash Auth Response:", { 
-        status: authResponse.status, 
-        hasToken: !!authData.access_token,
-        error: authData.error 
-      });
+      let accessToken: string | null = null;
+      const now = Date.now();
 
-      if (!authData.access_token) {
-        throw new Error(`Failed to get MonCash token: ${JSON.stringify(authData)}`);
+      // Use cached token if still valid (with 5 min buffer)
+      if (cachedToken?.setting_value) {
+        const tokenData = cachedToken.setting_value as any;
+        if (tokenData.access_token && tokenData.expires_at && tokenData.expires_at > now + 300000) {
+          accessToken = tokenData.access_token;
+          console.log("Using cached MonCash token");
+        }
+      }
+
+      // Get new token if no valid cached token
+      if (!accessToken) {
+        console.log("Fetching new MonCash token");
+        const authResponse = await fetch("https://sandbox.moncashbutton.digicelgroup.com/Api/oauth/token", {
+          method: "POST",
+          headers: {
+            "Authorization": `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: "scope=read,write&grant_type=client_credentials",
+        });
+        const authData = await authResponse.json();
+
+        console.log("MonCash Auth Response:", { 
+          status: authResponse.status, 
+          hasToken: !!authData.access_token,
+          error: authData.error 
+        });
+
+        if (!authData.access_token) {
+          throw new Error(`Failed to get MonCash token: ${JSON.stringify(authData)}`);
+        }
+
+        accessToken = authData.access_token;
+
+        // Cache token (MonCash tokens typically expire in 3600 seconds)
+        const expiresIn = authData.expires_in || 3600;
+        const expiresAt = now + (expiresIn * 1000);
+
+        await supabaseClient
+          .from("saas_settings")
+          .upsert({
+            setting_key: "moncash_token_cache",
+            setting_value: {
+              access_token: accessToken,
+              expires_at: expiresAt,
+              obtained_at: now,
+            },
+            description: "Cached MonCash OAuth token",
+          }, { onConflict: "setting_key" });
+
+        console.log("Cached new MonCash token, expires in", expiresIn, "seconds");
       }
 
       // Convert USD to HTG using configured rate
