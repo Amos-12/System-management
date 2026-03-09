@@ -95,55 +95,71 @@ export const PaymentExchangeRateSettings = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5" />
-          Taux de change pour paiements
-        </CardTitle>
-        <CardDescription>
-          Configurez le taux de conversion USD → HTG utilisé pour MonCash et NatCash
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="exchange-rate">Taux USD/HTG</Label>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">1 USD =</span>
-            <Input
-              id="exchange-rate"
-              type="number"
-              step="0.01"
-              min="0"
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-              className="max-w-[150px]"
-            />
-            <span className="text-sm text-muted-foreground">HTG</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Les plans à $19, $39 et $59 seront convertis automatiquement en HTG selon ce taux.
-          </p>
-        </div>
-
-        <div className="bg-muted/50 p-3 rounded-lg space-y-1 text-sm">
-          <p className="font-medium">Exemples de conversion :</p>
-          <p className="text-muted-foreground">• Plan Basic ($19) → {(19 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
-          <p className="text-muted-foreground">• Plan Pro ($39) → {(39 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
-          <p className="text-muted-foreground">• Plan Premium ($59) → {(59 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
-        </div>
-
-        <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Enregistrement...
-            </>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Taux de change pour paiements
+              </div>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </CardTitle>
+            <CardDescription>
+              Configurez le taux de conversion USD → HTG utilisé pour MonCash et NatCash
+            </CardDescription>
+          </CardHeader>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          {loading ? (
+            <CardContent className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </CardContent>
           ) : (
-            'Enregistrer le taux'
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="exchange-rate">Taux USD/HTG</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">1 USD =</span>
+                  <Input
+                    id="exchange-rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    className="max-w-[150px]"
+                  />
+                  <span className="text-sm text-muted-foreground">HTG</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Les plans à $19, $39 et $59 seront convertis automatiquement en HTG selon ce taux.
+                </p>
+              </div>
+
+              <div className="bg-muted/50 p-3 rounded-lg space-y-1 text-sm">
+                <p className="font-medium">Exemples de conversion :</p>
+                <p className="text-muted-foreground">• Plan Basic ($19) → {(19 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
+                <p className="text-muted-foreground">• Plan Pro ($39) → {(39 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
+                <p className="text-muted-foreground">• Plan Premium ($59) → {(59 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
+              </div>
+
+              <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  'Enregistrer le taux'
+                )}
+              </Button>
+            </CardContent>
           )}
-        </Button>
-      </CardContent>
-    </Card>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };
