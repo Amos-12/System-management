@@ -318,6 +318,11 @@ export const PaymentsPanel = () => {
                           : '-'}
                       </TableCell>
                       <TableCell>{getStatusBadge(i.status || 'paid')}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" onClick={() => downloadInvoicePdf(i)} title="Télécharger PDF">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
