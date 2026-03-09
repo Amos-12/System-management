@@ -22,21 +22,6 @@ serve(async (req) => {
     const { session_id } = await req.json();
     if (!session_id) throw new Error("session_id is required");
 
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      throw new Error("Not authenticated");
-    }
-
-    const supabaseAuth = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: userData, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !userData?.user) throw new Error("Not authenticated");
-
     // Retrieve Stripe session
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
