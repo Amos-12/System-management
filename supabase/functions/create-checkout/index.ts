@@ -153,8 +153,12 @@ serve(async (req) => {
         throw new Error(`Failed to get MonCash token: ${JSON.stringify(authData)}`);
       }
 
-      const amount = plan_id === "basic" ? 19 : plan_id === "pro" ? 39 : 59;
+      // Convert USD to HTG using configured rate
+      const amountUSD = plan_id === "basic" ? 19 : plan_id === "pro" ? 39 : 59;
+      const amount = Math.round(amountUSD * usdHtgRate); // MonCash expects integer HTG
       const orderId = `SM-${profile.company_id.slice(0, 8)}-${Date.now()}`;
+
+      console.log(`MonCash payment: ${amountUSD} USD × ${usdHtgRate} = ${amount} HTG`);
 
       // Create payment
       const paymentResponse = await fetch("https://sandbox.moncashbutton.digicelgroup.com/Api/v1/CreatePayment", {

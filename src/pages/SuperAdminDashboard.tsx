@@ -108,7 +108,10 @@ const SuperAdminDashboard = () => {
             <SuperAdminDbMonitoring />
           </TabsContent>
           <TabsContent value="payments" className="mt-6">
-            <PaymentsPanel />
+            <div className="space-y-6">
+              <PaymentExchangeRateSettings />
+              <PaymentsPanel />
+            </div>
           </TabsContent>
         </Tabs>
       </main>
