@@ -12,6 +12,7 @@ export const PaymentExchangeRateSettings = () => {
   const [rate, setRate] = useState<string>('132.00');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     fetchRate();
