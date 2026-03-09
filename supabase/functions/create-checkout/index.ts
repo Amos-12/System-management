@@ -149,7 +149,14 @@ serve(async (req) => {
       });
       const paymentData = await paymentResponse.json();
 
-      if (!paymentData.payment_token) throw new Error("Failed to create MonCash payment");
+      console.log("MonCash CreatePayment Response:", { 
+        status: paymentResponse.status, 
+        data: paymentData 
+      });
+
+      if (!paymentData.payment_token) {
+        throw new Error(`Failed to create MonCash payment: ${JSON.stringify(paymentData)}`);
+      }
 
       // Store pending payment
       const supabaseAdmin = createClient(
