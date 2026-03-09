@@ -59,6 +59,16 @@ serve(async (req) => {
 
     if (!profile?.company_id) throw new Error("No company found");
 
+    // Fetch exchange rate from saas_settings
+    const { data: settingsData } = await supabaseClient
+      .from("saas_settings")
+      .select("setting_value")
+      .eq("setting_key", "payment_exchange_rate")
+      .single();
+
+    const usdHtgRate = (settingsData?.setting_value as any)?.usd_htg_rate || 132.0;
+    console.log("Using USD/HTG exchange rate:", usdHtgRate);
+
     const origin = req.headers.get("origin") || "https://id-preview--964f3753-4441-40ac-acf5-cd66e737e71f.lovable.app";
 
     if (payment_method === "stripe") {
@@ -143,8 +153,12 @@ serve(async (req) => {
         throw new Error(`Failed to get MonCash token: ${JSON.stringify(authData)}`);
       }
 
-      const amount = plan_id === "basic" ? 19 : plan_id === "pro" ? 39 : 59;
+      // Convert USD to HTG using configured rate
+      const amountUSD = plan_id === "basic" ? 19 : plan_id === "pro" ? 39 : 59;
+      const amount = Math.round(amountUSD * usdHtgRate); // MonCash expects integer HTG
       const orderId = `SM-${profile.company_id.slice(0, 8)}-${Date.now()}`;
+
+      console.log(`MonCash payment: ${amountUSD} USD × ${usdHtgRate} = ${amount} HTG`);
 
       // Create payment
       const paymentResponse = await fetch("https://sandbox.moncashbutton.digicelgroup.com/Api/v1/CreatePayment", {
