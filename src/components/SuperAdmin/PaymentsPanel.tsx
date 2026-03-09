@@ -6,7 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Search, CreditCard, DollarSign, TrendingUp, Receipt } from 'lucide-react';
+import { Search, CreditCard, DollarSign, TrendingUp, Receipt, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
