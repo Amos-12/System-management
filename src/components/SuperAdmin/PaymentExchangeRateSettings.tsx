@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, DollarSign } from 'lucide-react';
+import { Loader2, DollarSign, ChevronDown } from 'lucide-react';
 
 export const PaymentExchangeRateSettings = () => {
   const [rate, setRate] = useState<string>('132.00');
