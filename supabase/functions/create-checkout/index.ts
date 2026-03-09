@@ -133,7 +133,15 @@ serve(async (req) => {
       });
       const authData = await authResponse.json();
 
-      if (!authData.access_token) throw new Error("Failed to get MonCash token");
+      console.log("MonCash Auth Response:", { 
+        status: authResponse.status, 
+        hasToken: !!authData.access_token,
+        error: authData.error 
+      });
+
+      if (!authData.access_token) {
+        throw new Error(`Failed to get MonCash token: ${JSON.stringify(authData)}`);
+      }
 
       const amount = plan_id === "basic" ? 19 : plan_id === "pro" ? 39 : 59;
       const orderId = `SM-${profile.company_id.slice(0, 8)}-${Date.now()}`;
@@ -149,7 +157,14 @@ serve(async (req) => {
       });
       const paymentData = await paymentResponse.json();
 
-      if (!paymentData.payment_token) throw new Error("Failed to create MonCash payment");
+      console.log("MonCash CreatePayment Response:", { 
+        status: paymentResponse.status, 
+        data: paymentData 
+      });
+
+      if (!paymentData.payment_token) {
+        throw new Error(`Failed to create MonCash payment: ${JSON.stringify(paymentData)}`);
+      }
 
       // Store pending payment
       const supabaseAdmin = createClient(
