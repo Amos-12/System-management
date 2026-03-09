@@ -107,6 +107,58 @@ export const PaymentsPanel = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const downloadInvoicePdf = (invoice: Invoice) => {
+    const doc = new jsPDF();
+    const companyName = companies[invoice.company_id] || 'N/A';
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FACTURE', 105, 25, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`N° ${invoice.invoice_number}`, 105, 35, { align: 'center' });
+    
+    // Line
+    doc.setDrawColor(200);
+    doc.line(20, 42, 190, 42);
+    
+    // Details
+    let y = 55;
+    const addRow = (label: string, value: string) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, 25, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(value, 80, y);
+      y += 10;
+    };
+    
+    addRow('Entreprise:', companyName);
+    addRow('Plan:', (invoice.plan_name || '-').toUpperCase());
+    addRow('Montant:', `${invoice.amount} ${invoice.currency || 'USD'}`);
+    addRow('Statut:', invoice.status === 'paid' ? 'Payé' : (invoice.status || '-'));
+    
+    if (invoice.period_start && invoice.period_end) {
+      addRow('Période:', `${format(new Date(invoice.period_start), 'dd/MM/yyyy')} - ${format(new Date(invoice.period_end), 'dd/MM/yyyy')}`);
+    }
+    
+    if (invoice.created_at) {
+      addRow('Date:', format(new Date(invoice.created_at), 'dd MMM yyyy', { locale: fr }));
+    }
+    
+    // Footer
+    y += 15;
+    doc.setDrawColor(200);
+    doc.line(20, y, 190, y);
+    y += 10;
+    doc.setFontSize(9);
+    doc.setTextColor(128);
+    doc.text('Document généré automatiquement - StockManager SaaS', 105, y, { align: 'center' });
+    
+    doc.save(`${invoice.invoice_number}.pdf`);
+  };
+
   const filteredInvoices = invoices.filter(i => {
     const companyName = companies[i.company_id] || '';
     return companyName.toLowerCase().includes(search.toLowerCase()) ||
