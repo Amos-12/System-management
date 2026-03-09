@@ -294,12 +294,13 @@ export const PaymentsPanel = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>N° Facture</TableHead>
+                     <TableHead>N° Facture</TableHead>
                     <TableHead>Entreprise</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>Période</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
