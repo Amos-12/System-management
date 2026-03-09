@@ -206,7 +206,7 @@ serve(async (req) => {
       const paymentResponse = await fetch("https://sandbox.moncashbutton.digicelgroup.com/Api/v1/CreatePayment", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${authData.access_token}`,
+          "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ amount, orderId }),
