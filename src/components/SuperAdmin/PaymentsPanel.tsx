@@ -6,7 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Search, CreditCard, DollarSign, TrendingUp, Receipt } from 'lucide-react';
+import { Search, CreditCard, DollarSign, TrendingUp, Receipt, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -104,6 +106,58 @@ export const PaymentsPanel = () => {
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const downloadInvoicePdf = (invoice: Invoice) => {
+    const doc = new jsPDF();
+    const companyName = companies[invoice.company_id] || 'N/A';
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FACTURE', 105, 25, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`N° ${invoice.invoice_number}`, 105, 35, { align: 'center' });
+    
+    // Line
+    doc.setDrawColor(200);
+    doc.line(20, 42, 190, 42);
+    
+    // Details
+    let y = 55;
+    const addRow = (label: string, value: string) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, 25, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(value, 80, y);
+      y += 10;
+    };
+    
+    addRow('Entreprise:', companyName);
+    addRow('Plan:', (invoice.plan_name || '-').toUpperCase());
+    addRow('Montant:', `${invoice.amount} ${invoice.currency || 'USD'}`);
+    addRow('Statut:', invoice.status === 'paid' ? 'Payé' : (invoice.status || '-'));
+    
+    if (invoice.period_start && invoice.period_end) {
+      addRow('Période:', `${format(new Date(invoice.period_start), 'dd/MM/yyyy')} - ${format(new Date(invoice.period_end), 'dd/MM/yyyy')}`);
+    }
+    
+    if (invoice.created_at) {
+      addRow('Date:', format(new Date(invoice.created_at), 'dd MMM yyyy', { locale: fr }));
+    }
+    
+    // Footer
+    y += 15;
+    doc.setDrawColor(200);
+    doc.line(20, y, 190, y);
+    y += 10;
+    doc.setFontSize(9);
+    doc.setTextColor(128);
+    doc.text('Document généré automatiquement - StockManager SaaS', 105, y, { align: 'center' });
+    
+    doc.save(`${invoice.invoice_number}.pdf`);
+  };
 
   const filteredInvoices = invoices.filter(i => {
     const companyName = companies[i.company_id] || '';
@@ -240,17 +294,18 @@ export const PaymentsPanel = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>N° Facture</TableHead>
+                     <TableHead>N° Facture</TableHead>
                     <TableHead>Entreprise</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>Période</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredInvoices.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune facture trouvée</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucune facture trouvée</TableCell></TableRow>
                   ) : filteredInvoices.map(i => (
                     <TableRow key={i.id}>
                       <TableCell className="font-mono text-sm">{i.invoice_number}</TableCell>
@@ -263,6 +318,11 @@ export const PaymentsPanel = () => {
                           : '-'}
                       </TableCell>
                       <TableCell>{getStatusBadge(i.status || 'paid')}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" onClick={() => downloadInvoicePdf(i)} title="Télécharger PDF">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
