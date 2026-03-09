@@ -8,6 +8,7 @@ import { GlobalActivityLogs } from '@/components/SuperAdmin/GlobalActivityLogs';
 import { SuperAdminDbMonitoring } from '@/components/SuperAdmin/SuperAdminDbMonitoring';
 import { SubscriptionPlansManager } from '@/components/SuperAdmin/SubscriptionPlansManager';
 import { PaymentsPanel } from '@/components/SuperAdmin/PaymentsPanel';
+import { PaymentExchangeRateSettings } from '@/components/SuperAdmin/PaymentExchangeRateSettings';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
