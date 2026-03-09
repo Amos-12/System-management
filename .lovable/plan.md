@@ -1,34 +1,62 @@
 
-# Phase 2 - Paiements automatises et facturation
 
-## Statut : EN COURS
+## Diagnostic
 
-## Complété
-- [x] Tables `payments` et `subscription_invoices` créées avec RLS
-- [x] Colonne `last_reminder_sent` ajoutée à `companies`
-- [x] Stripe activé + 3 produits/prix créés (Basic $19, Pro $39, Premium $59)
-- [x] Edge function `create-checkout` (Stripe + MonCash)
-- [x] Edge function `payment-webhook` (activation auto)
-- [x] Edge function `subscription-reminders` (rappels J-7/J-3/J-1 + désactivation)
-- [x] UI: `ExpiredScreen` avec sélection Stripe/MonCash
-- [x] UI: `UpgradeBanner` avec checkout Stripe direct
-- [x] Page `PaymentSuccess` avec confirmation
-- [x] Route `/payment-success` ajoutée
+Le problème est identifié : **le webhook Stripe n'est pas configuré dans votre dashboard Stripe**. Voici le flux actuel :
 
-## Stripe IDs
-| Plan | Product ID | Price ID |
-|------|-----------|----------|
-| Basic ($19/mo) | prod_U70o75L2Udqzx3 | price_1T8mnKAOoIXoYDc8xUbIfLlU |
-| Pro ($39/mo) | prod_U70pcM3cVvX4y4 | price_1T8mnuAOoIXoYDc8iRjrdyIC |
-| Premium ($59/mo) | prod_U70rau26HqWTvN | price_1T8mq4AOoIXoYDc8SRmqM10l |
+```text
+Utilisateur → Stripe Checkout → Paiement réussi → Redirection /payment-success
+                                       ↓
+                              Stripe envoie webhook → ❌ Jamais reçu
+                                       ↓
+                              Plan jamais mis à jour dans la DB
+```
 
-## Reste à faire
-- [ ] Configurer secrets MonCash (`MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET`)
-- [ ] Configurer secrets NatCash (`NATCASH_MERCHANT_ID`, `NATCASH_API_KEY`)
-- [ ] Implémenter NatCash dans create-checkout
-- [ ] Configurer Stripe webhook URL dans le dashboard Stripe → `https://xngppwphedaexwkgfjdv.supabase.co/functions/v1/payment-webhook`
-- [ ] Configurer `STRIPE_WEBHOOK_SECRET`
-- [x] Cron job pour `subscription-reminders` (pg_cron) — quotidien à 8h UTC
-- [x] Historique paiements dans CompanySettings
-- [x] Onglet Paiements dans Super Admin (PaymentsPanel avec KPIs, table paiements/factures)
-- [ ] Factures PDF téléchargeables
+La page `PaymentSuccess` affiche "succès" après 3 secondes d'attente, mais elle ne vérifie rien réellement. Le plan reste "trial" car personne ne met à jour la base de données.
+
+**De plus**, le secret `STRIPE_WEBHOOK_SECRET` n'est pas configuré dans les secrets Supabase.
+
+## Solution proposée
+
+Plutôt que de dépendre uniquement du webhook (qui nécessite une configuration manuelle dans Stripe), ajouter une **vérification active** sur la page PaymentSuccess qui appelle Stripe directement pour confirmer le paiement.
+
+### 1. Créer une edge function `verify-checkout-session`
+
+- Reçoit le `session_id` de Stripe (passé dans l'URL de retour)
+- Vérifie auprès de Stripe que le paiement est bien complété
+- Si oui, active l'abonnement dans la base (même logique que le webhook)
+- Retourne le statut au frontend
+
+### 2. Modifier `PaymentSuccess.tsx`
+
+- Au lieu d'attendre 3 secondes, appeler `verify-checkout-session` avec le `session_id`
+- Réessayer jusqu'à 3 fois si le paiement n'est pas encore confirmé
+- Afficher le vrai statut (succès/échec)
+
+### 3. Garder le webhook comme backup
+
+- Le webhook reste en place pour les renouvellements automatiques (`invoice.paid`)
+- La vérification active couvre le premier paiement
+
+## Détails techniques
+
+**Edge function `verify-checkout-session`** :
+- Authentifie l'utilisateur via le JWT
+- Récupère la session Stripe via `stripe.checkout.sessions.retrieve(session_id)`
+- Vérifie `session.payment_status === 'paid'`
+- Extrait `company_id` et `plan_id` des metadata
+- Appelle la même logique `activateSubscription` que le webhook
+- Protection contre double activation (vérifie si déjà activé)
+
+**Frontend** :
+- Appel `supabase.functions.invoke('verify-checkout-session', { body: { session_id } })`
+- Polling avec retry (max 3 tentatives, 2s d'intervalle)
+- Affichage du résultat réel
+
+### Configuration webhook (recommandé en parallèle)
+
+Pour les renouvellements futurs, configurer dans Stripe Dashboard :
+- URL : `https://xngppwphedaexwkgfjdv.supabase.co/functions/v1/payment-webhook`
+- Events : `checkout.session.completed`, `invoice.paid`
+- Ajouter le `STRIPE_WEBHOOK_SECRET` dans les secrets Supabase
+
