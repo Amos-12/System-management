@@ -59,6 +59,16 @@ serve(async (req) => {
 
     if (!profile?.company_id) throw new Error("No company found");
 
+    // Fetch exchange rate from saas_settings
+    const { data: settingsData } = await supabaseClient
+      .from("saas_settings")
+      .select("setting_value")
+      .eq("setting_key", "payment_exchange_rate")
+      .single();
+
+    const usdHtgRate = (settingsData?.setting_value as any)?.usd_htg_rate || 132.0;
+    console.log("Using USD/HTG exchange rate:", usdHtgRate);
+
     const origin = req.headers.get("origin") || "https://id-preview--964f3753-4441-40ac-acf5-cd66e737e71f.lovable.app";
 
     if (payment_method === "stripe") {
