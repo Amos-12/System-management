@@ -319,8 +319,8 @@ const Auth = () => {
                       onClick={() => setSignupMode('join')}
                     >
                       <Users className="w-8 h-8 text-primary" />
-                      <span className="font-semibold">Rejoindre une entreprise</span>
-                      <span className="text-xs text-muted-foreground">Avec un code d'invitation</span>
+                      <span className="font-semibold">{t('auth.joinCompany')}</span>
+                      <span className="text-xs text-muted-foreground">{t('auth.withInvitationCode')}</span>
                     </Button>
                   </div>
                 )}
