@@ -225,9 +225,9 @@ const SellerDashboard = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Mes Ventes
+                  {t('sales.mySales')}
                   <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
-                    ({sales.length} ventes)
+                    ({t('sales.salesCount', { count: sales.length })})
                   </span>
                 </CardTitle>
                 <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as typeof periodFilter)}>
