@@ -471,7 +471,7 @@ const Auth = () => {
                             {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                           </div>
                           <div className="space-y-1">
-                            <Label>Téléphone</Label>
+                            <Label>{t('common.phone')}</Label>
                             <Input
                               type="tel"
                               placeholder="+509 XXXX-XXXX"
