@@ -247,7 +247,7 @@ const SellerDashboard = () => {
               {/* Period stats */}
               {sales.length > 0 && (
                 <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                  <span>Total {periodLabels[periodFilter]}:</span>
+                  <span>{t('sales.totalPeriod', { period: periodLabels[periodFilter] })}:</span>
                   <span className="font-semibold text-foreground">
                     {displayCurrency === 'USD' 
                       ? `$${periodTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
