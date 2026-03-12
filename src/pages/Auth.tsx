@@ -380,7 +380,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label>Mot de passe *</Label>
+                        <Label>{t('common.password')} *</Label>
                         <Input
                           type="password"
                           placeholder="••••••••"
