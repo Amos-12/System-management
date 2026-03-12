@@ -400,7 +400,7 @@ const Profile = () => {
                   className="gap-1"
                 >
                   <Shield className="h-3 w-3" />
-                  {role === 'admin' ? 'Administrateur' : 'Vendeur'}
+                  {role === 'admin' ? t('roles.admin') : t('roles.seller')}
                 </Badge>
 
                 <Separator className="my-4" />
