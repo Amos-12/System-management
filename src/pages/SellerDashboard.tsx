@@ -261,7 +261,7 @@ const SellerDashboard = () => {
               {sales.length === 0 ? (
                 <div className="text-center py-6 sm:py-8 text-muted-foreground">
                   <Receipt className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-                  <p className="text-xs sm:text-sm">Aucune vente pour cette période</p>
+                  <p className="text-xs sm:text-sm">{t('sales.noSalesPeriod')}</p>
                 </div>
               ) : (
                 <div className="space-y-2 sm:space-y-3">
