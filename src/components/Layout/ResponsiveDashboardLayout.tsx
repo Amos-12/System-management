@@ -196,7 +196,7 @@ export const ResponsiveDashboardLayout = ({
               {companySettings?.name || title}
             </h2>
             <Badge variant={role === 'admin' ? 'default' : 'secondary'} className="mt-2">
-              {role === 'admin' ? 'Administrateur' : 'Vendeur'}
+              {role === 'admin' ? t('roles.admin') : t('roles.seller')}
             </Badge>
           </>
         )}
