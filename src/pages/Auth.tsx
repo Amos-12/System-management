@@ -432,7 +432,7 @@ const Auth = () => {
                               className="font-mono tracking-wider"
                             />
                             <Button onClick={handleValidateInvitation} disabled={isValidatingCode}>
-                              {isValidatingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Vérifier'}
+                              {isValidatingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : t('auth.verify')}
                             </Button>
                           </div>
                         </div>
