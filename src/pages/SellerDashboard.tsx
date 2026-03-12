@@ -319,7 +319,7 @@ const SellerDashboard = () => {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-light via-background to-secondary">
         <div className="text-center">
           <img src={logo} alt="Logo" className="w-14 h-14 object-contain mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Chargement du tableau de bord...</p>
+          <p className="text-muted-foreground">{t('dashboard.loadingDashboard')}</p>
         </div>
       </div>
     );
