@@ -165,13 +165,13 @@ const Auth = () => {
         redirectTo: `${window.location.origin}/auth`,
       });
       if (error) throw error;
-      toast({ title: 'Email envoyé', description: 'Vérifiez votre boîte de réception.' });
+      toast({ title: t('auth.emailSent'), description: t('auth.checkInbox') });
       setIsResetDialogOpen(false);
       setResetEmail('');
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error instanceof z.ZodError ? 'Email invalide' : (error.message || 'Erreur'),
+        title: t('common.error'),
+        description: error instanceof z.ZodError ? t('auth.invalidEmail') : (error.message || t('common.error')),
         variant: 'destructive',
       });
     } finally {
