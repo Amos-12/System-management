@@ -567,7 +567,7 @@ const Profile = () => {
                 {passwordData.newPassword && passwordData.newPassword.length < 6 && (
                   <div className="flex items-center gap-2 text-sm text-amber-600">
                     <AlertCircle className="h-4 w-4" />
-                    Le mot de passe doit contenir au moins 6 caractères
+                    {t('profile.passwordMinWarning')}
                   </div>
                 )}
 
