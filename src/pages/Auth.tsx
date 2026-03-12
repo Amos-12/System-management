@@ -442,8 +442,8 @@ const Auth = () => {
                         <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3 rounded-lg flex items-center gap-3">
                           <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
                           <div>
-                            <p className="font-semibold text-sm">Entreprise : {validatedCompany.name}</p>
-                            <p className="text-xs text-muted-foreground">Complétez votre inscription ci-dessous</p>
+                            <p className="font-semibold text-sm">{t('auth.company')} : {validatedCompany.name}</p>
+                            <p className="text-xs text-muted-foreground">{t('auth.completeSignup')}</p>
                           </div>
                         </div>
                         <form onSubmit={handleJoinCompany} className="space-y-3">
