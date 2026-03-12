@@ -246,7 +246,7 @@ const Auth = () => {
                     {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password">Mot de passe</Label>
+                    <Label htmlFor="signin-password">{t('common.password')}</Label>
                     <Input
                       id="signin-password"
                       type="password"
