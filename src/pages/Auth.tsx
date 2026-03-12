@@ -221,11 +221,11 @@ const Auth = () => {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin" className="flex items-center gap-2">
                   <UserCheck className="w-4 h-4" />
-                  Connexion
+                  {t('auth.login')}
                 </TabsTrigger>
                 <TabsTrigger value="signup" className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  Inscription
+                  {t('auth.signup')}
                 </TabsTrigger>
               </TabsList>
 
