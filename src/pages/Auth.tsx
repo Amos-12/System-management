@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { z } from 'zod';
 import logo from '@/assets/logo.png';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { LanguageSelector } from '@/components/ui/language-selector';
 
 const signInSchema = z.object({
   email: z.string().email('Email invalide'),
