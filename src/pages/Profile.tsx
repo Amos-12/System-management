@@ -232,8 +232,8 @@ const Profile = () => {
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast({
-        title: 'Confirmation invalide',
-        description: 'Les mots de passe ne correspondent pas',
+        title: t('profile.passwordMismatch'),
+        description: t('profile.passwordsMismatchDesc'),
         variant: 'destructive'
       });
       return;
