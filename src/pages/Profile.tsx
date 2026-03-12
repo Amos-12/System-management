@@ -125,8 +125,8 @@ const Profile = () => {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Type de fichier invalide",
-        description: "Veuillez sélectionner une image",
+        title: t('profile.invalidFileType'),
+        description: t('profile.selectImage'),
         variant: "destructive"
       });
       return;
