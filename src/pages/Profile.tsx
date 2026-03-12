@@ -410,7 +410,7 @@ const Profile = () => {
                   <div className="flex items-center gap-3 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-muted-foreground">Membre depuis</p>
+                      <p className="text-muted-foreground">{t('profile.memberSince')}</p>
                       <p className="font-medium">{memberSince || '—'}</p>
                     </div>
                   </div>
