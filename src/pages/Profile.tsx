@@ -472,7 +472,7 @@ const Profile = () => {
 
                     <div className="space-y-2">
                       <Label htmlFor="full_name" className="text-sm">
-                        Nom Complet
+                        {t('profile.fullName')}
                       </Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
