@@ -90,8 +90,8 @@ const Auth = () => {
       const { error } = await signUp(data.email, data.password, data.fullName, data.phone, data.companyName);
       if (!error) {
         toast({
-          title: "Entreprise créée !",
-          description: "Votre entreprise et compte admin ont été créés. Essai gratuit de 30 jours activé.",
+          title: t('auth.companyCreated'),
+          description: t('auth.companyCreatedDesc'),
         });
         navigate('/');
       }
