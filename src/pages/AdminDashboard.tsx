@@ -54,7 +54,7 @@ const AdminDashboard = () => {
         if (isFreePlan) return <LockedFeature title={t('subscription.lockedReports')} description={t('subscription.lockedReportsDesc')} requiredPlan="Pro" />;
         return <AdvancedReports />;
       case 'tva-report':
-        if (isFreePlan) return <LockedFeature title="Rapport TVA" description="Le rapport TVA détaillé est disponible dans les plans payants." requiredPlan="Basic" />;
+        if (isFreePlan) return <LockedFeature title={t('subscription.lockedTva')} description={t('subscription.lockedTvaDesc')} requiredPlan="Basic" />;
         return <TvaReport />;
       case 'activity':
         return <ActivityLogPanel />;
