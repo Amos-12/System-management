@@ -276,7 +276,7 @@ const SellerDashboard = () => {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="font-medium text-xs sm:text-sm truncate max-w-[140px] sm:max-w-none flex items-center gap-1">
-                          {sale.customer_name || 'Client anonyme'}
+                          {sale.customer_name || t('sales.anonymousClient')}
                           <Eye className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                         <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 sm:gap-2 flex-wrap">
