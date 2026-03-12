@@ -359,7 +359,7 @@ const Auth = () => {
                         {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
                       </div>
                       <div className="space-y-1">
-                        <Label>Email *</Label>
+                        <Label>{t('common.email')} *</Label>
                         <Input
                           type="email"
                           placeholder="votre@email.com"
