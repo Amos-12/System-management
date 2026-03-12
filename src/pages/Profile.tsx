@@ -12,7 +12,7 @@ import {
   User, Mail, Phone, Save, Lock, ArrowLeft, Shield, 
   Calendar, Clock, CheckCircle2, AlertCircle, Camera, 
   Activity, Package, ShoppingCart, Settings, LogIn, LogOut,
-  Trash2, Edit, Plus
+  Trash2, Edit, Plus, Globe
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
