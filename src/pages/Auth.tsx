@@ -496,9 +496,9 @@ const Auth = () => {
                           </div>
                           <Button type="submit" className="w-full" disabled={isSubmitting} variant="hero">
                             {isSubmitting ? (
-                              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Inscription...</>
+                              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('auth.signingUp')}</>
                             ) : (
-                              "Rejoindre l'entreprise"
+                              t('auth.joinTheCompany')
                             )}
                           </Button>
                         </form>
