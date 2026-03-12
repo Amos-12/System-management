@@ -172,8 +172,8 @@ const Profile = () => {
 
       setAvatarUrl(urlWithCacheBuster);
       toast({
-        title: "Photo mise à jour",
-        description: "Votre photo de profil a été modifiée avec succès"
+        title: t('profile.photoUpdated'),
+        description: t('profile.photoUpdatedDesc')
       });
     } catch (error) {
       console.error('Error uploading avatar:', error);
