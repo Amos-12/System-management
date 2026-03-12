@@ -348,7 +348,7 @@ const Auth = () => {
                         {errors.companyName && <p className="text-xs text-destructive">{errors.companyName}</p>}
                       </div>
                       <div className="space-y-1">
-                        <Label>Votre nom complet *</Label>
+                        <Label>{t('auth.fullName')} *</Label>
                         <Input
                           placeholder="Jean Baptiste"
                           value={createForm.fullName}
