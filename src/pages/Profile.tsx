@@ -442,10 +442,10 @@ const Profile = () => {
               <CardHeader className="pb-4">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Informations personnelles
+                  {t('profile.personalInfo')}
                 </CardTitle>
                 <CardDescription>
-                  Modifiez vos informations de profil
+                  {t('profile.editInfo')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
