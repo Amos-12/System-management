@@ -417,9 +417,9 @@ const Auth = () => {
                       <div className="space-y-4">
                         <div className="bg-primary/5 p-3 rounded-lg text-center">
                           <Users className="w-6 h-6 text-primary mx-auto mb-1" />
-                          <p className="font-semibold text-sm">Rejoindre une entreprise</p>
+                          <p className="font-semibold text-sm">{t('auth.joinACompany')}</p>
                           <p className="text-xs text-muted-foreground">
-                            Entrez le code fourni par votre administrateur
+                            {t('auth.enterAdminCode')}
                           </p>
                         </div>
                         <div className="space-y-2">
