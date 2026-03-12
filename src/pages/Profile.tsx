@@ -621,7 +621,7 @@ const Profile = () => {
                 ) : activityHistory.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Aucune activité enregistrée</p>
+                    <p>{t('profile.noActivity')}</p>
                   </div>
                 ) : (
                   <ScrollArea className="h-[300px] pr-4">
