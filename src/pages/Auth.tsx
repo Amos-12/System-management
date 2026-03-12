@@ -410,7 +410,7 @@ const Auth = () => {
                       setValidatedCompany(null);
                       setInvitationCode('');
                     }}>
-                      <ArrowLeft className="w-4 h-4 mr-1" /> Retour
+                      <ArrowLeft className="w-4 h-4 mr-1" /> {t('common.back')}
                     </Button>
 
                     {!validatedCompany ? (
