@@ -265,14 +265,14 @@ const Auth = () => {
                     <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
                       <DialogTrigger asChild>
                         <Button variant="link" className="text-sm text-muted-foreground hover:text-primary">
-                          Mot de passe oublié ?
+                          {t('auth.forgotPassword')}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+                          <DialogTitle>{t('auth.resetPassword')}</DialogTitle>
                           <DialogDescription>
-                            Nous vous enverrons un lien de réinitialisation.
+                            {t('auth.resetDescription')}
                           </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handlePasswordReset} className="space-y-4">
