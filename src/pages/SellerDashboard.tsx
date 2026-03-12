@@ -329,7 +329,7 @@ const SellerDashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-light via-background to-secondary">
         <div className="text-center">
-          <p className="text-muted-foreground">Veuillez vous connecter</p>
+          <p className="text-muted-foreground">{t('auth.pleaseLogin')}</p>
         </div>
       </div>
     );
