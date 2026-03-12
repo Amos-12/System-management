@@ -302,7 +302,7 @@ const Auth = () => {
                 {signupMode === 'choose' && (
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground text-center">
-                      Comment souhaitez-vous commencer ?
+                      {t('auth.howToStart')}
                     </p>
                     <Button
                       variant="outline"
