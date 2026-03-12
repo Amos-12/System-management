@@ -224,8 +224,8 @@ const Profile = () => {
     if (!user) return;
     if (!passwordData.newPassword || passwordData.newPassword.length < 6) {
       toast({
-        title: 'Mot de passe trop court',
-        description: 'Minimum 6 caractères',
+        title: t('profile.passwordTooShort'),
+        description: t('profile.minSixChars'),
         variant: 'destructive'
       });
       return;
