@@ -30,6 +30,7 @@ interface ActivityLog {
 }
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { user, profile, role, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
