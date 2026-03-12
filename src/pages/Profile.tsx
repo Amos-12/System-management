@@ -385,7 +385,7 @@ const Profile = () => {
                   />
                 </div>
                 {uploadingAvatar && (
-                  <p className="text-xs text-muted-foreground">Téléchargement...</p>
+                  <p className="text-xs text-muted-foreground">{t('profile.uploading')}</p>
                 )}
                 
                 <div className="space-y-1">
