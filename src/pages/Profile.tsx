@@ -531,7 +531,7 @@ const Profile = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="new_password" className="text-sm">
-                      Nouveau mot de passe
+                      {t('profile.newPassword')}
                     </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
