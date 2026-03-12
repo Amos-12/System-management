@@ -135,8 +135,8 @@ const Profile = () => {
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: "Fichier trop volumineux",
-        description: "L'image ne doit pas dépasser 2 Mo",
+        title: t('profile.fileTooLarge'),
+        description: t('profile.maxFileSize'),
         variant: "destructive"
       });
       return;
