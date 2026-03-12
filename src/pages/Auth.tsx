@@ -193,11 +193,15 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-[calc(16px+var(--safe-area-top,0px))] pb-[calc(16px+var(--safe-area-bottom,0px))]">
       <div className="fixed top-0 left-0 right-0 z-[60] bg-background" style={{ height: 'var(--safe-area-top, 0px)' }} />
+      {/* Language selector on auth page */}
+      <div className="fixed top-[calc(8px+var(--safe-area-top,0px))] right-4 z-50">
+        <LanguageSelector />
+      </div>
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <img src={logo} alt="Logo" className="w-24 h-24 object-contain mx-auto mb-3" />
-          <h1 className="text-3xl font-bold text-primary">Stock Management</h1>
-          <p className="text-muted-foreground">Plateforme SaaS de gestion de stock et ventes</p>
+          <h1 className="text-3xl font-bold text-primary">{t('auth.platformTitle')}</h1>
+          <p className="text-muted-foreground">{t('auth.platformSubtitle')}</p>
         </div>
 
         <Card className="shadow-lg">
