@@ -64,6 +64,7 @@ interface ProformaCartItem {
 }
 
 const SellerDashboard = () => {
+  const { t } = useTranslation();
   const { user, loading: authLoading, role, signOut } = useAuth();
   const saleCalc = useSaleCalculations();
   const { isExpired, plan, isFreePlan, companyName, loading: subLoading } = useSubscription();
