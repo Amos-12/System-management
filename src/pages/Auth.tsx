@@ -332,8 +332,8 @@ const Auth = () => {
                     </Button>
                     <div className="bg-primary/5 p-3 rounded-lg text-center">
                       <Building2 className="w-6 h-6 text-primary mx-auto mb-1" />
-                      <p className="font-semibold text-sm">Créer votre entreprise</p>
-                      <p className="text-xs text-muted-foreground">30 jours d'essai gratuit inclus</p>
+                      <p className="font-semibold text-sm">{t('auth.createYourCompany')}</p>
+                      <p className="text-xs text-muted-foreground">{t('auth.freeTrialIncluded')}</p>
                     </div>
                     <form onSubmit={handleCreateCompany} className="space-y-3">
                       <div className="space-y-1">
