@@ -509,7 +509,7 @@ const Profile = () => {
                   <div className="flex justify-end pt-2">
                     <Button type="submit" disabled={loading} className="gap-2">
                       <Save className="h-4 w-4" />
-                      {loading ? 'Enregistrement...' : 'Enregistrer'}
+                      {loading ? t('common.saving') : t('common.save')}
                     </Button>
                   </div>
                 </form>
