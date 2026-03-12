@@ -390,7 +390,7 @@ const Profile = () => {
                 
                 <div className="space-y-1">
                   <h2 className="text-lg sm:text-xl font-semibold">
-                    {formData.full_name || 'Utilisateur'}
+                    {formData.full_name || t('profile.user')}
                   </h2>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
                 </div>
