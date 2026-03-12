@@ -500,7 +500,7 @@ const Profile = () => {
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="Votre numéro de téléphone"
+                        placeholder={t('profile.phonePlaceholder')}
                         className="pl-10"
                       />
                     </div>
