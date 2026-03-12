@@ -206,9 +206,9 @@ const Auth = () => {
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="text-center">Accéder à la plateforme</CardTitle>
+            <CardTitle className="text-center">{t('auth.accessPlatform')}</CardTitle>
             <CardDescription className="text-center">
-              Connectez-vous ou créez votre espace
+              {t('auth.connectOrCreate')}
             </CardDescription>
           </CardHeader>
           <CardContent>
