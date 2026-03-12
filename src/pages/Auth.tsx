@@ -142,7 +142,7 @@ const Auth = () => {
       setIsSubmitting(true);
       const { error } = await signUp(data.email, data.password, data.fullName, data.phone, undefined, validatedCompany.id);
       if (!error) {
-        toast({ title: "Compte créé !", description: "Votre compte nécessite l'approbation d'un administrateur." });
+        toast({ title: t('auth.accountCreated'), description: t('auth.accountNeedsApproval') });
         setActiveTab('signin');
       }
     } catch (error) {
