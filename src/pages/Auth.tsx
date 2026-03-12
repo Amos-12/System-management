@@ -310,8 +310,8 @@ const Auth = () => {
                       onClick={() => setSignupMode('create')}
                     >
                       <Building2 className="w-8 h-8 text-primary" />
-                      <span className="font-semibold">Créer mon entreprise</span>
-                      <span className="text-xs text-muted-foreground">Essai gratuit de 30 jours</span>
+                      <span className="font-semibold">{t('auth.createCompany')}</span>
+                      <span className="text-xs text-muted-foreground">{t('auth.freeTrial')}</span>
                     </Button>
                     <Button
                       variant="outline"
