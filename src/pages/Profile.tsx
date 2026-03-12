@@ -211,8 +211,8 @@ const Profile = () => {
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le profil",
+        title: t('common.error'),
+        description: t('profile.updateError'),
         variant: "destructive"
       });
     } finally {
