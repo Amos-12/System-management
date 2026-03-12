@@ -178,8 +178,8 @@ const Profile = () => {
     } catch (error) {
       console.error('Error uploading avatar:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour la photo",
+        title: t('common.error'),
+        description: t('profile.photoError'),
         variant: "destructive"
       });
     } finally {
