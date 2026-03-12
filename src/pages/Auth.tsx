@@ -337,7 +337,7 @@ const Auth = () => {
                     </div>
                     <form onSubmit={handleCreateCompany} className="space-y-3">
                       <div className="space-y-1">
-                        <Label>Nom de l'entreprise *</Label>
+                        <Label>{t('auth.companyName')} *</Label>
                         <Input
                           placeholder="Ma Quincaillerie"
                           value={createForm.companyName}
