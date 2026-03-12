@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { LanguageSelector } from '@/components/ui/language-selector';
 
 interface ActivityLog {
   id: string;
