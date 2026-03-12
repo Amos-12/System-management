@@ -481,7 +481,7 @@ const Profile = () => {
                           type="text"
                           value={formData.full_name}
                           onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                          placeholder="Votre nom complet"
+                          placeholder={t('profile.fullNamePlaceholder')}
                           className="pl-10"
                           required
                         />
