@@ -253,8 +253,8 @@ const Profile = () => {
       });
 
       toast({
-        title: 'Mot de passe mis à jour',
-        description: 'Votre mot de passe a été modifié avec succès'
+        title: t('profile.passwordUpdated'),
+        description: t('profile.passwordUpdatedDesc')
       });
       setPasswordData({ newPassword: '', confirmPassword: '' });
       fetchActivityHistory();
