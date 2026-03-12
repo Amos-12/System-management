@@ -426,8 +426,8 @@ const Profile = () => {
                   <div className="flex items-center gap-3 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                     <div>
-                      <p className="text-muted-foreground">Statut du compte</p>
-                      <p className="font-medium text-green-600">Actif</p>
+                      <p className="text-muted-foreground">{t('profile.accountStatus')}</p>
+                      <p className="font-medium text-green-600">{t('common.active')}</p>
                     </div>
                   </div>
                 </div>
