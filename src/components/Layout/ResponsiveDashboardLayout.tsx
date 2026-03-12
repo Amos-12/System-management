@@ -391,6 +391,7 @@ export const ResponsiveDashboardLayout = ({
                 <User className="w-4 h-4" />
               </Button>
 
+              <LanguageSelector />
               <ThemeToggle />
 
               <Button 
@@ -400,7 +401,7 @@ export const ResponsiveDashboardLayout = ({
                 className="hover:bg-destructive hover:text-destructive-foreground transition-smooth flex-shrink-0"
               >
                 <LogOut className="w-4 h-4 sm:mr-2" />
-                <span className="hidden md:inline">Déconnexion</span>
+                <span className="hidden md:inline">{t('auth.signOut')}</span>
               </Button>
             </div>
           </div>
