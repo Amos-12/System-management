@@ -236,10 +236,10 @@ const SellerDashboard = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">20 récentes</SelectItem>
-                    <SelectItem value="today">Aujourd'hui</SelectItem>
-                    <SelectItem value="week">Cette semaine</SelectItem>
-                    <SelectItem value="month">Ce mois</SelectItem>
+                    <SelectItem value="all">{t('common.recent20')}</SelectItem>
+                    <SelectItem value="today">{t('common.today')}</SelectItem>
+                    <SelectItem value="week">{t('common.thisWeek')}</SelectItem>
+                    <SelectItem value="month">{t('common.thisMonth')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
