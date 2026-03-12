@@ -309,10 +309,10 @@ export const ResponsiveDashboardLayout = ({
                         <User className="w-4 h-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-xs truncate">{profile?.full_name || 'Utilisateur'}</p>
+                        <p className="font-medium text-xs truncate">{profile?.full_name || t('profile.user')}</p>
                       </div>
                       <Badge variant={role === 'admin' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5">
-                        {role === 'admin' ? 'Admin' : 'Vendeur'}
+                        {role === 'admin' ? 'Admin' : t('roles.seller')}
                       </Badge>
                     </div>
                   </div>
