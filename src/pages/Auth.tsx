@@ -328,7 +328,7 @@ const Auth = () => {
                 {signupMode === 'create' && (
                   <div className="space-y-4">
                     <Button variant="ghost" size="sm" onClick={() => { setSignupMode('choose'); setErrors({}); }}>
-                      <ArrowLeft className="w-4 h-4 mr-1" /> Retour
+                      <ArrowLeft className="w-4 h-4 mr-1" /> {t('common.back')}
                     </Button>
                     <div className="bg-primary/5 p-3 rounded-lg text-center">
                       <Building2 className="w-6 h-6 text-primary mx-auto mb-1" />
