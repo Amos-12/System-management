@@ -580,7 +580,7 @@ const Profile = () => {
                     className="gap-2"
                   >
                     <Lock className="h-4 w-4" />
-                    {pwdLoading ? 'Mise à jour...' : 'Mettre à jour'}
+                    {pwdLoading ? t('profile.updating') : t('profile.update')}
                   </Button>
                 </div>
               </CardContent>
