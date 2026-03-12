@@ -288,7 +288,7 @@ const Auth = () => {
                             />
                           </div>
                           <Button type="submit" className="w-full" disabled={isResetSubmitting}>
-                            {isResetSubmitting ? 'Envoi...' : 'Envoyer le lien'}
+                            {isResetSubmitting ? t('common.sending') : t('auth.sendLink')}
                           </Button>
                         </form>
                       </DialogContent>
