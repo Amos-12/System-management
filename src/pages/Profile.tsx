@@ -352,7 +352,7 @@ const Profile = () => {
           <Button variant="ghost" size="icon" onClick={handleBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl sm:text-2xl font-bold">Mon Profil</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">{t('profile.title')}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
