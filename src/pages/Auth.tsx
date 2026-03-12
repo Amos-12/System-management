@@ -423,7 +423,7 @@ const Auth = () => {
                           </p>
                         </div>
                         <div className="space-y-2">
-                          <Label>Code d'invitation</Label>
+                          <Label>{t('auth.invitationCode')}</Label>
                           <div className="flex gap-2">
                             <Input
                               placeholder="ex: a1b2c3d4"
