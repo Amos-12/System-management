@@ -108,7 +108,7 @@ const Auth = () => {
 
   const handleValidateInvitation = async () => {
     if (!invitationCode.trim()) {
-      toast({ title: "Erreur", description: "Veuillez entrer un code d'invitation", variant: "destructive" });
+      toast({ title: t('common.error'), description: t('auth.enterInvitationCode'), variant: "destructive" });
       return;
     }
     setIsValidatingCode(true);
