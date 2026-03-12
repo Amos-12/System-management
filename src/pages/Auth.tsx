@@ -277,7 +277,7 @@ const Auth = () => {
                         </DialogHeader>
                         <form onSubmit={handlePasswordReset} className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="reset-email">Email</Label>
+                            <Label htmlFor="reset-email">{t('common.email')}</Label>
                             <Input
                               id="reset-email"
                               type="email"
