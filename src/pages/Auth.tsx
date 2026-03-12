@@ -448,7 +448,7 @@ const Auth = () => {
                         </div>
                         <form onSubmit={handleJoinCompany} className="space-y-3">
                           <div className="space-y-1">
-                            <Label>Votre nom complet *</Label>
+                            <Label>{t('auth.fullName')} *</Label>
                             <Input
                               placeholder="Jean Baptiste"
                               value={joinForm.fullName}
