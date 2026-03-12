@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveDashboardLayout } from '@/components/Layout/ResponsiveDashboardLayout';
 import { SellerWorkflow } from '@/components/Seller/SellerWorkflow';
@@ -63,6 +64,7 @@ interface ProformaCartItem {
 }
 
 const SellerDashboard = () => {
+  const { t } = useTranslation();
   const { user, loading: authLoading, role, signOut } = useAuth();
   const saleCalc = useSaleCalculations();
   const { isExpired, plan, isFreePlan, companyName, loading: subLoading } = useSubscription();
@@ -208,10 +210,10 @@ const SellerDashboard = () => {
         return <StockAlerts />;
       case 'history':
         const periodLabels: Record<string, string> = {
-          all: '20 récentes',
-          today: "Aujourd'hui",
-          week: 'Cette semaine',
-          month: 'Ce mois'
+          all: t('common.recent20'),
+          today: t('common.today'),
+          week: t('common.thisWeek'),
+          month: t('common.thisMonth')
         };
         
         // Calculate total for filtered period using displayAmount (properly calculated TTC)
@@ -223,9 +225,9 @@ const SellerDashboard = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Mes Ventes
+                  {t('sales.mySales')}
                   <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
-                    ({sales.length} ventes)
+                    ({t('sales.salesCount', { count: sales.length })})
                   </span>
                 </CardTitle>
                 <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as typeof periodFilter)}>
@@ -234,10 +236,10 @@ const SellerDashboard = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">20 récentes</SelectItem>
-                    <SelectItem value="today">Aujourd'hui</SelectItem>
-                    <SelectItem value="week">Cette semaine</SelectItem>
-                    <SelectItem value="month">Ce mois</SelectItem>
+                    <SelectItem value="all">{t('common.recent20')}</SelectItem>
+                    <SelectItem value="today">{t('common.today')}</SelectItem>
+                    <SelectItem value="week">{t('common.thisWeek')}</SelectItem>
+                    <SelectItem value="month">{t('common.thisMonth')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -245,7 +247,7 @@ const SellerDashboard = () => {
               {/* Period stats */}
               {sales.length > 0 && (
                 <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                  <span>Total {periodLabels[periodFilter]}:</span>
+                  <span>{t('sales.totalPeriod', { period: periodLabels[periodFilter] })}:</span>
                   <span className="font-semibold text-foreground">
                     {displayCurrency === 'USD' 
                       ? `$${periodTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
@@ -259,7 +261,7 @@ const SellerDashboard = () => {
               {sales.length === 0 ? (
                 <div className="text-center py-6 sm:py-8 text-muted-foreground">
                   <Receipt className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-                  <p className="text-xs sm:text-sm">Aucune vente pour cette période</p>
+                  <p className="text-xs sm:text-sm">{t('sales.noSalesPeriod')}</p>
                 </div>
               ) : (
                 <div className="space-y-2 sm:space-y-3">
@@ -274,7 +276,7 @@ const SellerDashboard = () => {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="font-medium text-xs sm:text-sm truncate max-w-[140px] sm:max-w-none flex items-center gap-1">
-                          {sale.customer_name || 'Client anonyme'}
+                          {sale.customer_name || t('sales.anonymousClient')}
                           <Eye className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                         <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 sm:gap-2 flex-wrap">
@@ -317,7 +319,7 @@ const SellerDashboard = () => {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-light via-background to-secondary">
         <div className="text-center">
           <img src={logo} alt="Logo" className="w-14 h-14 object-contain mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Chargement du tableau de bord...</p>
+          <p className="text-muted-foreground">{t('dashboard.loadingDashboard')}</p>
         </div>
       </div>
     );
@@ -327,7 +329,7 @@ const SellerDashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-light via-background to-secondary">
         <div className="text-center">
-          <p className="text-muted-foreground">Veuillez vous connecter</p>
+          <p className="text-muted-foreground">{t('auth.pleaseLogin')}</p>
         </div>
       </div>
     );
@@ -341,7 +343,7 @@ const SellerDashboard = () => {
 
   return (
     <ResponsiveDashboardLayout 
-      title="Espace Vendeur" 
+      title={t('dashboard.sellerTitle')} 
       role="seller" 
       currentSection={currentSection} 
       onSectionChange={setCurrentSection}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ResponsiveDashboardLayout } from '@/components/Layout/ResponsiveDashboardLayout';
 import { AdminDashboardCharts } from '@/components/Dashboard/AdminDashboardCharts';
 import { AnalyticsDashboard } from '@/components/Dashboard/AnalyticsDashboard';
@@ -22,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const [currentSection, setCurrentSection] = useState(searchParams.get('section') || 'dashboard');
   const { isExpired, plan, isFreePlan, companyName, loading: subLoading } = useSubscription();
   const { signOut } = useAuth();
@@ -35,7 +37,7 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <AdminDashboardCharts />;
       case 'analytics':
-        if (isFreePlan) return <LockedFeature title="Analyses avancées" description="Les analyses détaillées, tendances annuelles et indicateurs de rentabilité sont disponibles dans les plans payants." requiredPlan="Pro" />;
+        if (isFreePlan) return <LockedFeature title={t('subscription.lockedAnalytics')} description={t('subscription.lockedAnalyticsDesc')} requiredPlan="Pro" />;
         return <AnalyticsDashboard />;
       case 'categories':
         return <CategoryManagement />;
@@ -46,13 +48,13 @@ const AdminDashboard = () => {
       case 'users':
         return <UserManagementPanel />;
       case 'seller-reports':
-        if (isFreePlan) return <LockedFeature title="Rapports vendeurs" description="Les rapports de performance des vendeurs sont disponibles dans les plans payants." requiredPlan="Pro" />;
+        if (isFreePlan) return <LockedFeature title={t('subscription.lockedSellerReports')} description={t('subscription.lockedSellerReportsDesc')} requiredPlan="Pro" />;
         return <SellerPerformanceReport />;
       case 'reports':
-        if (isFreePlan) return <LockedFeature title="Rapports avancés" description="Les rapports avancés et exports sont disponibles dans les plans payants." requiredPlan="Pro" />;
+        if (isFreePlan) return <LockedFeature title={t('subscription.lockedReports')} description={t('subscription.lockedReportsDesc')} requiredPlan="Pro" />;
         return <AdvancedReports />;
       case 'tva-report':
-        if (isFreePlan) return <LockedFeature title="Rapport TVA" description="Le rapport TVA détaillé est disponible dans les plans payants." requiredPlan="Basic" />;
+        if (isFreePlan) return <LockedFeature title={t('subscription.lockedTva')} description={t('subscription.lockedTvaDesc')} requiredPlan="Basic" />;
         return <TvaReport />;
       case 'activity':
         return <ActivityLogPanel />;
@@ -69,7 +71,7 @@ const AdminDashboard = () => {
 
   return (
     <ResponsiveDashboardLayout 
-      title="Tableau de Bord Admin" 
+      title={t('dashboard.adminTitle')} 
       role="admin" 
       currentSection={currentSection}
       onSectionChange={setCurrentSection}
