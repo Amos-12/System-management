@@ -261,8 +261,8 @@ const Profile = () => {
     } catch (error) {
       console.error('Error updating password:', error);
       toast({
-        title: 'Erreur',
-        description: "Impossible de mettre à jour le mot de passe",
+        title: t('common.error'),
+        description: t('profile.updateError'),
         variant: 'destructive'
       });
     } finally {
