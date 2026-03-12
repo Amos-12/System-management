@@ -210,10 +210,10 @@ const SellerDashboard = () => {
         return <StockAlerts />;
       case 'history':
         const periodLabels: Record<string, string> = {
-          all: '20 récentes',
-          today: "Aujourd'hui",
-          week: 'Cette semaine',
-          month: 'Ce mois'
+          all: t('common.recent20'),
+          today: t('common.today'),
+          week: t('common.thisWeek'),
+          month: t('common.thisMonth')
         };
         
         // Calculate total for filtered period using displayAmount (properly calculated TTC)
