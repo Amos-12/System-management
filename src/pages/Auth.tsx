@@ -259,7 +259,7 @@ const Auth = () => {
                     {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                   </div>
                   <Button type="submit" className="w-full" disabled={isSubmitting} variant="hero">
-                    {isSubmitting ? 'Connexion...' : 'Se connecter'}
+                    {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
                   </Button>
                   <div className="text-center">
                     <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
