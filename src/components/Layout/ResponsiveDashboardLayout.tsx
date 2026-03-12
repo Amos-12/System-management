@@ -48,6 +48,7 @@ export const ResponsiveDashboardLayout = ({
   currentSection = 'dashboard',
   onSectionChange 
 }: ResponsiveDashboardLayoutProps) => {
+  const { t } = useTranslation();
   const { signOut, profile, role: authRole } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
