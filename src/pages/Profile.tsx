@@ -205,8 +205,8 @@ const Profile = () => {
       if (error) throw error;
 
       toast({
-        title: "Profil mis à jour",
-        description: "Vos informations ont été modifiées avec succès"
+        title: t('profile.profileUpdated'),
+        description: t('profile.profileUpdatedDesc')
       });
     } catch (error) {
       console.error('Error updating profile:', error);
