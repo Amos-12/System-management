@@ -586,15 +586,31 @@ const Profile = () => {
               </CardContent>
             </Card>
 
+            {/* Language Section */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
+                  {t('profile.language')}
+                </CardTitle>
+                <CardDescription>
+                  {t('profile.languageDesc')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LanguageSelector variant="full" />
+              </CardContent>
+            </Card>
+
             {/* Activity History */}
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Historique des activités
+                  {t('profile.activityHistory')}
                 </CardTitle>
                 <CardDescription>
-                  Vos 20 dernières actions sur la plateforme
+                  {t('profile.last20Actions')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
