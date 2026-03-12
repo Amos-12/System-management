@@ -122,11 +122,11 @@ const Auth = () => {
         }
       );
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Code invalide");
+      if (!response.ok) throw new Error(result.error || t('auth.invalidCode'));
       setValidatedCompany({ id: result.company_id, name: result.company_name });
-      toast({ title: "Code valide !", description: `Vous allez rejoindre ${result.company_name}` });
+      toast({ title: t('auth.validCode'), description: t('auth.youWillJoin', { name: result.company_name }) });
     } catch (error: any) {
-      toast({ title: "Code invalide", description: error.message, variant: "destructive" });
+      toast({ title: t('auth.invalidCode'), description: error.message, variant: "destructive" });
       setValidatedCompany(null);
     } finally {
       setIsValidatingCode(false);
