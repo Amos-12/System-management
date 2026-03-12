@@ -466,7 +466,7 @@ const Profile = () => {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        L'email ne peut pas être modifié
+                        {t('profile.emailCantChange')}
                       </p>
                     </div>
 
