@@ -492,7 +492,7 @@ const Auth = () => {
                             {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                           </div>
                           <div className="bg-muted/30 p-3 rounded-md text-sm text-muted-foreground">
-                            <p>⚠️ Votre compte nécessitera l'approbation d'un administrateur.</p>
+                            <p>{t('auth.approvalWarning')}</p>
                           </div>
                           <Button type="submit" className="w-full" disabled={isSubmitting} variant="hero">
                             {isSubmitting ? (
