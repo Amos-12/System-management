@@ -118,29 +118,29 @@ export const ResponsiveDashboardLayout = ({
   }, [role]);
 
   const adminNavItems = [
-    { icon: Home, label: 'Dashboard', value: 'dashboard' },
-    { icon: BarChart3, label: 'Analytics', value: 'analytics' },
-    { icon: FolderTree, label: 'Catégories', value: 'categories' },
-    { icon: Package, label: 'Produits', value: 'products' },
-    { icon: ShoppingCart, label: 'Ventes', value: 'sales' },
-    { icon: Warehouse, label: 'Inventaire', value: 'inventory', route: '/inventory' },
-    { icon: Users, label: 'Utilisateurs', value: 'users' },
-    { icon: UserCheck, label: 'Perf. Vendeurs', value: 'seller-reports' },
-    { icon: TrendingUp, label: 'Rapports', value: 'reports' },
-    { icon: Receipt, label: 'Rapport TVA', value: 'tva-report' },
-    { icon: ClipboardList, label: "Logs", value: 'activity' },
-    { icon: Bell, label: 'Notifications', value: 'notifications' },
-    { icon: Settings, label: 'Paramètres', value: 'settings' },
-    ...(authRole === 'super_admin' ? [{ icon: Database, label: 'Base de données', value: 'database' }] : []),
-    { icon: HelpCircle, label: 'Aide', value: 'help', route: '/help' }
+    { icon: Home, label: t('nav.dashboard'), value: 'dashboard' },
+    { icon: BarChart3, label: t('nav.analytics'), value: 'analytics' },
+    { icon: FolderTree, label: t('nav.categories'), value: 'categories' },
+    { icon: Package, label: t('nav.products'), value: 'products' },
+    { icon: ShoppingCart, label: t('nav.sales'), value: 'sales' },
+    { icon: Warehouse, label: t('nav.inventory'), value: 'inventory', route: '/inventory' },
+    { icon: Users, label: t('nav.users'), value: 'users' },
+    { icon: UserCheck, label: t('nav.sellerReports'), value: 'seller-reports' },
+    { icon: TrendingUp, label: t('nav.reports'), value: 'reports' },
+    { icon: Receipt, label: t('nav.tvaReport'), value: 'tva-report' },
+    { icon: ClipboardList, label: t('nav.activityLogs'), value: 'activity' },
+    { icon: Bell, label: t('nav.notifications'), value: 'notifications' },
+    { icon: Settings, label: t('nav.settings'), value: 'settings' },
+    ...(authRole === 'super_admin' ? [{ icon: Database, label: t('nav.database'), value: 'database' }] : []),
+    { icon: HelpCircle, label: t('nav.help'), value: 'help', route: '/help' }
   ];
 
   const sellerNavItems = [
-    { icon: Home, label: 'Dashboard', value: 'dashboard' },
-    { icon: ShoppingCart, label: 'Nouvelle vente', value: 'sale' },
-    { icon: Receipt, label: 'Pro-forma', value: 'proforma' },
-    { icon: TrendingUp, label: 'Mes ventes', value: 'history' },
-    { icon: HelpCircle, label: 'Aide', value: 'help', route: '/help' }
+    { icon: Home, label: t('nav.dashboard'), value: 'dashboard' },
+    { icon: ShoppingCart, label: t('nav.newSale'), value: 'sale' },
+    { icon: Receipt, label: t('nav.proforma'), value: 'proforma' },
+    { icon: TrendingUp, label: t('nav.mySales'), value: 'history' },
+    { icon: HelpCircle, label: t('nav.help'), value: 'help', route: '/help' }
   ];
 
   const navItems = role === 'admin' ? adminNavItems : sellerNavItems;
