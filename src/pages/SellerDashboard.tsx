@@ -343,7 +343,7 @@ const SellerDashboard = () => {
 
   return (
     <ResponsiveDashboardLayout 
-      title="Espace Vendeur" 
+      title={t('dashboard.sellerTitle')} 
       role="seller" 
       currentSection={currentSection} 
       onSectionChange={setCurrentSection}

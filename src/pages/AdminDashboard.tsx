@@ -71,7 +71,7 @@ const AdminDashboard = () => {
 
   return (
     <ResponsiveDashboardLayout 
-      title="Tableau de Bord Admin" 
+      title={t('dashboard.adminTitle')} 
       role="admin" 
       currentSection={currentSection}
       onSectionChange={setCurrentSection}
