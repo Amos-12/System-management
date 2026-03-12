@@ -39,6 +39,7 @@ const joinCompanySchema = z.object({
 type SignupMode = 'choose' | 'create' | 'join';
 
 const Auth = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, loading, signIn, signUp } = useAuth();
   const [activeTab, setActiveTab] = useState('signin');
