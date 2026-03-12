@@ -521,10 +521,10 @@ const Profile = () => {
               <CardHeader className="pb-4">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Sécurité
+                  {t('profile.security')}
                 </CardTitle>
                 <CardDescription>
-                  Modifiez votre mot de passe
+                  {t('profile.changePassword')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
