@@ -23,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const [currentSection, setCurrentSection] = useState(searchParams.get('section') || 'dashboard');
   const { isExpired, plan, isFreePlan, companyName, loading: subLoading } = useSubscription();
   const { signOut } = useAuth();
