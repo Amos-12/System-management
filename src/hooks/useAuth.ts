@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import i18n from '@/i18n';
 
 export interface UserProfile {
   id: string;
@@ -76,8 +77,8 @@ export const useAuth = () => {
         // Don't show error toast for super_admin who may not have a profile row
         if (isMounted && fetchedRole !== 'super_admin') {
           toast({
-            title: "Erreur",
-            description: "Impossible de charger le profil utilisateur",
+            title: i18n.t('common.error'),
+            description: i18n.t('toasts.auth.profileLoadError'),
             variant: "destructive"
           });
         }
@@ -149,13 +150,13 @@ export const useAuth = () => {
       if (error) {
         if (error.message.includes('User already registered')) {
           toast({
-            title: "Compte existant",
-            description: "Un compte avec cet email existe déjà. Essayez de vous connecter.",
+            title: i18n.t('toasts.auth.accountExistsTitle'),
+            description: i18n.t('toasts.auth.accountExistsDescription'),
             variant: "destructive"
           });
         } else {
           toast({
-            title: "Erreur d'inscription",
+            title: i18n.t('toasts.auth.signupErrorTitle'),
             description: error.message,
             variant: "destructive"
           });
@@ -175,8 +176,8 @@ export const useAuth = () => {
       }
 
       toast({
-        title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès !",
+        title: i18n.t('toasts.auth.signupSuccessTitle'),
+        description: i18n.t('toasts.auth.signupSuccessDescription'),
       });
 
       return { error: null };
@@ -207,13 +208,13 @@ export const useAuth = () => {
 
         if (error.message.includes('Invalid login credentials')) {
           toast({
-            title: "Erreur de connexion",
-            description: "Email ou mot de passe incorrect",
+            title: i18n.t('toasts.auth.signinErrorTitle'),
+            description: i18n.t('toasts.auth.invalidCredentials'),
             variant: "destructive"
           });
         } else {
           toast({
-            title: "Erreur de connexion",
+            title: i18n.t('toasts.auth.signinErrorTitle'),
             description: error.message,
             variant: "destructive"
           });
@@ -243,8 +244,10 @@ export const useAuth = () => {
         .maybeSingle();
 
       toast({
-        title: "Connexion réussie",
-        description: `Bienvenue sur ${companyData?.name || 'votre espace'} !`,
+        title: i18n.t('toasts.auth.signinSuccessTitle'),
+        description: i18n.t('toasts.auth.signinSuccessDescription', {
+          company: companyData?.name || i18n.t('index.workspaceFallback')
+        }),
       });
 
       return { error: null };
@@ -284,8 +287,8 @@ export const useAuth = () => {
       await supabase.auth.signOut().catch(() => {});
 
       toast({
-        title: "Déconnexion réussie",
-        description: "À bientôt !",
+        title: i18n.t('toasts.auth.signoutSuccessTitle'),
+        description: i18n.t('toasts.auth.signoutSuccessDescription'),
       });
 
       // Hard redirect to /auth to fully reset app state

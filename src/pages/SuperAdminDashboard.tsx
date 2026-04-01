@@ -13,9 +13,11 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Shield, Building2, Users, Activity, Database, CreditCard, Wallet } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import logo from '@/assets/logo.png';
 
 const SuperAdminDashboard = () => {
+  const { t } = useTranslation();
   const { user, role, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -30,7 +32,7 @@ const SuperAdminDashboard = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <img src={logo} alt="Logo" className="w-14 h-14 object-contain mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Chargement...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -46,15 +48,15 @@ const SuperAdminDashboard = () => {
                 <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-sm sm:text-lg font-bold text-primary">Super Admin</h1>
-                <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Gestion de la plateforme SaaS</p>
+                <h1 className="text-sm sm:text-lg font-bold text-primary">{t('superAdmin.title')}</h1>
+                <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">{t('superAdmin.subtitle')}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Button variant="outline" size="sm" onClick={signOut}>
                 <LogOut className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Déconnexion</span>
+                <span className="hidden sm:inline">{t('auth.signOut')}</span>
               </Button>
             </div>
           </div>
@@ -68,27 +70,27 @@ const SuperAdminDashboard = () => {
           <TabsList className="w-full flex overflow-x-auto">
             <TabsTrigger value="companies" className="flex items-center gap-1.5">
               <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Entreprises</span>
+              <span className="hidden sm:inline">{t('superAdmin.companies')}</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-1.5">
               <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Utilisateurs</span>
+              <span className="hidden sm:inline">{t('superAdmin.users')}</span>
             </TabsTrigger>
             <TabsTrigger value="plans" className="flex items-center gap-1.5">
               <CreditCard className="w-4 h-4" />
-              <span className="hidden sm:inline">Plans</span>
+              <span className="hidden sm:inline">{t('superAdmin.plans')}</span>
             </TabsTrigger>
             <TabsTrigger value="logs" className="flex items-center gap-1.5">
               <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Activité</span>
+              <span className="hidden sm:inline">{t('superAdmin.activity')}</span>
             </TabsTrigger>
             <TabsTrigger value="database" className="flex items-center gap-1.5">
               <Database className="w-4 h-4" />
-              <span className="hidden sm:inline">Base de données</span>
+              <span className="hidden sm:inline">{t('superAdmin.database')}</span>
             </TabsTrigger>
             <TabsTrigger value="payments" className="flex items-center gap-1.5">
               <Wallet className="w-4 h-4" />
-              <span className="hidden sm:inline">Paiements</span>
+              <span className="hidden sm:inline">{t('superAdmin.payments')}</span>
             </TabsTrigger>
           </TabsList>
 
