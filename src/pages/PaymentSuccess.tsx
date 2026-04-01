@@ -4,8 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, ArrowRight, Loader2, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 
 const PaymentSuccess = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
@@ -22,7 +24,7 @@ const PaymentSuccess = () => {
   useEffect(() => {
     if (!sessionId) {
       setStatus('error');
-      setErrorMessage('Session de paiement introuvable.');
+      setErrorMessage(t('paymentPage.sessionNotFound'));
       return;
     }
 
@@ -48,14 +50,14 @@ const PaymentSuccess = () => {
           setTimeout(verify, 2500);
         } else {
           setStatus('error');
-          setErrorMessage('Le paiement n\'a pas pu être vérifié. Contactez le support si le montant a été débité.');
+          setErrorMessage(t('paymentPage.verificationFailedFallback'));
         }
       } catch (err: any) {
         if (attempt < maxAttempts) {
           setTimeout(verify, 2500);
         } else {
           setStatus('error');
-          setErrorMessage(err.message || 'Erreur lors de la vérification du paiement.');
+          setErrorMessage(err.message || t('paymentPage.verificationErrorFallback'));
         }
       }
     };
@@ -70,9 +72,9 @@ const PaymentSuccess = () => {
           {status === 'verifying' && (
             <>
               <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
-              <h1 className="text-xl font-bold">Vérification du paiement...</h1>
+              <h1 className="text-xl font-bold">{t('paymentPage.verifyingTitle')}</h1>
               <p className="text-muted-foreground text-sm">
-                Veuillez patienter pendant que nous confirmons votre paiement.
+                {t('paymentPage.verifyingDescription')}
               </p>
             </>
           )}
@@ -81,12 +83,12 @@ const PaymentSuccess = () => {
               <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
-              <h1 className="text-xl font-bold">Paiement confirmé !</h1>
+              <h1 className="text-xl font-bold">{t('paymentPage.successTitle')}</h1>
               <p className="text-muted-foreground text-sm">
-                Votre plan <span className="font-semibold text-foreground">{planNames[plan] || plan}</span> est maintenant actif.
+                {t('paymentPage.successDescription', { plan: planNames[plan] || plan })}
               </p>
               <Button onClick={() => navigate('/')} className="gap-2 mt-4">
-                Accéder à l'application
+                {t('paymentPage.goToApp')}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </>
@@ -96,10 +98,10 @@ const PaymentSuccess = () => {
               <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
                 <XCircle className="w-8 h-8 text-destructive" />
               </div>
-              <h1 className="text-xl font-bold">Vérification échouée</h1>
+              <h1 className="text-xl font-bold">{t('paymentPage.errorTitle')}</h1>
               <p className="text-muted-foreground text-sm">{errorMessage}</p>
               <Button onClick={() => navigate('/')} variant="outline" className="gap-2 mt-4">
-                Retour à l'application
+                {t('paymentPage.backToApp')}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </>
