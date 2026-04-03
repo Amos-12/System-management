@@ -673,7 +673,7 @@ export const SalesManagement = () => {
           <CardContent className="p-2 sm:p-3 md:p-4">
             <div className="flex items-center justify-between gap-1 sm:gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Revenu Total</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('sales.totalRevenue')}</p>
                 <p className="text-sm sm:text-base md:text-lg font-bold truncate text-primary">
                   {filteredStats.displayCurrency === 'USD' 
                     ? `$${formatCompactNumber(filteredStats.unifiedTotal, isMobile)}`
