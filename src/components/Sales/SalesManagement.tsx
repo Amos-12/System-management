@@ -330,8 +330,8 @@ export const SalesManagement = () => {
     } catch (error) {
       console.error('Error fetching sales:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les ventes",
+        title: t('common.error'),
+        description: t('sales.loadError'),
         variant: "destructive"
       });
     } finally {
