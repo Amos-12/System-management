@@ -399,7 +399,7 @@ export const SalesManagement = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('fr-FR', {
+    return formatLocalizedDateTime(dateString, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
