@@ -744,13 +744,13 @@ export const SalesManagement = () => {
               <Select value={periodFilter} onValueChange={(value: 'all' | 'today' | 'week' | 'month') => setPeriodFilter(value)}>
                 <SelectTrigger className="w-[90px] sm:w-[130px] shrink-0 h-9">
                   <Calendar className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
-                  <SelectValue placeholder="Période" />
+                  <SelectValue placeholder={t('sales.filters.period')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tout</SelectItem>
-                  <SelectItem value="today">Aujourd'hui</SelectItem>
-                  <SelectItem value="week">Cette semaine</SelectItem>
-                  <SelectItem value="month">Ce mois</SelectItem>
+                  <SelectItem value="all">{t('common.all')}</SelectItem>
+                  <SelectItem value="today">{t('common.today')}</SelectItem>
+                  <SelectItem value="week">{t('common.thisWeek')}</SelectItem>
+                  <SelectItem value="month">{t('common.thisMonth')}</SelectItem>
                 </SelectContent>
               </Select>
               
