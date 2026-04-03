@@ -640,7 +640,7 @@ export const SalesManagement = () => {
     <div className="space-y-4 sm:space-y-6">
       {/* Header with currency indicator */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg sm:text-2xl font-bold text-foreground">Gestion des Ventes</h2>
+        <h2 className="text-lg sm:text-2xl font-bold text-foreground">{t('sales.title')}</h2>
         <Badge 
           variant="outline" 
           className={`text-xs px-2 py-0.5 ${
