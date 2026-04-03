@@ -833,7 +833,7 @@ export const SalesManagement = () => {
               {paginatedSales.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <ShoppingCart className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                  <p>Aucune vente trouvée</p>
+                  <p>{t('sales.noSales')}</p>
                 </div>
               ) : (
                 paginatedSales.map((sale, index) => (
