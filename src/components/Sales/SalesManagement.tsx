@@ -630,7 +630,7 @@ export const SalesManagement = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <ShoppingCart className="w-8 h-8 text-primary animate-pulse" />
-        <span className="ml-2 text-muted-foreground">Chargement...</span>
+        <span className="ml-2 text-muted-foreground">{t('common.loading')}</span>
       </div>
     );
   }
