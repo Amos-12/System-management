@@ -649,7 +649,7 @@ export const SalesManagement = () => {
               : 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700'
           }`}
         >
-          Affichage: {filteredStats.displayCurrency === 'USD' ? '$ USD' : 'HTG'}
+          {t('sales.display')}: {filteredStats.displayCurrency === 'USD' ? '$ USD' : 'HTG'}
         </Badge>
       </div>
 
