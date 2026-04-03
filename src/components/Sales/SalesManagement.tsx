@@ -623,7 +623,7 @@ export const SalesManagement = () => {
     pdf.text(`Généré par ${companySettings?.company_name || 'Système'} - ${new Date().toLocaleString('fr-FR')}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
     
     pdf.save(`rapport_ventes_${new Date().toISOString().split('T')[0]}.pdf`);
-    toast({ title: "Export PDF", description: `Rapport généré avec ${filteredSales.length} ventes` });
+    toast({ title: t('common.exportSuccess'), description: t('sales.exportPdfDesc', { count: filteredSales.length }) });
   };
 
   if (loading) {
