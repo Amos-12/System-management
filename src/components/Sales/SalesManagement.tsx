@@ -391,8 +391,8 @@ export const SalesManagement = () => {
     } catch (error) {
       console.error('Error deleting sale:', error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de supprimer la vente",
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('sales.deleteError'),
         variant: "destructive"
       });
     }
