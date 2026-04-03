@@ -758,10 +758,10 @@ export const SalesManagement = () => {
               <Select value={sellerFilter} onValueChange={setSellerFilter}>
                 <SelectTrigger className="w-[85px] sm:w-[140px] shrink-0 h-9">
                   <Users className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
-                  <SelectValue placeholder="Vendeur" />
+                  <SelectValue placeholder={t('common.seller')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="all">{t('sales.filters.allSellers')}</SelectItem>
                   {sellers.map(seller => (
                     <SelectItem key={seller.user_id} value={seller.user_id}>
                       {seller.full_name}
