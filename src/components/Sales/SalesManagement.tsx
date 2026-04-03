@@ -455,7 +455,7 @@ export const SalesManagement = () => {
 
   const exportToExcel = () => {
     if (isFreePlan) {
-      toast({ title: "Fonctionnalité Premium", description: "L'export Excel est disponible dans les plans payants.", variant: "destructive" });
+      toast({ title: t('common.premiumFeature'), description: t('common.premiumExportExcel'), variant: "destructive" });
       return;
     }
     const rate = companySettings?.usd_htg_rate || 132;
