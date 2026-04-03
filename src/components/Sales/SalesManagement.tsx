@@ -659,7 +659,7 @@ export const SalesManagement = () => {
           <CardContent className="p-2 sm:p-3 md:p-4">
             <div className="flex items-center justify-between gap-1 sm:gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Ventes</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('sales.salesCountLabel')}</p>
                 <p className="text-sm sm:text-base md:text-lg font-bold">{filteredStats.count}</p>
               </div>
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500/15 flex items-center justify-center shrink-0">
