@@ -879,7 +879,7 @@ export const SalesManagement = () => {
                           {formatDate(sale.created_at)}
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm">
-                          {sale.customer_name || <span className="text-muted-foreground italic">Non renseigné</span>}
+                          {sale.customer_name || <span className="text-muted-foreground italic">{t('sales.notSpecified')}</span>}
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-xs sm:text-sm">
                           {sale.profiles?.full_name || <span className="text-muted-foreground italic">N/A</span>}
