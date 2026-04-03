@@ -382,8 +382,8 @@ export const SalesManagement = () => {
       }
 
       toast({
-        title: "Vente supprimée",
-        description: data.message || `${data.restoredProducts || 0} produit(s) remis en stock`,
+        title: t('sales.saleDeleted'),
+        description: t('sales.saleDeletedDesc', { count: data.restoredProducts || 0 }),
       });
 
       // Recharger la liste
