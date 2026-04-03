@@ -716,7 +716,7 @@ export const SalesManagement = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <CardTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
-              Historique des Ventes
+              {t('sales.history')}
             </CardTitle>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={exportToExcel} className="h-8">
