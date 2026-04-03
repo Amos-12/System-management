@@ -82,6 +82,7 @@ const formatCompactNumber = (amount: number, isMobile: boolean): string => {
 };
 
 export const SalesManagement = () => {
+  const { t } = useTranslation();
   // Centralized hooks
   const { settings: companySettingsHook } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
