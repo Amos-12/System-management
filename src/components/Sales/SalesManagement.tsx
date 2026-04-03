@@ -484,7 +484,7 @@ export const SalesManagement = () => {
     XLSX.utils.book_append_sheet(wb, ws, 'Ventes');
     XLSX.writeFile(wb, `ventes_${new Date().toISOString().split('T')[0]}.xlsx`);
     
-    toast({ title: "Export Excel", description: `${filteredSales.length} ventes exportées` });
+    toast({ title: t('common.exportSuccess'), description: t('sales.exportExcelDesc', { count: filteredSales.length }) });
   };
 
   const exportToPDF = async () => {
