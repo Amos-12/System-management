@@ -857,12 +857,12 @@ export const SalesManagement = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead className="hidden md:table-cell">Vendeur</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead className="hidden sm:table-cell">Paiement</TableHead>
-                    <TableHead>Actions</TableHead>
+                     <TableHead>{t('common.date')}</TableHead>
+                    <TableHead>{t('common.client')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('common.seller')}</TableHead>
+                    <TableHead>{t('common.amount')}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t('common.payment')}</TableHead>
+                    <TableHead>{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
