@@ -774,13 +774,13 @@ export const SalesManagement = () => {
               <Select value={currencyFilter} onValueChange={(value: 'all' | 'HTG' | 'USD' | 'mixed') => setCurrencyFilter(value)}>
                 <SelectTrigger className="w-[80px] sm:w-[110px] shrink-0 h-9">
                   <DollarSign className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
-                  <SelectValue placeholder="Devise" />
+                  <SelectValue placeholder={t('common.currency')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toute</SelectItem>
+                  <SelectItem value="all">{t('sales.filters.allCurrencies')}</SelectItem>
                   <SelectItem value="HTG">HTG</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="mixed">Mixte</SelectItem>
+                  <SelectItem value="mixed">{t('sales.filters.mixed')}</SelectItem>
                 </SelectContent>
               </Select>
               
