@@ -14,6 +14,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedDate } from '@/lib/locale';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +47,7 @@ interface CompanySettings {
 }
 
 export const CompanySettings = () => {
+  const { t } = useTranslation();
   const subscription = useSubscription();
   const { profile } = useAuth();
   const [settings, setSettings] = useState<CompanySettings | null>(null);
@@ -74,13 +77,11 @@ export const CompanySettings = () => {
     subscription: false,
   });
 
-  // Check if there are unsaved changes
   const isDirty = useCallback(() => {
     if (!settings || !originalSettings) return false;
     return JSON.stringify(settings) !== JSON.stringify(originalSettings);
   }, [settings, originalSettings]);
 
-  // Get list of modified fields
   const getModifiedFields = useCallback((): string[] => {
     if (!settings || !originalSettings) return [];
     const modified: string[] = [];
@@ -132,60 +133,38 @@ export const CompanySettings = () => {
         .eq('id', settings.id);
       if (error) throw error;
       setInvitationCode(newCode);
-      toast({ title: 'Code régénéré', description: `Nouveau code : ${newCode}` });
+      toast({ title: t('settings.invitation.regenerated'), description: t('settings.invitation.regeneratedDesc', { code: newCode }) });
     } catch (error) {
       console.error('Error regenerating code:', error);
-      toast({ title: 'Erreur', description: 'Impossible de régénérer le code', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('settings.invitation.regenerateError'), variant: 'destructive' });
     } finally {
       setRegenerating(false);
     }
   };
 
-  // Auto-save with 2 second debounce
   useEffect(() => {
     if (!isDirty() || saving) return;
-
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      handleSave(true);
-    }, 2000);
-
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
+    if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    autoSaveTimeoutRef.current = setTimeout(() => { handleSave(true); }, 2000);
+    return () => { if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current); };
   }, [settings, isDirty, saving]);
 
-  // Warn before leaving page with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty()) {
         e.preventDefault();
-        e.returnValue = 'Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?';
+        e.returnValue = '';
         return e.returnValue;
       }
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
   const fetchSettings = async () => {
     try {
-      if (!profile?.company_id) {
-        setLoading(false);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('id', profile.company_id)
-        .single();
-
+      if (!profile?.company_id) { setLoading(false); return; }
+      const { data, error } = await supabase.from('companies').select('*').eq('id', profile.company_id).single();
       if (error) throw error;
       const settingsData: CompanySettings = {
         id: data.id,
@@ -207,17 +186,11 @@ export const CompanySettings = () => {
       };
       setSettings(settingsData);
       setOriginalSettings(settingsData);
-      if (data.logo_url) {
-        setLogoPreview(data.logo_url);
-      }
+      if (data.logo_url) setLogoPreview(data.logo_url);
       setInvitationCode(data.invitation_code || null);
     } catch (error) {
       console.error('Error fetching company settings:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les paramètres de l'entreprise",
-        variant: "destructive"
-      });
+      toast({ title: t('common.error'), description: t('settings.settingsLoadError'), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -227,60 +200,33 @@ export const CompanySettings = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        toast({
-          title: "Fichier trop volumineux",
-          description: "La taille maximale est de 2MB",
-          variant: "destructive"
-        });
+        toast({ title: t('settings.logo.fileTooLarge'), description: t('settings.logo.fileTooLargeDesc'), variant: "destructive" });
         return;
       }
       setLogoFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-      };
+      reader.onloadend = () => { setLogoPreview(reader.result as string); };
       reader.readAsDataURL(file);
     }
   };
 
   const handleLogoUpload = async () => {
     if (!logoFile || !settings) return;
-
     setUploading(true);
     try {
       const fileExt = logoFile.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `logos/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('company-assets')
-        .upload(filePath, logoFile);
-
+      const { error: uploadError } = await supabase.storage.from('company-assets').upload(filePath, logoFile);
       if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('company-assets')
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('companies')
-        .update({ logo_url: publicUrl })
-        .eq('id', settings.id);
-
+      const { data: { publicUrl } } = supabase.storage.from('company-assets').getPublicUrl(filePath);
+      const { error: updateError } = await supabase.from('companies').update({ logo_url: publicUrl }).eq('id', settings.id);
       if (updateError) throw updateError;
-
       setSettings({ ...settings, logo_url: publicUrl });
-      toast({
-        title: "Logo téléversé",
-        description: "Le logo a été enregistré avec succès"
-      });
+      toast({ title: t('settings.logo.uploaded'), description: t('settings.logo.uploadedDesc') });
     } catch (error) {
       console.error('Error uploading logo:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de téléverser le logo",
-        variant: "destructive"
-      });
+      toast({ title: t('common.error'), description: t('settings.logo.uploadError'), variant: "destructive" });
     } finally {
       setUploading(false);
       setLogoFile(null);
@@ -289,47 +235,28 @@ export const CompanySettings = () => {
 
   const handleSave = async (isAutoSave = false) => {
     if (!settings) return;
-
     setSaving(true);
     try {
       const { error } = await supabase
         .from('companies')
         .update({
-          name: settings.company_name,
-          company_description: settings.company_description,
-          address: settings.address,
-          city: settings.city,
-          phone: settings.phone,
-          email: settings.email,
-          tva_rate: settings.tva_rate,
-          payment_terms: settings.payment_terms,
-          logo_position_x: settings.logo_position_x,
-          logo_position_y: settings.logo_position_y,
-          logo_width: settings.logo_width,
-          logo_height: settings.logo_height,
-          usd_htg_rate: settings.usd_htg_rate,
-          default_display_currency: settings.default_display_currency,
+          name: settings.company_name, company_description: settings.company_description,
+          address: settings.address, city: settings.city, phone: settings.phone, email: settings.email,
+          tva_rate: settings.tva_rate, payment_terms: settings.payment_terms,
+          logo_position_x: settings.logo_position_x, logo_position_y: settings.logo_position_y,
+          logo_width: settings.logo_width, logo_height: settings.logo_height,
+          usd_htg_rate: settings.usd_htg_rate, default_display_currency: settings.default_display_currency,
         })
         .eq('id', settings.id);
-
       if (error) throw error;
-
       setOriginalSettings(settings);
       setLastSaved(new Date());
-
       if (!isAutoSave) {
-        toast({
-          title: "Paramètres enregistrés",
-          description: "Les paramètres de l'entreprise ont été mis à jour avec succès",
-        });
+        toast({ title: t('settings.settingsSaved'), description: t('settings.settingsSavedDesc') });
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'enregistrer les paramètres",
-        variant: "destructive"
-      });
+      toast({ title: t('common.error'), description: t('settings.settingsSaveError'), variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -351,9 +278,7 @@ export const CompanySettings = () => {
     return (
       <Card>
         <CardContent className="py-12">
-          <p className="text-center text-muted-foreground">
-            Aucun paramètre trouvé
-          </p>
+          <p className="text-center text-muted-foreground">{t('settings.noSettings')}</p>
         </CardContent>
       </Card>
     );
@@ -366,37 +291,25 @@ export const CompanySettings = () => {
         <div className="flex items-center gap-2">
           <Settings2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           <div>
-            <h1 className="text-lg sm:text-xl font-semibold">Paramètres</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-              Configuration de l'entreprise
-            </p>
+            <h1 className="text-lg sm:text-xl font-semibold">{t('settings.title')}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">{t('settings.companyConfig')}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Status indicator */}
           {isDirty() ? (
             <Badge variant="outline" className="gap-1 text-xs bg-amber-500/10 text-amber-600 border-amber-500/30 animate-pulse">
               <AlertCircle className="h-3 w-3" />
-              <span className="hidden sm:inline">Non sauvegardé</span>
+              <span className="hidden sm:inline">{t('settings.unsaved')}</span>
             </Badge>
           ) : lastSaved ? (
             <Badge variant="outline" className="gap-1 text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
               <Check className="h-3 w-3" />
-              <span className="hidden sm:inline">Sauvegardé</span>
+              <span className="hidden sm:inline">{t('settings.saved')}</span>
             </Badge>
           ) : null}
-          <Button
-            onClick={() => handleSave()}
-            disabled={saving || !isDirty()}
-            size="sm"
-            className="gap-1.5"
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            <span className="hidden sm:inline">Enregistrer</span>
+          <Button onClick={() => handleSave()} disabled={saving || !isDirty()} size="sm" className="gap-1.5">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span className="hidden sm:inline">{t('common.save')}</span>
           </Button>
         </div>
       </div>
@@ -409,7 +322,7 @@ export const CompanySettings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Image className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  <CardTitle className="text-sm sm:text-base">Logo</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">{t('settings.logo.title')}</CardTitle>
                 </div>
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSections.logo ? 'rotate-180' : ''}`} />
               </div>
@@ -420,9 +333,9 @@ export const CompanySettings = () => {
               {subscription.isFreePlan ? (
                 <div className="flex flex-col items-center py-6 text-center">
                   <Lock className="w-8 h-8 text-muted-foreground mb-2" />
-                  <p className="text-sm font-medium mb-1">Logo personnalisé</p>
-                  <p className="text-xs text-muted-foreground mb-3">Disponible dans les plans payants. Le logo par défaut sera utilisé.</p>
-                  <Badge variant="secondary">Plan gratuit</Badge>
+                  <p className="text-sm font-medium mb-1">{t('settings.logo.customLogo')}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{t('settings.logo.customLogoDesc')}</p>
+                  <Badge variant="secondary">{t('common.freeplan')}</Badge>
                 </div>
               ) : (
                 <>
@@ -430,75 +343,39 @@ export const CompanySettings = () => {
                     <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
                       <img src={logoPreview} alt="Logo" className="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-medium truncate">Logo actuel</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">PNG, JPG (max 2MB)</p>
+                        <p className="text-xs sm:text-sm font-medium truncate">{t('settings.logo.current')}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{t('settings.logo.format')}</p>
                       </div>
                     </div>
                   )}
-
                   <div className="flex gap-2">
-                    <Input
-                      type="file"
-                      accept="image/png,image/jpeg,image/jpg"
-                      onChange={handleLogoChange}
-                      className="flex-1 text-xs sm:text-sm h-9"
-                    />
+                    <Input type="file" accept="image/png,image/jpeg,image/jpg" onChange={handleLogoChange} className="flex-1 text-xs sm:text-sm h-9" />
                     {logoFile && (
-                      <Button 
-                        onClick={handleLogoUpload} 
-                        disabled={uploading}
-                        size="sm"
-                        className="gap-1.5 shrink-0"
-                      >
-                        {uploading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Save className="h-3.5 w-3.5" />
-                        )}
+                      <Button onClick={handleLogoUpload} disabled={uploading} size="sm" className="gap-1.5 shrink-0">
+                        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                         <span className="hidden sm:inline">Upload</span>
                       </Button>
                     )}
                   </div>
                 </>
               )}
-
               {settings?.logo_url && (
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Largeur</Label>
-                    <Input
-                      type="number"
-                      value={settings.logo_width || 50}
-                      onChange={(e) => setSettings({ ...settings, logo_width: parseFloat(e.target.value) || 50 })}
-                      className="h-8 text-xs"
-                    />
+                    <Label className="text-xs">{t('settings.logo.width')}</Label>
+                    <Input type="number" value={settings.logo_width || 50} onChange={(e) => setSettings({ ...settings, logo_width: parseFloat(e.target.value) || 50 })} className="h-8 text-xs" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Hauteur</Label>
-                    <Input
-                      type="number"
-                      value={settings.logo_height || 50}
-                      onChange={(e) => setSettings({ ...settings, logo_height: parseFloat(e.target.value) || 50 })}
-                      className="h-8 text-xs"
-                    />
+                    <Label className="text-xs">{t('settings.logo.height')}</Label>
+                    <Input type="number" value={settings.logo_height || 50} onChange={(e) => setSettings({ ...settings, logo_height: parseFloat(e.target.value) || 50 })} className="h-8 text-xs" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Position X</Label>
-                    <Input
-                      type="number"
-                      value={settings.logo_position_x || 0}
-                      onChange={(e) => setSettings({ ...settings, logo_position_x: parseFloat(e.target.value) || 0 })}
-                      className="h-8 text-xs"
-                    />
+                    <Label className="text-xs">{t('settings.logo.positionX')}</Label>
+                    <Input type="number" value={settings.logo_position_x || 0} onChange={(e) => setSettings({ ...settings, logo_position_x: parseFloat(e.target.value) || 0 })} className="h-8 text-xs" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Position Y</Label>
-                    <Input
-                      type="number"
-                      value={settings.logo_position_y || 0}
-                      onChange={(e) => setSettings({ ...settings, logo_position_y: parseFloat(e.target.value) || 0 })}
-                      className="h-8 text-xs"
-                    />
+                    <Label className="text-xs">{t('settings.logo.positionY')}</Label>
+                    <Input type="number" value={settings.logo_position_y || 0} onChange={(e) => setSettings({ ...settings, logo_position_y: parseFloat(e.target.value) || 0 })} className="h-8 text-xs" />
                   </div>
                 </div>
               )}
@@ -507,7 +384,7 @@ export const CompanySettings = () => {
         </Collapsible>
       </Card>
 
-      {/* Company Info Section */}
+      {/* Company Info */}
       <Card>
         <Collapsible open={openSections.company} onOpenChange={() => toggleSection('company')}>
           <CollapsibleTrigger asChild>
@@ -515,7 +392,7 @@ export const CompanySettings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  <CardTitle className="text-sm sm:text-base">Entreprise</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">{t('settings.company.title')}</CardTitle>
                 </div>
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSections.company ? 'rotate-180' : ''}`} />
               </div>
@@ -524,42 +401,21 @@ export const CompanySettings = () => {
           <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
             <CardContent className="pt-0 space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Nom</Label>
-                <Input
-                  value={settings.company_name}
-                  onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
-                  placeholder="Système Management!"
-                  className="h-9 text-sm"
-                />
+                <Label className="text-xs sm:text-sm">{t('settings.company.name')}</Label>
+                <Input value={settings.company_name} onChange={(e) => setSettings({ ...settings, company_name: e.target.value })} className="h-9 text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Description</Label>
-                <Input
-                  value={settings.company_description}
-                  onChange={(e) => setSettings({ ...settings, company_description: e.target.value })}
-                  placeholder="Vente de produit alimentaire"
-                  className="h-9 text-sm"
-                />
+                <Label className="text-xs sm:text-sm">{t('settings.company.description')}</Label>
+                <Input value={settings.company_description} onChange={(e) => setSettings({ ...settings, company_description: e.target.value })} className="h-9 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm">Téléphone</Label>
-                  <Input
-                    value={settings.phone}
-                    onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
-                    placeholder="+509 1234-5678"
-                    className="h-9 text-sm"
-                  />
+                  <Label className="text-xs sm:text-sm">{t('settings.company.phone')}</Label>
+                  <Input value={settings.phone} onChange={(e) => setSettings({ ...settings, phone: e.target.value })} placeholder="+509 1234-5678" className="h-9 text-sm" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm">Email</Label>
-                  <Input
-                    type="email"
-                    value={settings.email}
-                    onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-                    placeholder="contact@email.com"
-                    className="h-9 text-sm"
-                  />
+                  <Label className="text-xs sm:text-sm">{t('settings.company.email')}</Label>
+                  <Input type="email" value={settings.email} onChange={(e) => setSettings({ ...settings, email: e.target.value })} placeholder="contact@email.com" className="h-9 text-sm" />
                 </div>
               </div>
             </CardContent>
@@ -567,62 +423,46 @@ export const CompanySettings = () => {
         </Collapsible>
       </Card>
 
-      {/* Invitation Code Section */}
+      {/* Invitation Code */}
       {invitationCode && (
         <Card>
           <CardHeader className="py-3 sm:py-4">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              <CardTitle className="text-sm sm:text-base">Code d'invitation</CardTitle>
+              <CardTitle className="text-sm sm:text-base">{t('settings.invitation.title')}</CardTitle>
             </div>
-            <CardDescription className="text-xs">
-              Partagez ce code avec vos vendeurs pour qu'ils rejoignent votre entreprise
-            </CardDescription>
+            <CardDescription className="text-xs">{t('settings.invitation.description')}</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
-             <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <div className="flex-1 bg-muted rounded-md px-4 py-2.5 font-mono text-lg tracking-widest text-center select-all">
                 {invitationCode}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 shrink-0"
-                onClick={() => {
-                  navigator.clipboard.writeText(invitationCode);
-                  setCodeCopied(true);
-                  setTimeout(() => setCodeCopied(false), 2000);
-                  toast({ title: 'Code copié', description: invitationCode });
-                }}
-              >
+              <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => {
+                navigator.clipboard.writeText(invitationCode);
+                setCodeCopied(true);
+                setTimeout(() => setCodeCopied(false), 2000);
+                toast({ title: t('settings.invitation.codeCopied'), description: invitationCode });
+              }}>
                 {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {codeCopied ? 'Copié' : 'Copier'}
+                {codeCopied ? t('settings.invitation.copied') : t('settings.invitation.copy')}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 shrink-0"
-                onClick={() => setShowRegenerateConfirm(true)}
-                disabled={regenerating}
-              >
+              <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => setShowRegenerateConfirm(true)} disabled={regenerating}>
                 <RefreshCw className={`h-4 w-4 ${regenerating ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Régénérer</span>
+                <span className="hidden sm:inline">{t('settings.invitation.regenerate')}</span>
               </Button>
             </div>
 
-            {/* Regenerate Confirmation Dialog */}
             <AlertDialog open={showRegenerateConfirm} onOpenChange={setShowRegenerateConfirm}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Régénérer le code d'invitation ?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    L'ancien code ne fonctionnera plus. Les vendeurs qui n'ont pas encore rejoint devront utiliser le nouveau code.
-                  </AlertDialogDescription>
+                  <AlertDialogTitle>{t('settings.invitation.regenerateTitle')}</AlertDialogTitle>
+                  <AlertDialogDescription>{t('settings.invitation.regenerateDesc')}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                   <AlertDialogAction onClick={() => { setShowRegenerateConfirm(false); handleRegenerateCode(); }}>
-                    Régénérer
+                    {t('settings.invitation.regenerate')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -631,7 +471,7 @@ export const CompanySettings = () => {
         </Card>
       )}
 
-      {/* Address Section */}
+      {/* Address */}
       <Card>
         <Collapsible open={openSections.address} onOpenChange={() => toggleSection('address')}>
           <CollapsibleTrigger asChild>
@@ -639,7 +479,7 @@ export const CompanySettings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  <CardTitle className="text-sm sm:text-base">Adresse</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">{t('settings.address.title')}</CardTitle>
                 </div>
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSections.address ? 'rotate-180' : ''}`} />
               </div>
@@ -648,29 +488,19 @@ export const CompanySettings = () => {
           <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
             <CardContent className="pt-0 space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Adresse</Label>
-                <Input
-                  value={settings.address}
-                  onChange={(e) => setSettings({ ...settings, address: e.target.value })}
-                  placeholder="123 Rue Principale"
-                  className="h-9 text-sm"
-                />
+                <Label className="text-xs sm:text-sm">{t('settings.address.address')}</Label>
+                <Input value={settings.address} onChange={(e) => setSettings({ ...settings, address: e.target.value })} placeholder="123 Rue Principale" className="h-9 text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Ville</Label>
-                <Input
-                  value={settings.city}
-                  onChange={(e) => setSettings({ ...settings, city: e.target.value })}
-                  placeholder="Aux Cayes 8110"
-                  className="h-9 text-sm"
-                />
+                <Label className="text-xs sm:text-sm">{t('settings.address.city')}</Label>
+                <Input value={settings.city} onChange={(e) => setSettings({ ...settings, city: e.target.value })} placeholder="Aux Cayes 8110" className="h-9 text-sm" />
               </div>
             </CardContent>
           </CollapsibleContent>
         </Collapsible>
       </Card>
 
-      {/* Currency Settings */}
+      {/* Currency */}
       <Card>
         <Collapsible open={openSections.currency} onOpenChange={() => toggleSection('currency')}>
           <CollapsibleTrigger asChild>
@@ -678,7 +508,7 @@ export const CompanySettings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  <CardTitle className="text-sm sm:text-base">Devises</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">{t('settings.currencies.title')}</CardTitle>
                 </div>
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSections.currency ? 'rotate-180' : ''}`} />
               </div>
@@ -688,25 +518,13 @@ export const CompanySettings = () => {
             <CardContent className="pt-0 space-y-3">
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm">Taux USD → HTG</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="1"
-                    value={settings.usd_htg_rate || 132}
-                    onChange={(e) => setSettings({ ...settings, usd_htg_rate: parseFloat(e.target.value) || 132 })}
-                    className="h-9 text-sm"
-                  />
+                  <Label className="text-xs sm:text-sm">{t('settings.currencies.usdToHtg')}</Label>
+                  <Input type="number" step="0.01" min="1" value={settings.usd_htg_rate || 132} onChange={(e) => setSettings({ ...settings, usd_htg_rate: parseFloat(e.target.value) || 132 })} className="h-9 text-sm" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm">Devise par défaut</Label>
-                  <Select
-                    value={settings.default_display_currency || 'HTG'}
-                    onValueChange={(value: 'USD' | 'HTG') => setSettings({ ...settings, default_display_currency: value })}
-                  >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Label className="text-xs sm:text-sm">{t('settings.currencies.defaultCurrency')}</Label>
+                  <Select value={settings.default_display_currency || 'HTG'} onValueChange={(value: 'USD' | 'HTG') => setSettings({ ...settings, default_display_currency: value })}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="HTG">HTG</SelectItem>
                       <SelectItem value="USD">USD</SelectItem>
@@ -714,13 +532,12 @@ export const CompanySettings = () => {
                   </Select>
                 </div>
               </div>
-              
               <div className="p-2.5 sm:p-3 rounded-lg bg-muted/50 border text-xs sm:text-sm">
-                <p className="font-medium mb-1.5">Aperçu</p>
+                <p className="font-medium mb-1.5">{t('settings.currencies.preview')}</p>
                 <div className="space-y-1 text-muted-foreground">
                   <div className="flex justify-between">
                     <span>100 USD =</span>
-                    <span className="font-mono">{((settings.usd_htg_rate || 132) * 100).toLocaleString('fr-FR')} HTG</span>
+                    <span className="font-mono">{((settings.usd_htg_rate || 132) * 100).toLocaleString()} HTG</span>
                   </div>
                   <div className="flex justify-between">
                     <span>1,000 HTG =</span>
@@ -741,7 +558,7 @@ export const CompanySettings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  <CardTitle className="text-sm sm:text-base">Paiement & TVA</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">{t('settings.paymentTva.title')}</CardTitle>
                 </div>
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSections.payment ? 'rotate-180' : ''}`} />
               </div>
@@ -750,37 +567,20 @@ export const CompanySettings = () => {
           <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
             <CardContent className="pt-0 space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Taux de TVA (%)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={settings.tva_rate}
-                  onChange={(e) => setSettings({ ...settings, tva_rate: parseFloat(e.target.value) || 0 })}
-                  placeholder="10.0"
-                  className="h-9 text-sm"
-                />
-                <p className="text-[10px] sm:text-xs text-muted-foreground">
-                  Taux appliqué sur les factures
-                </p>
+                <Label className="text-xs sm:text-sm">{t('settings.paymentTva.tvaRate')}</Label>
+                <Input type="number" step="0.1" min="0" max="100" value={settings.tva_rate} onChange={(e) => setSettings({ ...settings, tva_rate: parseFloat(e.target.value) || 0 })} placeholder="10.0" className="h-9 text-sm" />
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{t('settings.paymentTva.tvaRateHint')}</p>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Conditions de paiement</Label>
-                <Textarea
-                  value={settings.payment_terms}
-                  onChange={(e) => setSettings({ ...settings, payment_terms: e.target.value })}
-                  placeholder="Paiement comptant ou à crédit selon accord"
-                  rows={2}
-                  className="text-sm resize-none"
-                />
+                <Label className="text-xs sm:text-sm">{t('settings.paymentTva.paymentTerms')}</Label>
+                <Textarea value={settings.payment_terms} onChange={(e) => setSettings({ ...settings, payment_terms: e.target.value })} placeholder={t('settings.paymentTva.paymentTermsPlaceholder')} rows={2} className="text-sm resize-none" />
               </div>
             </CardContent>
           </CollapsibleContent>
         </Collapsible>
       </Card>
 
-      {/* Subscription Section */}
+      {/* Subscription */}
       <Card>
         <Collapsible open={openSections.subscription} onOpenChange={() => toggleSection('subscription')}>
           <CollapsibleTrigger asChild>
@@ -788,7 +588,7 @@ export const CompanySettings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  <CardTitle className="text-sm sm:text-base">Abonnement</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">{t('settings.subscription.title')}</CardTitle>
                   <Badge variant={subscription.isExpired ? 'destructive' : 'default'} className="text-[10px] px-1.5">
                     {subscription.plan.toUpperCase()}
                   </Badge>
@@ -799,58 +599,51 @@ export const CompanySettings = () => {
           </CollapsibleTrigger>
           <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
             <CardContent className="pt-0 space-y-4">
-              {/* Current Plan Status */}
               <div className="p-3 rounded-lg border bg-muted/30 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-medium">Statut</span>
+                  <span className="text-xs sm:text-sm font-medium">{t('settings.subscription.status')}</span>
                   <Badge variant={subscription.isActive && !subscription.isExpired ? 'default' : 'destructive'}>
-                    {subscription.isActive && !subscription.isExpired ? 'Actif' : 'Expiré'}
+                    {subscription.isActive && !subscription.isExpired ? t('settings.subscription.active') : t('settings.subscription.expired')}
                   </Badge>
                 </div>
-                
                 {subscription.subscriptionEnd && (
                   <>
                     <div className="flex items-center justify-between text-xs sm:text-sm">
-                      <span className="text-muted-foreground">Expiration</span>
-                      <span className="font-mono">{new Date(subscription.subscriptionEnd).toLocaleDateString('fr-FR')}</span>
+                      <span className="text-muted-foreground">{t('settings.subscription.expiration')}</span>
+                      <span className="font-mono">{formatLocalizedDate(subscription.subscriptionEnd)}</span>
                     </div>
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">{subscription.daysRemaining} jours restants</span>
+                        <span className="text-muted-foreground">{t('settings.subscription.daysRemaining', { count: subscription.daysRemaining })}</span>
                         <span className="text-muted-foreground">{Math.min(100, Math.round((subscription.daysRemaining / 30) * 100))}%</span>
                       </div>
-                      <Progress 
-                        value={Math.min(100, Math.round((subscription.daysRemaining / 30) * 100))} 
-                        className="h-2"
-                      />
+                      <Progress value={Math.min(100, Math.round((subscription.daysRemaining / 30) * 100))} className="h-2" />
                     </div>
                   </>
                 )}
-
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <div className="flex items-center gap-1.5 text-xs sm:text-sm">
                     <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Utilisateurs max:</span>
+                    <span className="text-muted-foreground">{t('settings.subscription.maxUsers')}:</span>
                     <span className="font-medium">{subscription.maxUsers === 999 ? '∞' : subscription.maxUsers}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs sm:text-sm">
                     <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Produits max:</span>
+                    <span className="text-muted-foreground">{t('settings.subscription.maxProducts')}:</span>
                     <span className="font-medium">{subscription.maxProducts === 999999 ? '∞' : subscription.maxProducts}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Plans Grid */}
               {subscriptionPlans.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs sm:text-sm font-medium">Plans disponibles</p>
+                    <p className="text-xs sm:text-sm font-medium">{t('settings.subscription.choosePlan')}</p>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs ${!isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>Mensuel</span>
+                      <span className={`text-xs ${!isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{t('settings.subscription.monthly')}</span>
                       <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
                       <span className={`text-xs ${isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                        Annuel <span className="text-primary font-medium">-20%</span>
+                        {t('settings.subscription.annual')}
                       </span>
                     </div>
                   </div>
@@ -866,29 +659,20 @@ export const CompanySettings = () => {
                       const annualPrice = Math.round(monthlyPrice * 12 * 0.8);
                       const displayPrice = isAnnual ? Math.round(annualPrice / 12) : monthlyPrice;
                       return (
-                        <div 
-                          key={plan.id} 
-                          className={`p-3 rounded-lg border text-xs sm:text-sm space-y-2 ${isCurrent ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'bg-muted/20'}`}
-                        >
+                        <div key={plan.id} className={`p-3 rounded-lg border text-xs sm:text-sm space-y-2 ${isCurrent ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'bg-muted/20'}`}>
                           <div className="flex items-center justify-between">
                             <span className="font-semibold">{plan.name}</span>
-                            {isCurrent && <Badge className="text-[10px] px-1.5">Actuel</Badge>}
+                            {isCurrent && <Badge className="text-[10px] px-1.5">{t('settings.subscription.currentPlan')}</Badge>}
                           </div>
                           <p className="text-lg font-bold">
-                            {monthlyPrice === 0 ? 'Gratuit' : `$${displayPrice}`}
-                            {monthlyPrice > 0 && <span className="text-xs text-muted-foreground font-normal">{isAnnual ? '/mois (facturé annuellement)' : '/mois'}</span>}
+                            {monthlyPrice === 0 ? t('common.freeplan') : `$${displayPrice}`}
+                            {monthlyPrice > 0 && <span className="text-xs text-muted-foreground font-normal">{t('settings.subscription.perMonth')}</span>}
                           </p>
-                          {isAnnual && monthlyPrice > 0 && (
-                            <p className="text-xs text-muted-foreground line-through">
-                              ${monthlyPrice}/mois
-                            </p>
-                          )}
                           <div className="space-y-1 text-muted-foreground text-xs">
-                            <p>{plan.max_users >= 999 ? 'Utilisateurs illimités' : `${plan.max_users} utilisateurs`}</p>
-                            <p>{plan.max_products >= 999999 ? 'Produits illimités' : `${plan.max_products} produits`}</p>
-                            <p>{plan.max_sales_monthly >= 999999 ? 'Ventes illimitées' : `${plan.max_sales_monthly} ventes/mois`}</p>
+                            <p>{plan.max_users >= 999 ? `${t('settings.subscription.unlimited')} ${t('settings.subscription.users')}` : `${plan.max_users} ${t('settings.subscription.users')}`}</p>
+                            <p>{plan.max_products >= 999999 ? `${t('settings.subscription.unlimited')} ${t('settings.subscription.products')}` : `${plan.max_products} ${t('settings.subscription.products')}`}</p>
+                            <p>{plan.max_sales_monthly >= 999999 ? `${t('settings.subscription.unlimited')} ${t('settings.subscription.salesPerMonth')}` : `${plan.max_sales_monthly} ${t('settings.subscription.salesPerMonth')}`}</p>
                           </div>
-                          
                           {features.length > 0 && (
                             <div className="space-y-0.5 pt-1 border-t">
                               {features.map((f: string, i: number) => (
@@ -899,31 +683,25 @@ export const CompanySettings = () => {
                               ))}
                             </div>
                           )}
-
                           {isUpgrade && (
-                            <Button
-                              size="sm"
-                              className="w-full gap-1.5 mt-2"
-                              disabled={!!checkoutLoading}
-                              onClick={async () => {
-                                setCheckoutLoading(plan.id);
-                                try {
-                                  const { error: refreshError } = await supabase.auth.refreshSession();
-                                  if (refreshError) throw refreshError;
-                                  const { data, error } = await supabase.functions.invoke('create-checkout', {
-                                    body: { plan_id: plan.id, payment_method: selectedPaymentMethod, billing_period: isAnnual ? 'annual' : 'monthly' },
-                                  });
-                                  if (error) throw error;
-                                  if (data?.url) window.open(data.url, '_blank');
-                                } catch (err: any) {
-                                  toast({ title: 'Erreur', description: err.message || 'Impossible de créer la session de paiement', variant: 'destructive' });
-                                } finally {
-                                  setCheckoutLoading(null);
-                                }
-                              }}
-                            >
+                            <Button size="sm" className="w-full gap-1.5 mt-2" disabled={!!checkoutLoading} onClick={async () => {
+                              setCheckoutLoading(plan.id);
+                              try {
+                                const { error: refreshError } = await supabase.auth.refreshSession();
+                                if (refreshError) throw refreshError;
+                                const { data, error } = await supabase.functions.invoke('create-checkout', {
+                                  body: { plan_id: plan.id, payment_method: selectedPaymentMethod, billing_period: isAnnual ? 'annual' : 'monthly' },
+                                });
+                                if (error) throw error;
+                                if (data?.url) window.open(data.url, '_blank');
+                              } catch (err: any) {
+                                toast({ title: t('common.error'), description: err.message || t('common.saveError'), variant: 'destructive' });
+                              } finally {
+                                setCheckoutLoading(null);
+                              }
+                            }}>
                               {checkoutLoading === plan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                              Passer au {plan.name}
+                              {t('settings.subscription.subscribe')} {plan.name}
                             </Button>
                           )}
                         </div>
@@ -933,30 +711,26 @@ export const CompanySettings = () => {
                 </div>
               )}
 
-              {/* Restrictions du plan gratuit */}
               {subscription.isFreePlan && (
                 <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 space-y-2">
                   <div className="flex items-center gap-1.5">
                     <Lock className="h-4 w-4 text-amber-600" />
-                    <span className="text-xs sm:text-sm font-medium text-amber-700 dark:text-amber-400">Restrictions du plan gratuit</span>
+                    <span className="text-xs sm:text-sm font-medium text-amber-700 dark:text-amber-400">{t('common.premiumFeature')}</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-muted-foreground">
-                    <p>🔒 Statistiques avancées</p>
-                    <p>🔒 Facture A4 personnalisée</p>
-                    <p>🔒 Logo personnalisé</p>
-                    <p>🔒 Export Excel / PDF</p>
-                    <p>🔒 Catégories avancées (fer, céramique...)</p>
-                    <p>🔒 Multi-boutiques</p>
+                    <p>🔒 {t('settings.subscription.advancedAnalytics')}</p>
+                    <p>🔒 {t('settings.subscription.advancedReports')}</p>
+                    <p>🔒 {t('settings.logo.customLogo')}</p>
+                    <p>🔒 {t('settings.subscription.excelPdfExport')}</p>
                   </div>
                 </div>
               )}
 
-              {/* Historique des paiements */}
               {paymentHistory.length > 0 && (
                 <div className="space-y-2 pt-2 border-t">
                   <p className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
                     <CreditCard className="h-3.5 w-3.5" />
-                    Historique des paiements
+                    {t('settings.subscription.paymentHistory')}
                   </p>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {paymentHistory.map((item: any, idx: number) => (
@@ -969,7 +743,7 @@ export const CompanySettings = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{item.amount} {item.currency}</span>
-                          <span className="text-muted-foreground">{new Date(item.created_at).toLocaleDateString('fr-FR')}</span>
+                          <span className="text-muted-foreground">{formatLocalizedDate(item.created_at)}</span>
                         </div>
                       </div>
                     ))}
@@ -977,25 +751,14 @@ export const CompanySettings = () => {
                 </div>
               )}
 
-              {/* Payment method selector */}
               <div className="space-y-2 pt-2 border-t">
-                <p className="text-xs sm:text-sm font-medium">Mode de paiement</p>
+                <p className="text-xs sm:text-sm font-medium">{t('common.payment')}</p>
                 <div className="flex gap-2">
-                  <Button
-                    variant={selectedPaymentMethod === 'stripe' ? 'default' : 'outline'}
-                    size="sm"
-                    className="gap-1.5 flex-1"
-                    onClick={() => setSelectedPaymentMethod('stripe')}
-                  >
+                  <Button variant={selectedPaymentMethod === 'stripe' ? 'default' : 'outline'} size="sm" className="gap-1.5 flex-1" onClick={() => setSelectedPaymentMethod('stripe')}>
                     <CreditCard className="h-3.5 w-3.5" />
-                    Carte bancaire
+                    {t('common.payment')}
                   </Button>
-                  <Button
-                    variant={selectedPaymentMethod === 'moncash' ? 'default' : 'outline'}
-                    size="sm"
-                    className="gap-1.5 flex-1"
-                    onClick={() => setSelectedPaymentMethod('moncash')}
-                  >
+                  <Button variant={selectedPaymentMethod === 'moncash' ? 'default' : 'outline'} size="sm" className="gap-1.5 flex-1" onClick={() => setSelectedPaymentMethod('moncash')}>
                     <Smartphone className="h-3.5 w-3.5" />
                     MonCash
                   </Button>
@@ -1003,21 +766,15 @@ export const CompanySettings = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 flex-1"
-                  onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Question abonnement', '_blank')}
-                >
+                <Button variant="outline" size="sm" className="gap-1.5 flex-1" onClick={() => window.open('mailto:contact@systemmanagement.sn?subject=Question abonnement', '_blank')}>
                   <Mail className="h-4 w-4" />
-                  Nous contacter
+                  {t('common.email')}
                 </Button>
               </div>
             </CardContent>
           </CollapsibleContent>
         </Collapsible>
       </Card>
-
     </div>
   );
 };
