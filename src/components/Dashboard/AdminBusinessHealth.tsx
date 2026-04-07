@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Activity, TrendingUp, Package, Percent } from 'lucide-react';
 import { formatNumber, formatCurrencyValue } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface AdminBusinessHealthProps {
   revenue: number;

@@ -47,6 +47,8 @@ import { useSaleCalculations } from '@/hooks/useSaleCalculations';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTranslation } from 'react-i18next';
+import { formatLocalizedTime } from '@/lib/locale';
 
 interface RevenueData {
   date: string;

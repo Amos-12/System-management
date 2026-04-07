@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Trophy, Medal, Award, TrendingUp } from 'lucide-react';
 import { formatNumber, formatCurrencyValue } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface SellerData {
   name: string;
