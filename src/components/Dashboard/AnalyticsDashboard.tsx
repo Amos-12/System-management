@@ -91,6 +91,7 @@ const COLORS = [
 ];
 
 export const AnalyticsDashboard = () => {
+  const { t } = useTranslation();
   const saleCalc = useSaleCalculations();
 
   const [period, setPeriod] = useState<Period>('week');
