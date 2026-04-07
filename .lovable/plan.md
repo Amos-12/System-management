@@ -1,125 +1,77 @@
 
-## Plan de traduction complète de toute l’application
+
+## Plan : Traduction complète de tous les composants restants
 
 ### Constat
-Le projet a déjà une base i18n, mais elle ne couvre qu’une partie de l’UI. Les composants internes demandés (`ProductManagement`, `SalesManagement`, `CompanySettings`, `StockAlerts`) contiennent encore beaucoup de texte en dur, et ce problème existe aussi ailleurs dans l’application.
 
-En plus, il y a un blocage build séparé à corriger en parallèle :
-- les edge functions Supabase importent `npm:@supabase/supabase-js@2.57.2`
-- le build échoue car cette dépendance n’est pas résolue côté Deno
+Seuls 16 fichiers utilisent `useTranslation()`. Tous les autres composants (30+) contiennent du texte français en dur : labels, toasts, badges, colonnes de tableaux, filtres, états vides, et le composant `TablePagination`. Les dates utilisent encore `fr` de date-fns au lieu de la locale dynamique.
 
-### Ce que je vais couvrir
-Traduire l’application de façon globale, pas seulement 4 composants :
-- pages principales
-- dashboards admin/vendeur/super admin
-- modules produits, ventes, inventaire, notifications, catégories, rapports, paramètres, aide
-- dialogues, labels, placeholders, badges, boutons
-- messages toast restants
-- textes vides/chargement/erreurs
-- dates/horaires formatés selon la langue active
+### Composants à migrer (par priorité)
 
-### Plan d’implémentation
+**Groupe 1 — Dashboard Admin (5 fichiers, ~2500 lignes)**
+- `AdminDashboardCharts.tsx` (1052 lignes) — KPI titles, period labels, chart labels, toasts, export PDF
+- `AdminBusinessHealth.tsx` (144 lignes) — health labels ("Excellent", "Bon", "Critique"), card titles
+- `AdminTopSellersChart.tsx` — chart labels
+- `RecentActivities.tsx` (225 lignes) — activity labels, time formatting `fr` locale
+- `KPICard.tsx` — already receives translated titles, OK
 
-#### 1. Stabiliser l’infrastructure i18n
-- Étendre `fr.json`, `en.json`, `es.json` avec des namespaces cohérents par module :
-  - `index`
-  - `products`
-  - `sales`
-  - `inventory`
-  - `settings`
-  - `notifications`
-  - `reports`
-  - `categories`
-  - `seller`
-  - `superAdmin`
-  - `help`
-  - `toasts`
-  - `validation`
-- Compléter aussi les libellés transverses manquants :
-  - états vides
-  - chargement
-  - actions table
-  - filtres
-  - confirmations
-  - exports
-  - permissions / limites d’abonnement
+**Groupe 2 — Analytics (1 fichier, 680 lignes)**
+- `AnalyticsDashboard.tsx` — period labels, tab names, chart titles, KPI labels, date-fns `fr`
 
-#### 2. Traduire d’abord les modules prioritaires demandés
-- `src/components/Products/ProductManagement.tsx`
-- `src/components/Sales/SalesManagement.tsx`
-- `src/components/Settings/CompanySettings.tsx`
-- `src/components/Notifications/StockAlerts.tsx`
+**Groupe 3 — Categories (3 fichiers, ~1100 lignes)**
+- `CategoryManagement.tsx` (545 lignes) — table headers, badges "Active/Inactive", dialog labels, toasts
+- `SubcategoryManagement.tsx` — similar
+- `SpecificationFieldsManager.tsx` — field labels
 
-Pour chacun :
-- ajouter `useTranslation()`
-- remplacer les chaînes UI visibles
-- remplacer les toasts en dur
-- traduire titres, filtres, vues table/cartes, exports, validations, états vides, dialogues, badges
+**Groupe 4 — Inventaire (3 fichiers, ~1500 lignes)**
+- `InventoryManagement.tsx` (1048 lignes) — filters, stock levels, table headers, dialogs, export, toasts
+- `QuickInventoryMode.tsx` — labels
+- `InventoryHistory.tsx` — table headers, date formatting
 
-#### 3. Étendre à toute l’application
-Passer ensuite sur les autres zones encore en dur :
-- `Index.tsx`
-- `HelpPage.tsx`
-- composants Seller (`SellerWorkflow`, `ProformaWorkflow`, `SavedProformasList`, `CartSection`)
-- composants Reports / TVA / Inventory
-- composants Categories
-- composants SuperAdmin
-- composants Activity / dialogs / panels secondaires
-- pages et composants qui utilisent encore des labels français statiques
+**Groupe 5 — Reports (3 fichiers, ~1900 lignes)**
+- `AdvancedReports.tsx` (947 lignes) — period selector, chart labels, export buttons, toasts, date-fns `fr`
+- `SellerPerformanceReport.tsx` (518 lignes) — period labels, table headers, export
+- `TvaReport.tsx` (470 lignes) — table headers, labels, date inputs, PDF export
 
-#### 4. Centraliser les toasts et messages métier
-Aujourd’hui beaucoup de toasts sont définis dans les hooks et composants.
-Je vais harmoniser cela en :
-- branchant `useTranslation()` dans les composants
-- pour les hooks non React comme `useAuth`, utiliser l’instance i18n importée directement
-- migrer les messages fréquents vers des clés réutilisables :
-  - erreur chargement
-  - sauvegarde réussie
-  - suppression réussie
-  - validation invalide
-  - action non autorisée
-  - fonctionnalité premium
-  - session expirée
+**Groupe 6 — Activity Logs (2 fichiers)**
+- `ActivityLogPanel.tsx` (380 lignes) — ACTION_TYPES labels array, filters, date formatting
+- `GlobalActivityLogs.tsx` — similar
 
-#### 5. Localiser les formats date/heure/nombre
-Le code contient encore des formats forcés en `fr-FR` et `date-fns/locale fr`.
-Je vais remplacer cela par une logique basée sur la langue active :
-- mapper `fr/en/es` vers locale `date-fns`
-- remplacer `toLocaleString('fr-FR')`, `toLocaleDateString('fr-FR')`, `toLocaleTimeString('fr-FR')`
-- garder les devises séparées, mais adapter séparateurs et dates à la langue choisie
+**Groupe 7 — Seller (4 fichiers, ~4600 lignes)**
+- `SellerWorkflow.tsx` (2773 lignes) — product cards, cart, checkout, toasts, print labels
+- `CartSection.tsx` (348 lignes) — cart labels, buttons, dialogs
+- `ProformaWorkflow.tsx` (1233 lignes) — proforma labels, saved drafts, print
+- `SavedProformasList.tsx` (301 lignes) — list headers, badges, date formatting
 
-#### 6. Corriger le blocage build des edge functions
-En parallèle de la traduction, il faut corriger le build cassé :
-- uniformiser les imports Supabase dans les functions
-- remplacer les imports Deno problématiques `npm:@supabase/supabase-js@2.57.2` par une version compatible et cohérente avec le projet
-- si nécessaire, ajouter la config Deno/Supabase adaptée pour la résolution des modules
+**Groupe 8 — SuperAdmin (7 fichiers)**
+- `CompanyList.tsx`, `GlobalUsersPanel.tsx`, `PaymentsPanel.tsx`, `SaasKPIs.tsx`, `SubscriptionPlansManager.tsx`, `SuperAdminDbMonitoring.tsx`, `PaymentExchangeRateSettings.tsx` — all have hardcoded French
 
-### Priorité de livraison
-Ordre recommandé :
-1. corriger le build Supabase functions
-2. traduire les 4 composants prioritaires
-3. traduire les hooks/toasts partagés
-4. traduire les modules restants
-5. localiser dates/heures/nombres
-6. faire une passe finale de cohérence sur les clés manquantes
+**Groupe 9 — Autres**
+- `HelpPage.tsx` (451 lignes) — toute la FAQ en dur (structurée en array)
+- `DatabaseMonitoring.tsx` — labels
+- `SellerDashboard.tsx` / `SellerDashboardStats.tsx` / `SellerGoalsCard.tsx` / `SellerTrendChart.tsx` / etc.
+- `ExpiredScreen.tsx`, `LockedFeature.tsx`, `UpgradeBanner.tsx` — subscription messages
+- `Profile.tsx` — si pas encore traduit
+- `Auth.tsx` — si pas encore traduit
 
-### Détails techniques
-- utiliser `useTranslation()` dans les composants React
-- utiliser l’instance `i18n` directement dans les hooks non composants
-- éviter de stocker du texte traduit dans l’état quand ce texte peut être recalculé via `t()`
-- préférer des clés structurées comme :
-  - `products.exportPdf`
-  - `sales.filters.period`
-  - `settings.logo.uploadSuccess`
-  - `notifications.lowStock.title`
-  - `toasts.loadError`
-- conserver le français comme fallback
-- vérifier aussi les placeholders, titres PDF/export, colonnes de tableaux, boutons mobiles et tooltips
+**Groupe 10 — Pagination**
+- `TablePagination.tsx` — "sur", "résultat(s)", "Précédent", "Suivant" en dur
 
-### Résultat attendu
-À la fin :
-- toute l’application bascule correctement entre français, anglais et espagnol
-- les messages toast suivent la langue active
-- les formats de date/heure ne restent plus bloqués en français
-- les composants internes et secondaires sont couverts, pas seulement les écrans principaux
-- le build n’est plus bloqué par les edge functions Supabase
+### Approche technique
+
+Pour chaque composant :
+1. Ajouter `import { useTranslation } from 'react-i18next'` et `const { t } = useTranslation()`
+2. Remplacer toutes les chaînes visibles par `t('namespace.key')`
+3. Remplacer `date-fns/locale fr` par import dynamique basé sur la langue active (utiliser les helpers de `src/lib/locale.ts`)
+4. Ajouter les clés correspondantes dans `fr.json`, `en.json`, `es.json`
+
+Pour `HelpPage.tsx` spécifiquement : transformer l'array statique en clés i18n structurées (`help.sections.auth.title`, `help.sections.auth.questions.0.question`, etc.)
+
+Pour `TablePagination.tsx` : ajouter `useTranslation()` et traduire "Précédent", "Suivant", "sur X résultats"
+
+Pour les formats de date : créer un helper `getDateFnsLocale()` dans `src/lib/locale.ts` qui retourne `fr`, `en`, ou `es` de date-fns selon la langue active, et l'utiliser partout au lieu de `{ locale: fr }`
+
+### Livraison
+
+Vu le volume (~30 fichiers, ~15000 lignes), je procéderai par groupes dans l'ordre listé. Les clés de traduction seront ajoutées dans les 3 fichiers JSON au fur et à mesure. Le résultat final : 100% de l'application traduite, y compris pagination, dates, et page d'aide.
+
