@@ -75,7 +75,10 @@
     "discount": "Descuento",
     "swipe": "Deslizar",
     "noResult": "Sin resultados",
-    "freeplan": "Plan gratuito"
+    "freeplan": "Plan gratuito",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "showingResults": "{{start}}-{{end}} de {{total}} resultado(s)"
   },
   "nav": {
     "dashboard": "Panel",
