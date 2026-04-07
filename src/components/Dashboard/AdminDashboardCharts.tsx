@@ -611,7 +611,7 @@ export const AdminDashboardCharts = () => {
         .select('*')
         .single();
 
-      const periodLabel = period === 'daily' ? 'Journalier' : period === 'weekly' ? 'Hebdomadaire' : 'Mensuel';
+      const periodLabel = period === 'daily' ? t('dashboard.daily') : period === 'weekly' ? t('dashboard.weekly') : t('dashboard.monthly');
 
       await generateAdminDashboardPdf(
         {
