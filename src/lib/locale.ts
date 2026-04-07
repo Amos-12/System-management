@@ -1,5 +1,6 @@
 import i18n from '@/i18n';
 import { fr, enUS, es } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 
 type SupportedLanguage = 'fr' | 'en' | 'es';
 
