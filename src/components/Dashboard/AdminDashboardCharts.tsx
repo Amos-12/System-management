@@ -701,7 +701,7 @@ export const AdminDashboardCharts = () => {
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <Badge variant="outline" className="flex items-center gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2">
             <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-            {lastUpdated.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            {formatLocalizedTime(lastUpdated, { hour: '2-digit', minute: '2-digit' })}
           </Badge>
           <Badge variant="outline" className="flex items-center gap-1 text-[10px] sm:text-xs bg-muted/50 px-1.5 sm:px-2">
             <DollarSign className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary" />
