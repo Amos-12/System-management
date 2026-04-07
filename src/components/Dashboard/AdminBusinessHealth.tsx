@@ -24,18 +24,19 @@ export const AdminBusinessHealth = ({
   totalProducts,
   currency = 'HTG'
 }: AdminBusinessHealthProps) => {
+  const { t } = useTranslation();
   // Calculate health score (0-100)
   const revenueScore = Math.min((revenue / revenueTarget) * 100, 100) * 0.4;
-  const marginScore = Math.min(profitMargin * 2, 40); // Max 40 points for 20%+ margin
-  const stockHealthScore = Math.max(0, (1 - lowStockCount / totalProducts) * 20); // Max 20 points
+  const marginScore = Math.min(profitMargin * 2, 40);
+  const stockHealthScore = Math.max(0, (1 - lowStockCount / totalProducts) * 20);
   
   const healthScore = Math.round(revenueScore + marginScore + stockHealthScore);
   
   const getHealthStatus = () => {
-    if (healthScore >= 80) return { label: 'Excellent', color: 'bg-admin-profit text-white', textColor: 'text-admin-profit' };
-    if (healthScore >= 60) return { label: 'Bon', color: 'bg-admin-revenue text-white', textColor: 'text-admin-revenue' };
-    if (healthScore >= 40) return { label: 'À surveiller', color: 'bg-admin-target text-white', textColor: 'text-admin-target' };
-    return { label: 'Critique', color: 'bg-destructive text-white', textColor: 'text-destructive' };
+    if (healthScore >= 80) return { label: t('dashboard.healthExcellent'), color: 'bg-admin-profit text-white', textColor: 'text-admin-profit' };
+    if (healthScore >= 60) return { label: t('dashboard.healthGood'), color: 'bg-admin-revenue text-white', textColor: 'text-admin-revenue' };
+    if (healthScore >= 40) return { label: t('dashboard.healthWatch'), color: 'bg-admin-target text-white', textColor: 'text-admin-target' };
+    return { label: t('dashboard.healthCritical'), color: 'bg-destructive text-white', textColor: 'text-destructive' };
   };
 
   const status = getHealthStatus();
