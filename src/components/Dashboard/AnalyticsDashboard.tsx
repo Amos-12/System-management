@@ -471,7 +471,7 @@ export const AnalyticsDashboard = () => {
           currency={displayCurrency}
         />
         <KPICard
-          title="Bénéfices"
+          title={t('analytics.profit')}
           value={kpis.profit.current}
           previousValue={kpis.profit.previous}
           icon={TrendingUp}
