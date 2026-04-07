@@ -487,7 +487,7 @@ export const AnalyticsDashboard = () => {
           format="number"
         />
         <KPICard
-          title="Panier moyen"
+          title={t('analytics.avgTicket')}
           value={kpis.avgTicket.current}
           previousValue={kpis.avgTicket.previous}
           icon={Target}
