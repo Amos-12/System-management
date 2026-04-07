@@ -907,7 +907,7 @@ export const AdminDashboardCharts = () => {
           <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
             <CardTitle className="text-sm sm:text-lg flex items-center gap-2">
               <Package className="h-4 w-4 sm:h-5 sm:w-5 text-admin-products" />
-              Top Produits
+              {t('dashboard.topProducts')}
             </CardTitle>
           </CardHeader>
           <CardContent className="px-2 sm:px-6">
