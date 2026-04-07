@@ -674,7 +674,7 @@ export const AnalyticsDashboard = () => {
       {/* Period Summary Badge */}
       <div className="flex justify-center">
         <Badge variant="outline" className="text-sm">
-          {periodLabels[period]} • {sales.length} vente{sales.length !== 1 ? 's' : ''} • {displayCurrency === 'USD' ? '$' : ''}{formatNumber(kpis.revenue.current)} {displayCurrency === 'HTG' ? 'HTG' : ''}
+          {periodLabels[period]} • {t('analytics.salesSummary', { count: sales.length })} • {displayCurrency === 'USD' ? '$' : ''}{formatNumber(kpis.revenue.current)} {displayCurrency === 'HTG' ? 'HTG' : ''}
         </Badge>
       </div>
     </div>
