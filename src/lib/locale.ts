@@ -1,4 +1,5 @@
 import i18n from '@/i18n';
+import { fr, enUS, es } from 'date-fns/locale';
 
 type SupportedLanguage = 'fr' | 'en' | 'es';
 
@@ -8,12 +9,20 @@ const localeMap: Record<SupportedLanguage, string> = {
   es: 'es-ES',
 };
 
+const dateFnsLocaleMap: Record<SupportedLanguage, Locale> = {
+  fr,
+  en: enUS,
+  es,
+};
+
 export const getCurrentLanguage = (): SupportedLanguage => {
   const language = (i18n.resolvedLanguage || i18n.language || 'fr').slice(0, 2) as SupportedLanguage;
   return localeMap[language] ? language : 'fr';
 };
 
 export const getCurrentLocale = (): string => localeMap[getCurrentLanguage()];
+
+export const getDateFnsLocale = (): Locale => dateFnsLocaleMap[getCurrentLanguage()];
 
 export const formatLocalizedNumber = (
   value: number,
