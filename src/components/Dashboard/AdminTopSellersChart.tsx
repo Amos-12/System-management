@@ -70,7 +70,7 @@ export const AdminTopSellersChart = ({ sellers, maxRevenue, currency = 'HTG' }: 
           <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-pink-500/20 to-rose-500/20">
             <Users className="h-4 w-4 sm:h-5 sm:w-5 text-pink-600 dark:text-pink-400" />
           </div>
-          Top 5 Vendeurs
+          {t('dashboard.topSellers')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6">
