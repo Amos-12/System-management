@@ -121,7 +121,7 @@ export const AdminBusinessHealth = ({
               <Package className="h-3 w-3 sm:h-4 sm:w-4 text-admin-target" />
             </div>
             <div className="text-sm sm:text-lg font-bold text-admin-target">{lowStockCount}</div>
-            <div className="text-[9px] sm:text-xs text-muted-foreground">Stock bas</div>
+            <div className="text-[9px] sm:text-xs text-muted-foreground">{t('dashboard.lowStock')}</div>
           </div>
         </div>
 
