@@ -753,6 +753,30 @@
       "feature": "Feature"
     }
   },
+  "analytics": {
+    "title": "Analytics",
+    "updated": "Updated",
+    "display": "Display",
+    "revenue": "Revenue",
+    "profit": "Profit",
+    "sales": "Sales",
+    "avgTicket": "Avg. ticket",
+    "salesTrend": "Sales trend",
+    "comparison": "Comparison",
+    "distribution": "Distribution",
+    "comparisonTitle": "Comparison vs previous period",
+    "heatmapTitle": "Activity by hour and day",
+    "topProducts": "Top 10 Products",
+    "categoryDistribution": "Category distribution",
+    "periods": {
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "quarter": "90 days",
+      "custom": "Custom"
+    },
+    "salesSummary": "{{count}} sale(s)"
+  },
   "reports": {
     "title": "Reports",
     "sellerPerformance": "Seller Performance",

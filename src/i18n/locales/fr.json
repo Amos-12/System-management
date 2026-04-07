@@ -753,6 +753,30 @@
       "feature": "Fonctionnalité"
     }
   },
+  "analytics": {
+    "title": "Analytics",
+    "updated": "MàJ",
+    "display": "Affichage",
+    "revenue": "Revenus",
+    "profit": "Bénéfices",
+    "sales": "Ventes",
+    "avgTicket": "Panier moyen",
+    "salesTrend": "Tendance des ventes",
+    "comparison": "Comparaison",
+    "distribution": "Distribution",
+    "comparisonTitle": "Comparaison vs période précédente",
+    "heatmapTitle": "Activité par heure et jour",
+    "topProducts": "Top 10 Produits",
+    "categoryDistribution": "Distribution par catégorie",
+    "periods": {
+      "today": "Aujourd'hui",
+      "week": "Cette semaine",
+      "month": "Ce mois",
+      "quarter": "90 jours",
+      "custom": "Personnalisé"
+    },
+    "salesSummary": "{{count}} vente(s)"
+  },
   "reports": {
     "title": "Rapports",
     "sellerPerformance": "Performance Vendeurs",
