@@ -274,7 +274,7 @@ export const AnalyticsDashboard = () => {
       const dayItems = saleItems.filter(i => daySales.some(s => s.id === (i as any).sale_id));
 
       return {
-        date: format(day, 'dd/MM', { locale: fr }),
+        date: format(day, 'dd/MM', { locale: getDateFnsLocale() }),
         revenue: saleCalc.calculateRevenueTTC(daySales as SaleForCalc[], dayItems as any),
         profit: saleCalc.calculateNetProfit(daySales as SaleForCalc[], dayItems as any),
         salesCount: daySales.length,
