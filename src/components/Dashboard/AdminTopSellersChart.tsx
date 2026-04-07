@@ -77,7 +77,7 @@ export const AdminTopSellersChart = ({ sellers, maxRevenue, currency = 'HTG' }: 
         {sellers.length === 0 ? (
           <div className="text-center py-6 sm:py-8 text-muted-foreground">
             <Users className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-            <p className="text-sm sm:text-base">Aucune donnée disponible</p>
+            <p className="text-sm sm:text-base">{t('common.noData')}</p>
           </div>
         ) : (
           sellers.map((seller, index) => {
