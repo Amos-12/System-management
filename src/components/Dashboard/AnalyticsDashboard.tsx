@@ -503,7 +503,7 @@ export const AnalyticsDashboard = () => {
         <TabsList>
           <TabsTrigger value="comparison" className="gap-2">
             <BarChart3 className="w-4 h-4" />
-            Comparaison
+            {t('analytics.comparison')}
           </TabsTrigger>
           <TabsTrigger value="distribution" className="gap-2">
             <PieChartIcon className="w-4 h-4" />
