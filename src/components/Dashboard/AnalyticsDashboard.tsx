@@ -319,7 +319,7 @@ export const AnalyticsDashboard = () => {
       );
 
       return {
-        label: format(day, 'EEE', { locale: fr }),
+        label: format(day, 'EEE', { locale: getDateFnsLocale() }),
         current: saleCalc ? saleCalc.calculateRevenueTTC(currentDaySales as SaleForCalc[], currentDayItems as any) : 0,
         previous: saleCalc ? saleCalc.calculateRevenueTTC(prevDaySales as SaleForCalc[], prevDayItems as any) : 0,
       };
