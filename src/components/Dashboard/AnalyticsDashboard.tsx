@@ -120,10 +120,10 @@ export const AnalyticsDashboard = () => {
         prevTo = endOfDay(subDays(now, 1));
         break;
       case 'week':
-        from = startOfWeek(now, { locale: fr });
-        to = endOfWeek(now, { locale: fr });
-        prevFrom = startOfWeek(subDays(from, 1), { locale: fr });
-        prevTo = endOfWeek(subDays(from, 1), { locale: fr });
+        from = startOfWeek(now, { locale: getDateFnsLocale() });
+        to = endOfWeek(now, { locale: getDateFnsLocale() });
+        prevFrom = startOfWeek(subDays(from, 1), { locale: getDateFnsLocale() });
+        prevTo = endOfWeek(subDays(from, 1), { locale: getDateFnsLocale() });
         break;
       case 'month':
         from = startOfMonth(now);
