@@ -128,7 +128,7 @@ export const AdminBusinessHealth = ({
         {/* Revenue Progress */}
         <div className="space-y-1.5 sm:space-y-2">
           <div className="flex justify-between text-[10px] sm:text-sm">
-            <span className="text-muted-foreground">Objectif</span>
+            <span className="text-muted-foreground">{t('dashboard.target')}</span>
             <span className="font-medium">{Math.round((revenue / revenueTarget) * 100)}%</span>
           </div>
           <Progress 
