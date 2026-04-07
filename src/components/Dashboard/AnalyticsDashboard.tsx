@@ -415,7 +415,7 @@ export const AnalyticsDashboard = () => {
                 : 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700'
             }`}
           >
-            Affichage: {displayCurrency === 'USD' ? '$ USD' : 'HTG'}
+            {t('analytics.display')}: {displayCurrency === 'USD' ? '$ USD' : 'HTG'}
           </Badge>
 
           <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
