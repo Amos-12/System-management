@@ -188,7 +188,7 @@ export const RecentActivities = () => {
                     <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
                       {formatDistanceToNow(new Date(activity.created_at), { 
                         addSuffix: true,
-                        locale: fr 
+                        locale: getDateFnsLocale() 
                       })}
                     </p>
                   </div>
