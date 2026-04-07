@@ -382,11 +382,11 @@ export const AnalyticsDashboard = () => {
   }, [saleItems, usdHtgRate, displayCurrency]);
 
   const periodLabels: Record<Period, string> = {
-    today: "Aujourd'hui",
-    week: 'Cette semaine',
-    month: 'Ce mois',
-    quarter: '90 jours',
-    custom: 'Personnalisé',
+    today: t('analytics.periods.today'),
+    week: t('analytics.periods.week'),
+    month: t('analytics.periods.month'),
+    quarter: t('analytics.periods.quarter'),
+    custom: t('analytics.periods.custom'),
   };
 
   return (
