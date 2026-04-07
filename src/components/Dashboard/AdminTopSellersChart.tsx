@@ -17,6 +17,7 @@ interface AdminTopSellersChartProps {
 }
 
 export const AdminTopSellersChart = ({ sellers, maxRevenue, currency = 'HTG' }: AdminTopSellersChartProps) => {
+  const { t } = useTranslation();
   const max = maxRevenue || (sellers.length > 0 ? Math.max(...sellers.map(s => s.revenue)) : 1);
   const totalRevenue = sellers.reduce((sum, s) => sum + s.revenue, 0);
   
