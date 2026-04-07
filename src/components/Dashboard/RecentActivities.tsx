@@ -76,6 +76,7 @@ const getActivityLabel = (actionType: string, t: (key: string) => string): strin
 };
 
 export const RecentActivities = () => {
+  const { t } = useTranslation();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
