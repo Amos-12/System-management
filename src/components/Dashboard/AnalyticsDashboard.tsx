@@ -507,7 +507,7 @@ export const AnalyticsDashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="distribution" className="gap-2">
             <PieChartIcon className="w-4 h-4" />
-            Distribution
+            {t('analytics.distribution')}
           </TabsTrigger>
         </TabsList>
 
