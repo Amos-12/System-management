@@ -966,8 +966,8 @@ export const AdminDashboardCharts = () => {
               <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 to-teal-500/20">
                 <BarChart3 className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-cyan-600 dark:text-cyan-400" />
               </div>
-              <span className="hidden sm:inline">Distribution par Catégorie</span>
-              <span className="sm:hidden">Catégories</span>
+              <span className="hidden sm:inline">{t('dashboard.categoryDistribution')}</span>
+              <span className="sm:hidden">{t('dashboard.categoriesShort')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 sm:px-6">
