@@ -585,7 +585,7 @@ export const AdminDashboardCharts = () => {
           const profile = profilesData?.find(p => p.user_id === sellerId);
           const stats = sellerGroups[sellerId];
           return {
-            name: profile?.full_name || 'Vendeur inconnu',
+            name: profile?.full_name || t('dashboard.unknownSeller'),
             sales: salesCountBySeller[sellerId] || 0,
             revenue: stats.revenue
           };
