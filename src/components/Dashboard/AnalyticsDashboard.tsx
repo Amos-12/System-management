@@ -39,7 +39,8 @@ import {
   getDay,
   getHours,
 } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale';
+import { useTranslation } from 'react-i18next';
 import {
   BarChart,
   Bar,
