@@ -651,8 +651,8 @@ export const AdminDashboardCharts = () => {
     } catch (error) {
       console.error('Error exporting PDF:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'exporter le PDF",
+        title: t('common.error'),
+        description: t('dashboard.pdfExportError'),
         variant: "destructive",
       });
     }
