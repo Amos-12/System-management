@@ -515,7 +515,7 @@ export const AnalyticsDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ComparisonChart 
               data={comparisonData} 
-              title="Comparaison vs période précédente"
+              title={t('analytics.comparisonTitle')}
               currency={displayCurrency}
             />
             <HeatmapChart 
