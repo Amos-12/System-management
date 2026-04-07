@@ -771,7 +771,7 @@ export const AdminDashboardCharts = () => {
         </div>
         <div className="animate-fade-in priority-card" style={{ animationDelay: '150ms' }}>
           <KPICard
-            title="Bénéfices Mois"
+            title={t('dashboard.profitMonth')}
             value={monthProfit}
             previousValue={prevMonthProfit}
             icon={TrendingUp}
