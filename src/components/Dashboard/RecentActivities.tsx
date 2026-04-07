@@ -137,8 +137,8 @@ export const RecentActivities = () => {
           <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20">
             <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-violet-600 dark:text-violet-400" />
           </div>
-          <span className="hidden sm:inline">Activités Récentes</span>
-          <span className="sm:hidden">Activités</span>
+          <span className="hidden sm:inline">{t('dashboard.recentActivities')}</span>
+          <span className="sm:hidden">{t('dashboard.activitiesShort')}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="px-3 sm:px-6">
