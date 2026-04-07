@@ -176,7 +176,7 @@ export const RecentActivities = () => {
                         variant="secondary" 
                         className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0 sm:py-0.5 ${getActivityColor(activity.action_type)}`}
                       >
-                        {getActivityLabel(activity.action_type)}
+                        {getActivityLabel(activity.action_type, t)}
                       </Badge>
                       <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
                         {activity.user_name}
