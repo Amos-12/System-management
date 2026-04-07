@@ -996,7 +996,7 @@ export const AdminDashboardCharts = () => {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: any, name: string) => [`${value} produits`, name]}
+                      formatter={(value: any, name: string) => [`${value} ${t('dashboard.productsCount')}`, name]}
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--card))', 
                         border: '1px solid hsl(var(--border))', 
