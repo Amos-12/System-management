@@ -52,8 +52,8 @@ export const AdminBusinessHealth = ({
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-sm sm:text-lg flex items-center gap-1.5 sm:gap-2">
             <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-admin-profit" />
-            <span className="hidden sm:inline">Santé Business</span>
-            <span className="sm:hidden">Santé</span>
+            <span className="hidden sm:inline">{t('dashboard.businessHealth')}</span>
+            <span className="sm:hidden">{t('dashboard.healthShort')}</span>
           </CardTitle>
           <Badge className={`${status.color} text-[10px] sm:text-xs px-1.5 sm:px-2`}>{status.label}</Badge>
         </div>
