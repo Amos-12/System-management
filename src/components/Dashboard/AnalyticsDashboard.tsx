@@ -423,11 +423,11 @@ export const AnalyticsDashboard = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="z-[100]">
-              <SelectItem value="today">Aujourd'hui</SelectItem>
-              <SelectItem value="week">Cette semaine</SelectItem>
-              <SelectItem value="month">Ce mois</SelectItem>
-              <SelectItem value="quarter">90 jours</SelectItem>
-              <SelectItem value="custom">Personnalisé</SelectItem>
+              <SelectItem value="today">{t('analytics.periods.today')}</SelectItem>
+              <SelectItem value="week">{t('analytics.periods.week')}</SelectItem>
+              <SelectItem value="month">{t('analytics.periods.month')}</SelectItem>
+              <SelectItem value="quarter">{t('analytics.periods.quarter')}</SelectItem>
+              <SelectItem value="custom">{t('analytics.periods.custom')}</SelectItem>
             </SelectContent>
           </Select>
 
