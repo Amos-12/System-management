@@ -597,7 +597,7 @@ export const AnalyticsDashboard = () => {
               <CardHeader className="pb-2 shrink-0">
                 <CardTitle className="text-sm sm:text-lg font-semibold text-card-foreground flex items-center gap-2">
                   <PieChartIcon className="h-4 w-4 text-primary" />
-                  Distribution par catégorie
+                  {t('analytics.categoryDistribution')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex-1">
