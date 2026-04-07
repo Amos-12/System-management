@@ -520,7 +520,7 @@ export const AnalyticsDashboard = () => {
             />
             <HeatmapChart 
               data={heatmapData} 
-              title="Activité par heure et jour"
+              title={t('analytics.heatmapTitle')}
             />
           </div>
         </TabsContent>
