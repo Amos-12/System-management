@@ -797,7 +797,7 @@ export const AdminDashboardCharts = () => {
         </div>
         <div className="animate-fade-in" style={{ animationDelay: '250ms' }}>
           <KPICard
-            title="Panier Moyen"
+            title={t('dashboard.avgBasket')}
             value={avgBasket}
             icon={BarChart3}
             format="currency"
