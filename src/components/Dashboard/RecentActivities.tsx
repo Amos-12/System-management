@@ -71,32 +71,8 @@ const getActivityColor = (actionType: string): string => {
   return 'bg-muted text-muted-foreground';
 };
 
-const getActivityLabel = (actionType: string): string => {
-  const labels: Record<string, string> = {
-    'sale_created': 'Vente',
-    'sale_deleted': 'Suppression',
-    'sale_cancelled': 'Annulation',
-    'product_added': 'Ajout',
-    'product_updated': 'Modification',
-    'product_deleted': 'Suppression',
-    'product_deactivated': 'Désactivation',
-    'user_approved': 'Approbation',
-    'user_deactivated': 'Désactivation',
-    'user_deleted': 'Suppression',
-    'user_login': 'Connexion',
-    'user_logout': 'Déconnexion',
-    'user_signup': 'Inscription',
-    'stock_adjusted': 'Stock',
-    'settings_updated': 'Paramètres',
-    'category_created': 'Catégorie',
-    'category_updated': 'Catégorie',
-    'category_deleted': 'Catégorie',
-    'subcategory_created': 'Sous-cat.',
-    'subcategory_updated': 'Sous-cat.',
-    'subcategory_deleted': 'Sous-cat.',
-    'system_cleanup': 'Système',
-  };
-  return labels[actionType] || actionType;
+const getActivityLabel = (actionType: string, t: (key: string) => string): string => {
+  return t(`dashboard.activityLabels.${actionType}`) || actionType;
 };
 
 export const RecentActivities = () => {
