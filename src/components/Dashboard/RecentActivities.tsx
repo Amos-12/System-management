@@ -119,7 +119,7 @@ export const RecentActivities = () => {
 
       const activitiesWithNames = data?.map(a => ({
         ...a,
-        user_name: a.user_id ? profilesMap[a.user_id] || 'Utilisateur' : 'Système'
+        user_name: a.user_id ? profilesMap[a.user_id] || t('dashboard.user') : t('dashboard.system')
       })) || [];
 
       setActivities(activitiesWithNames);
