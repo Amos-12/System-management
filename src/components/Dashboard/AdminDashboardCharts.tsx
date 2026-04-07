@@ -681,7 +681,7 @@ export const AdminDashboardCharts = () => {
       <div className="flex flex-col gap-2">
         {/* Row 1: Title + Action buttons */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg sm:text-2xl font-bold text-foreground">Tableau de Bord</h2>
+          <h2 className="text-lg sm:text-2xl font-bold text-foreground">{t('dashboard.title')}</h2>
           <div className="flex items-center gap-1.5">
             <Button 
               variant="outline" 
