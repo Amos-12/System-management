@@ -395,9 +395,9 @@ export const AnalyticsDashboard = () => {
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <h2 className="text-lg sm:text-2xl font-bold text-foreground">Analytics</h2>
+            <h2 className="text-lg sm:text-2xl font-bold text-foreground">{t('analytics.title')}</h2>
             <span className="text-[10px] sm:text-xs text-muted-foreground">
-              MàJ: {format(lastRefresh, 'HH:mm:ss', { locale: fr })}
+              {t('analytics.updated')}: {format(lastRefresh, 'HH:mm:ss', { locale: getDateFnsLocale() })}
             </span>
           </div>
         </div>
