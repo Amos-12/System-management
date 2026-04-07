@@ -666,7 +666,7 @@ export const AdminDashboardCharts = () => {
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="h-32 flex items-center justify-center">
-                <div className="text-muted-foreground">Chargement...</div>
+                <div className="text-muted-foreground">{t('common.loading')}</div>
               </CardContent>
             </Card>
           ))}
