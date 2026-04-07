@@ -448,7 +448,7 @@ export const AnalyticsDashboard = () => {
                       setDateRange({ from: range.from, to: range.to });
                     }
                   }}
-                  locale={fr}
+                  locale={getDateFnsLocale()}
                 />
               </PopoverContent>
             </Popover>
