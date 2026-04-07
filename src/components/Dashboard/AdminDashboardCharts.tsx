@@ -723,9 +723,9 @@ export const AdminDashboardCharts = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="daily">7 derniers jours</SelectItem>
-              <SelectItem value="weekly">4 semaines</SelectItem>
-              <SelectItem value="monthly">3 mois</SelectItem>
+              <SelectItem value="daily">{t('dashboard.last7days')}</SelectItem>
+              <SelectItem value="weekly">{t('dashboard.last4weeks')}</SelectItem>
+              <SelectItem value="monthly">{t('dashboard.last3months')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
