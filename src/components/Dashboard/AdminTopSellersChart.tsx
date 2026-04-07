@@ -125,7 +125,7 @@ export const AdminTopSellersChart = ({ sellers, maxRevenue, currency = 'HTG' }: 
                     <div className="flex justify-between mt-1 sm:mt-1.5 text-[10px] sm:text-xs">
                       <span className="text-muted-foreground flex items-center gap-0.5 sm:gap-1">
                         <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                        {seller.sales} vente{seller.sales > 1 ? 's' : ''}
+                        {seller.sales} {t('dashboard.salesCount', { count: seller.sales })}
                       </span>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrencyValue(seller.revenue, currency)}</span>
                     </div>
