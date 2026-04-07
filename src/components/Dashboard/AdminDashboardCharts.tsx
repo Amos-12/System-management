@@ -883,8 +883,8 @@ export const AdminDashboardCharts = () => {
                   <Area 
                     type="monotone" 
                     dataKey="profit" 
-                    name="Bénéfices"
-                    stroke="hsl(var(--admin-profit))" 
+                    name={t('dashboard.profit')}
+                    stroke="hsl(var(--admin-profit))"
                     strokeWidth={2}
                     fill="url(#profitGradient)"
                   />
