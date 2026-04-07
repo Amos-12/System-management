@@ -564,7 +564,7 @@ export const AnalyticsDashboard = () => {
                         tickLine={false}
                       />
                       <Tooltip 
-                        formatter={(value: number) => [displayCurrency === 'USD' ? `$${formatNumber(value)}` : `${formatNumber(value)} HTG`, 'Revenus']}
+                        formatter={(value: number) => [displayCurrency === 'USD' ? `$${formatNumber(value)}` : `${formatNumber(value)} HTG`, t('analytics.revenue')]}
                         contentStyle={{ 
                           backgroundColor: 'hsl(var(--card))',
                           border: '1px solid hsl(var(--border))',
