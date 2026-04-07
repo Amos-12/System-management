@@ -1010,7 +1010,7 @@ export const AdminDashboardCharts = () => {
                 {/* Total in center */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <p className="text-lg sm:text-2xl font-bold text-foreground">{categoryData.reduce((sum, c) => sum + c.value, 0)}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Produits</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">{t('dashboard.productsCount')}</p>
                 </div>
               </div>
               
