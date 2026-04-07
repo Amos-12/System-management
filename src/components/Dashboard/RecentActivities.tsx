@@ -158,7 +158,7 @@ export const RecentActivities = () => {
           ) : activities.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Activity className="h-8 w-8 sm:h-12 sm:w-12 mb-2 opacity-50" />
-              <p className="text-xs sm:text-sm">Aucune activité récente</p>
+              <p className="text-xs sm:text-sm">{t('dashboard.noRecentActivity')}</p>
             </div>
           ) : (
             <div className="space-y-1.5 sm:space-y-2">
