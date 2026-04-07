@@ -158,8 +158,8 @@ export const AdminDashboardCharts = () => {
     } catch (error) {
       console.error('Error fetching chart data:', error);
       toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les données',
+        title: t('common.error'),
+        description: t('common.loadError'),
         variant: 'destructive',
       });
     } finally {
