@@ -787,7 +787,7 @@ export const AdminDashboardCharts = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
           <KPICard
-            title="Ventes"
+            title={t('dashboard.sales')}
             value={todaySales}
             icon={ShoppingCart}
             format="number"
