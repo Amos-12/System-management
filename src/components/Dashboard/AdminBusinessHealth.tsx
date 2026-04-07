@@ -114,7 +114,7 @@ export const AdminBusinessHealth = ({
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-admin-revenue" />
             </div>
             <div className="text-sm sm:text-lg font-bold text-admin-revenue">{stockTurnover.toFixed(1)}x</div>
-            <div className="text-[9px] sm:text-xs text-muted-foreground">Rotation</div>
+            <div className="text-[9px] sm:text-xs text-muted-foreground">{t('dashboard.rotation')}</div>
           </div>
           <div className="text-center p-1.5 sm:p-3 rounded-lg bg-muted/50 dark:bg-muted/20">
             <div className="flex justify-center mb-0.5 sm:mb-1">
