@@ -838,8 +838,8 @@ export const AdminDashboardCharts = () => {
             <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
               <CardTitle className="text-sm sm:text-lg flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-admin-revenue" />
-                <span className="hidden sm:inline">Évolution Revenus & Bénéfices</span>
-                <span className="sm:hidden">Revenus & Bénéfices</span>
+                <span className="hidden sm:inline">{t('dashboard.revenueProfitTrend')}</span>
+                <span className="sm:hidden">{t('dashboard.revenueProfitShort')}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="px-2 sm:px-6">
