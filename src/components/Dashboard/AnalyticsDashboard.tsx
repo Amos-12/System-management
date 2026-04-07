@@ -496,7 +496,7 @@ export const AnalyticsDashboard = () => {
       </div>
 
       {/* Main Trend Chart - without Brush */}
-      <TrendChart data={trendData} title={`Tendance des ventes - ${periodLabels[period]}`} showBrush={false} height={250} currency={displayCurrency} />
+      <TrendChart data={trendData} title={`${t('analytics.salesTrend')} - ${periodLabels[period]}`} showBrush={false} height={250} currency={displayCurrency} />
 
       {/* Tabs for different views */}
       <Tabs defaultValue="comparison" className="space-y-4">
