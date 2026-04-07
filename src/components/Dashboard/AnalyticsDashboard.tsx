@@ -480,7 +480,7 @@ export const AnalyticsDashboard = () => {
           currency={displayCurrency}
         />
         <KPICard
-          title="Ventes"
+          title={t('analytics.sales')}
           value={kpis.sales.current}
           previousValue={kpis.sales.previous}
           icon={ShoppingCart}
