@@ -400,7 +400,7 @@ export const AdminDashboardCharts = () => {
       const dayStats = saleCalc.calculatePeriodStats(sales, items, dayStart, dayEnd);
 
       chartData.push({
-        date: dayStart.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+        date: formatLocalizedDate(dayStart, { day: '2-digit', month: 'short' }),
         revenue: dayStats.revenueTTC,
         profit: dayStats.profitNet,
         sales: dayStats.count
