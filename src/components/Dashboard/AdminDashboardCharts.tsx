@@ -645,8 +645,8 @@ export const AdminDashboardCharts = () => {
       );
 
       toast({
-        title: "PDF exporté",
-        description: "Le rapport du tableau de bord a été téléchargé",
+        title: t('dashboard.pdfExported'),
+        description: t('dashboard.pdfExportedDesc'),
       });
     } catch (error) {
       console.error('Error exporting PDF:', error);
