@@ -923,7 +923,7 @@ export const AdminDashboardCharts = () => {
                     width={75}
                   />
                   <Tooltip 
-                    formatter={(value: any) => [displayCurrency === 'USD' ? `$${formatNumber(value)}` : `${formatNumber(value)} HTG`, 'Revenus']} 
+                    formatter={(value: any) => [displayCurrency === 'USD' ? `$${formatNumber(value)}` : `${formatNumber(value)} HTG`, t('dashboard.revenue')]} 
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--card))', 
                       border: '1px solid hsl(var(--border))', 
