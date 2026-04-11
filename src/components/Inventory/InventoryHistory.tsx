@@ -13,24 +13,15 @@ import { useToast } from '@/hooks/use-toast';
 import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { 
-  Search, 
-  RefreshCw, 
-  Download,
-  Calendar as CalendarIcon,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Settings2,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Package,
-  FileText
+  Search, RefreshCw, Download, Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle,
+  Settings2, TrendingUp, TrendingDown, Minus, Package, FileText
 } from 'lucide-react';
 import { generateInventoryHistoryPDF, CompanySettings } from '@/lib/pdfGenerator';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale';
 import * as XLSX from 'xlsx';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 interface StockMovement {
   id: string;
@@ -52,6 +43,7 @@ type MovementFilter = 'all' | 'in' | 'out' | 'adjustment';
 type DateRange = { from: Date; to: Date };
 
 export const InventoryHistory = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
