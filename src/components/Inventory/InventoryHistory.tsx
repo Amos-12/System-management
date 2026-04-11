@@ -212,7 +212,7 @@ export const InventoryHistory = () => {
     
     movements.forEach(m => {
       const dateKey = format(new Date(m.created_at), 'yyyy-MM-dd');
-      const dateLabel = format(new Date(m.created_at), 'dd/MM', { locale: fr });
+      const dateLabel = format(new Date(m.created_at), 'dd/MM', { locale: getDateFnsLocale() });
       
       if (!dailyData[dateKey]) {
         dailyData[dateKey] = { date: dateKey, dateLabel, ins: 0, outs: 0, net: 0 };
@@ -276,7 +276,7 @@ export const InventoryHistory = () => {
 
   const exportToExcel = () => {
     const data = filteredMovements.map(m => ({
-      'Date': format(new Date(m.created_at), 'dd/MM/yyyy HH:mm', { locale: fr }),
+      'Date': format(new Date(m.created_at), 'dd/MM/yyyy HH:mm', { locale: getDateFnsLocale() }),
       'Produit': m.product_name,
       'Catégorie': m.product_category,
       'Type': getMovementLabel(m.movement_type),
@@ -467,7 +467,7 @@ export const InventoryHistory = () => {
               <PopoverTrigger asChild>
                 <Button variant="outline" className="min-w-[240px] justify-start">
                   <CalendarIcon className="w-4 h-4 mr-2" />
-                  {format(dateRange.from, 'dd/MM/yyyy', { locale: fr })} - {format(dateRange.to, 'dd/MM/yyyy', { locale: fr })}
+                  {format(dateRange.from, 'dd/MM/yyyy', { locale: getDateFnsLocale() })} - {format(dateRange.to, 'dd/MM/yyyy', { locale: getDateFnsLocale() })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -566,10 +566,10 @@ export const InventoryHistory = () => {
                     <TableRow key={m.id}>
                       <TableCell className="whitespace-nowrap">
                         <div className="text-sm font-medium">
-                          {format(new Date(m.created_at), 'dd/MM/yyyy', { locale: fr })}
+                          {format(new Date(m.created_at), 'dd/MM/yyyy', { locale: getDateFnsLocale() })}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {format(new Date(m.created_at), 'HH:mm', { locale: fr })}
+                          {format(new Date(m.created_at), 'HH:mm', { locale: getDateFnsLocale() })}
                         </div>
                       </TableCell>
                       <TableCell>
