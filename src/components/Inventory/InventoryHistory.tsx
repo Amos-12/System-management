@@ -482,7 +482,7 @@ export const InventoryHistory = () => {
                       setDateRange({ from: range.from, to: range.from });
                     }
                   }}
-                  locale={fr}
+                  locale={getDateFnsLocale()}
                   numberOfMonths={2}
                 />
               </PopoverContent>
