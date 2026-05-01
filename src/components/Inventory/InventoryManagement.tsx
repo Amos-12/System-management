@@ -941,9 +941,9 @@ export const InventoryManagement = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {adjustmentModal.type === 'add' && 'Ajouter du stock'}
-              {adjustmentModal.type === 'remove' && 'Retirer du stock'}
-              {adjustmentModal.type === 'adjust' && 'Ajuster le stock'}
+              {adjustmentModal.type === 'add' && t('inventory.addStock')}
+              {adjustmentModal.type === 'remove' && t('inventory.removeStock')}
+              {adjustmentModal.type === 'adjust' && t('inventory.adjustStock')}
             </DialogTitle>
           </DialogHeader>
           
