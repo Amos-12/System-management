@@ -378,8 +378,8 @@ export const InventoryManagement = () => {
       });
 
       toast({
-        title: 'Stock mis à jour',
-        description: `Le stock de ${product.name} a été mis à jour`,
+        title: t('inventory.stockUpdated'),
+        description: t('inventory.stockUpdatedDesc', { name: product.name }),
       });
 
       setAdjustmentModal({ open: false, product: null, type: 'add' });
@@ -387,8 +387,8 @@ export const InventoryManagement = () => {
     } catch (error) {
       console.error('Error adjusting stock:', error);
       toast({
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour le stock',
+        title: t('common.error'),
+        description: t('inventory.updateError'),
         variant: 'destructive'
       });
     } finally {
