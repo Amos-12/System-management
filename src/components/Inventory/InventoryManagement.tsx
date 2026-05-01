@@ -292,8 +292,8 @@ export const InventoryManagement = () => {
   const handleAdjustment = async () => {
     if (!adjustmentModal.product || !adjustmentQuantity || !adjustmentReason) {
       toast({
-        title: 'Erreur',
-        description: 'Veuillez remplir tous les champs',
+        title: t('common.error'),
+        description: t('inventory.fillAllFields'),
         variant: 'destructive'
       });
       return;
