@@ -686,7 +686,7 @@ export const InventoryManagement = () => {
                 className="hidden sm:flex h-7 sm:h-8 text-xs"
               >
                 <List className="w-3.5 h-3.5 mr-1" />
-                Tableau
+                {t('inventory.table')}
               </Button>
               <Button 
                 variant={viewMode === 'cards' ? 'default' : 'outline'} 
@@ -695,7 +695,7 @@ export const InventoryManagement = () => {
                 className="h-7 sm:h-8 text-xs"
               >
                 <LayoutGrid className="w-3.5 h-3.5 sm:mr-1" />
-                <span className="hidden sm:inline">Cartes</span>
+                <span className="hidden sm:inline">{t('inventory.cards')}</span>
               </Button>
             </div>
           </div>
