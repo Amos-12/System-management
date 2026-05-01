@@ -890,7 +890,7 @@ export const InventoryManagement = () => {
                                   size="icon"
                                   className="h-8 w-8"
                                   onClick={() => openAdjustmentModal(product, 'add')}
-                                  title="Ajouter du stock"
+                                  title={t('inventory.actionAdd')}
                                 >
                                   <Plus className="w-4 h-4 text-green-500" />
                                 </Button>
@@ -899,7 +899,7 @@ export const InventoryManagement = () => {
                                   size="icon"
                                   className="h-8 w-8"
                                   onClick={() => openAdjustmentModal(product, 'remove')}
-                                  title="Retirer du stock"
+                                  title={t('inventory.actionRemove')}
                                 >
                                   <Minus className="w-4 h-4 text-red-500" />
                                 </Button>
@@ -908,7 +908,7 @@ export const InventoryManagement = () => {
                                   size="icon"
                                   className="h-8 w-8"
                                   onClick={() => openAdjustmentModal(product, 'adjust')}
-                                  title="Ajuster le stock"
+                                  title={t('inventory.actionAdjust')}
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
