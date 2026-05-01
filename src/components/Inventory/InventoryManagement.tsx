@@ -803,25 +803,25 @@ export const InventoryManagement = () => {
                       </TableHead>
                       <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
                         <div className="flex items-center gap-1">
-                          Produit
+                          {t('inventory.product')}
                           <ArrowUpDown className="w-3 h-3" />
                         </div>
                       </TableHead>
                       <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => handleSort('category')}>
                         <div className="flex items-center gap-1">
-                          Catégorie
+                          {t('inventory.category')}
                           <ArrowUpDown className="w-3 h-3" />
                         </div>
                       </TableHead>
                       <TableHead className="cursor-pointer text-right" onClick={() => handleSort('quantity')}>
                         <div className="flex items-center justify-end gap-1">
-                          Stock
+                          {t('inventory.stock')}
                           <ArrowUpDown className="w-3 h-3" />
                         </div>
                       </TableHead>
-                      <TableHead className="text-right hidden sm:table-cell">Seuil</TableHead>
-                      <TableHead className="hidden sm:table-cell">Statut</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">{t('inventory.thresholdShort')}</TableHead>
+                      <TableHead className="hidden sm:table-cell">{t('inventory.stockStatus')}</TableHead>
+                      <TableHead className="text-right">{t('common.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
