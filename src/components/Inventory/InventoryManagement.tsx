@@ -742,7 +742,7 @@ export const InventoryManagement = () => {
                           
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">Stock</span>
+                              <span className="text-sm text-muted-foreground">{t('inventory.stock')}</span>
                               <span className={`font-mono font-semibold ${
                                 status === 'rupture' ? 'text-destructive' :
                                 status === 'alerte' ? 'text-orange-500' : ''
@@ -751,7 +751,7 @@ export const InventoryManagement = () => {
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">Seuil d'alerte</span>
+                              <span className="text-sm text-muted-foreground">{t('inventory.alertThreshold')}</span>
                               <span className="text-sm">{product.alert_threshold}</span>
                             </div>
                           </div>
