@@ -118,8 +118,8 @@ export const InventoryManagement = () => {
     } catch (error) {
       console.error('Error fetching products:', error);
       toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les produits',
+        title: t('common.error'),
+        description: t('inventory.loadError'),
         variant: 'destructive'
       });
     } finally {
