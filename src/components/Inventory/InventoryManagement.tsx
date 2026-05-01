@@ -834,7 +834,7 @@ export const InventoryManagement = () => {
                     ) : paginatedProducts.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          Aucun produit trouvé
+                          {t('inventory.noProductsFound')}
                         </TableCell>
                       </TableRow>
                     ) : (
