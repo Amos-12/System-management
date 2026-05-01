@@ -621,7 +621,7 @@ export const InventoryManagement = () => {
             <div className="relative">
               <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher..."
+                placeholder={t('inventory.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 sm:pl-9 h-8 sm:h-9 text-xs sm:text-sm"
