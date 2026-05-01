@@ -581,7 +581,7 @@ export const InventoryManagement = () => {
           <CardContent className="pt-3 sm:pt-6 px-3 sm:px-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">Produits</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('inventory.products')}</p>
                 <p className="text-sm sm:text-xl font-bold">{stats.totalProducts}</p>
               </div>
               <Package className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-50" />
