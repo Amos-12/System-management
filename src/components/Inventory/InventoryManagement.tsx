@@ -494,10 +494,10 @@ export const InventoryManagement = () => {
         <div>
           <h2 className="text-lg sm:text-2xl font-bold text-foreground flex items-center gap-2">
             <Warehouse className="w-5 h-5 sm:w-7 sm:h-7" />
-            <span className="hidden sm:inline">Gestion d'Inventaire</span>
-            <span className="sm:hidden">Inventaire</span>
+            <span className="hidden sm:inline">{t('inventory.title')}</span>
+            <span className="sm:hidden">{t('inventory.titleShort')}</span>
           </h2>
-          <p className="text-xs sm:text-base text-muted-foreground">Vue en temps réel du stock</p>
+          <p className="text-xs sm:text-base text-muted-foreground">{t('inventory.subtitle')}</p>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
           <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={fetchProducts} disabled={loading}>
