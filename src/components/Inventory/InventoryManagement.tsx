@@ -553,13 +553,13 @@ export const InventoryManagement = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <p className="text-[10px] sm:text-sm text-muted-foreground flex items-center gap-1 cursor-help">
-                        <span className="hidden sm:inline">Valeur estimée</span>
-                        <span className="sm:hidden">Valeur</span>
+                        <span className="hidden sm:inline">{t('inventory.estimatedValue')}</span>
+                        <span className="sm:hidden">{t('inventory.valueShort')}</span>
                         <Info className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
                       </p>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">Valeur théorique si tout le stock était vendu au prix actuel</p>
+                      <p className="text-xs">{t('inventory.estimatedValueTooltip')}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
