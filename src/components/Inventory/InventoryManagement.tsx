@@ -857,7 +857,7 @@ export const InventoryManagement = () => {
                               <div className="flex flex-col">
                                 <span>{product.name}</span>
                                 {!product.is_active && (
-                                  <Badge variant="outline" className="mt-1 text-xs w-fit">Inactif</Badge>
+                                  <Badge variant="outline" className="mt-1 text-xs w-fit">{t('inventory.inactive')}</Badge>
                                 )}
                                 <div className="flex flex-wrap gap-1 mt-1 md:hidden">
                                   <Badge variant="outline" className="text-xs">{product.category}</Badge>
