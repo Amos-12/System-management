@@ -397,26 +397,26 @@ export const InventoryManagement = () => {
   };
 
   const exportToExcel = () => {
-    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: t('inventory.premiumFeature'), description: t('inventory.premiumExports'), variant: "destructive" }); return; }
     const data = filteredProducts.map(p => {
       const stock = getStockDisplay(p);
       return {
-        'Produit': p.name,
-        'Catégorie': p.category,
-        'Stock': stock.value,
-        'Unité': stock.unit,
-        'Seuil d\'alerte': p.alert_threshold,
-        'Prix de vente': p.price,
-        'Prix d\'achat': p.purchase_price || 'N/A',
-        'Valeur stock': stock.value * p.price,
-        'Statut': getStockStatus(p),
-        'Actif': p.is_active ? 'Oui' : 'Non'
+        [t('inventory.product')]: p.name,
+        [t('inventory.category')]: p.category,
+        [t('inventory.stock')]: stock.value,
+        [t('common.unit') !== 'common.unit' ? t('common.unit') : 'Unit']: stock.unit,
+        [t('inventory.alertThreshold')]: p.alert_threshold,
+        [t('common.salePrice') !== 'common.salePrice' ? t('common.salePrice') : 'Sale price']: p.price,
+        [t('common.purchasePrice') !== 'common.purchasePrice' ? t('common.purchasePrice') : 'Purchase price']: p.purchase_price || 'N/A',
+        [t('common.stockValue') !== 'common.stockValue' ? t('common.stockValue') : 'Stock value']: stock.value * p.price,
+        [t('inventory.stockStatus')]: getStockStatus(p),
+        [t('common.active')]: p.is_active ? t('common.yes') : t('common.no')
       };
     });
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventaire');
+    XLSX.utils.book_append_sheet(wb, ws, t('inventory.titleShort'));
     XLSX.writeFile(wb, `inventaire_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`);
   };
 
