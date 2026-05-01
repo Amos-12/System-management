@@ -163,10 +163,10 @@ export const InventoryManagement = () => {
     }
     // Fer: utiliser stock_barre seulement si > 0
     if (product.category === 'fer' && product.stock_barre !== null && product.stock_barre > 0) {
-      return { value: product.stock_barre, unit: 'barres', raw: product.stock_barre };
+      return { value: product.stock_barre, unit: t('inventory.unitBars'), raw: product.stock_barre };
     }
     // Par défaut: utiliser quantity
-    return { value: product.quantity, unit: product.unit || 'unités', raw: product.quantity };
+    return { value: product.quantity, unit: product.unit || t('inventory.unitDefault'), raw: product.quantity };
   };
 
   const getStockStatus = (product: Product) => {
