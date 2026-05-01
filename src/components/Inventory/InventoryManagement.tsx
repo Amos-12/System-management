@@ -477,13 +477,13 @@ export const InventoryManagement = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'rupture':
-        return <Badge variant="destructive" className="flex items-center gap-1"><XCircle className="w-3 h-3" /> Rupture</Badge>;
+        return <Badge variant="destructive" className="flex items-center gap-1"><XCircle className="w-3 h-3" /> {t('inventory.badgeRupture')}</Badge>;
       case 'alerte':
-        return <Badge variant="outline" className="flex items-center gap-1 border-orange-500 text-orange-500"><AlertTriangle className="w-3 h-3" /> Alerte</Badge>;
+        return <Badge variant="outline" className="flex items-center gap-1 border-orange-500 text-orange-500"><AlertTriangle className="w-3 h-3" /> {t('inventory.badgeAlerte')}</Badge>;
       case 'eleve':
-        return <Badge variant="outline" className="flex items-center gap-1 border-blue-500 text-blue-500"><CheckCircle className="w-3 h-3" /> Élevé</Badge>;
+        return <Badge variant="outline" className="flex items-center gap-1 border-blue-500 text-blue-500"><CheckCircle className="w-3 h-3" /> {t('inventory.badgeEleve')}</Badge>;
       default:
-        return <Badge variant="secondary" className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Normal</Badge>;
+        return <Badge variant="secondary" className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {t('inventory.badgeNormal')}</Badge>;
     }
   };
 
