@@ -671,10 +671,10 @@ export const InventoryManagement = () => {
         <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3">
             <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''}
+              {t('inventory.productCount', { count: filteredProducts.length })}
               {selectedProducts.size > 0 && (
                 <Badge variant="secondary" className="ml-1 sm:ml-2 text-[10px] sm:text-xs">
-                  {selectedProducts.size} sél.
+                  {selectedProducts.size} {t('inventory.selectedShort')}
                 </Badge>
               )}
             </CardTitle>
