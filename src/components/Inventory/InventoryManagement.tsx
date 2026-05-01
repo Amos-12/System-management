@@ -710,7 +710,7 @@ export const InventoryManagement = () => {
                 </div>
               ) : paginatedProducts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Aucun produit trouvé
+                  {t('inventory.noProductsFound')}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
