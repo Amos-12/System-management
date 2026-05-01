@@ -72,6 +72,7 @@ type SortField = 'name' | 'quantity' | 'category' | 'price';
 type SortDirection = 'asc' | 'desc';
 
 export const InventoryManagement = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { profile } = useAuth();
   const isMobile = useIsMobile();
