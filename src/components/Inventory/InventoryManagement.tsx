@@ -421,7 +421,7 @@ export const InventoryManagement = () => {
   };
 
   const exportToPDF = async () => {
-    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: t('inventory.premiumFeature'), description: t('inventory.premiumExports'), variant: "destructive" }); return; }
     const { data: settings } = await supabase
       .from('companies')
       .select('*')
@@ -430,8 +430,8 @@ export const InventoryManagement = () => {
     
     if (!settings) {
       toast({
-        title: 'Erreur',
-        description: 'Paramètres de l\'entreprise non disponibles',
+        title: t('common.error'),
+        description: t('inventory.settingsUnavailable'),
         variant: 'destructive'
       });
       return;
@@ -461,8 +461,8 @@ export const InventoryManagement = () => {
     });
 
     toast({
-      title: 'Export réussi',
-      description: 'Le rapport PDF a été téléchargé'
+      title: t('inventory.exportSuccess'),
+      description: t('inventory.pdfDownloaded')
     });
   };
 
