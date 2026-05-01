@@ -593,7 +593,7 @@ export const InventoryManagement = () => {
           <CardContent className="pt-3 sm:pt-6 px-3 sm:px-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">En alerte</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('inventory.inAlert')}</p>
                 <p className="text-sm sm:text-xl font-bold text-orange-500">{stats.alerteCount}</p>
               </div>
               <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 opacity-50" />
