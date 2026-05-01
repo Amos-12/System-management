@@ -953,7 +953,7 @@ export const InventoryManagement = () => {
             const isIron = product.category === 'fer';
             
             // Unité d'entrée: boîtes pour céramique, barres pour fer, unité standard sinon
-            const inputUnit = isCeramic ? 'boîtes' : (isIron ? 'barres' : (product.unit || 'unités'));
+            const inputUnit = isCeramic ? t('inventory.unitBoxes') : (isIron ? t('inventory.unitBars') : (product.unit || t('inventory.unitDefault')));
             const currentRaw = isCeramic && product.stock_boite !== null && product.stock_boite > 0 
               ? product.stock_boite 
               : (isIron && product.stock_barre !== null && product.stock_barre > 0 
