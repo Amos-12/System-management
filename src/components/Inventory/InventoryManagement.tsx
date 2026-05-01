@@ -630,10 +630,10 @@ export const InventoryManagement = () => {
             <div className="grid grid-cols-3 gap-1.5 sm:gap-4">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
-                  <SelectValue placeholder="Catégorie" />
+                  <SelectValue placeholder={t('inventory.category')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes</SelectItem>
+                  <SelectItem value="all">{t('inventory.allCategories')}</SelectItem>
                   {categories.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
@@ -641,24 +641,24 @@ export const InventoryManagement = () => {
               </Select>
               <Select value={stockLevel} onValueChange={(v) => setStockLevel(v as StockLevel)}>
                 <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
-                  <SelectValue placeholder="Stock" />
+                  <SelectValue placeholder={t('inventory.stock')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="rupture">Rupture</SelectItem>
-                  <SelectItem value="alerte">Alerte</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="eleve">Élevé</SelectItem>
+                  <SelectItem value="all">{t('inventory.allStocks')}</SelectItem>
+                  <SelectItem value="rupture">{t('inventory.stockLevelRupture')}</SelectItem>
+                  <SelectItem value="alerte">{t('inventory.stockLevelAlerte')}</SelectItem>
+                  <SelectItem value="normal">{t('inventory.stockLevelNormal')}</SelectItem>
+                  <SelectItem value="eleve">{t('inventory.stockLevelEleve')}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
-                  <SelectValue placeholder="Statut" />
+                  <SelectValue placeholder={t('inventory.stockStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="active">Actifs</SelectItem>
-                  <SelectItem value="inactive">Inactifs</SelectItem>
+                  <SelectItem value="all">{t('inventory.allStocks')}</SelectItem>
+                  <SelectItem value="active">{t('inventory.statusActive')}</SelectItem>
+                  <SelectItem value="inactive">{t('inventory.statusInactive')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
