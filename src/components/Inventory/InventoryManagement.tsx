@@ -520,15 +520,15 @@ export const InventoryManagement = () => {
         <TabsList className="grid w-full max-w-lg grid-cols-3 h-8 sm:h-9">
           <TabsTrigger value="standard" className="gap-2">
             <List className="w-4 h-4" />
-            <span className="hidden sm:inline">Inventaire</span>
+            <span className="hidden sm:inline">{t('inventory.tabStandard')}</span>
           </TabsTrigger>
           <TabsTrigger value="quick" className="gap-2">
             <ScanLine className="w-4 h-4" />
-            <span className="hidden sm:inline">Scan Rapide</span>
+            <span className="hidden sm:inline">{t('inventory.quickMode')}</span>
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-2">
             <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline">Historique</span>
+            <span className="hidden sm:inline">{t('inventory.history')}</span>
           </TabsTrigger>
         </TabsList>
 
