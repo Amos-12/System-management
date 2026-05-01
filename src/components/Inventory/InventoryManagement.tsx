@@ -980,7 +980,7 @@ export const InventoryManagement = () => {
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="font-medium">{product.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    Stock actuel: {currentRaw.toFixed(2)} {inputUnit}
+                    {t('inventory.currentStock')}: {currentRaw.toFixed(2)} {inputUnit}
                     {isCeramic && product.surface_par_boite && (
                       <span className="ml-1">({displayStock.value.toFixed(2)} m²)</span>
                     )}
@@ -989,7 +989,7 @@ export const InventoryManagement = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="quantity">
-                    {adjustmentModal.type === 'adjust' ? 'Nouvelle quantité' : 'Quantité'} ({inputUnit})
+                    {adjustmentModal.type === 'adjust' ? t('inventory.newQuantity') : t('inventory.quantity')} ({inputUnit})
                   </Label>
                   <Input
                     id="quantity"
@@ -998,22 +998,22 @@ export const InventoryManagement = () => {
                     step="0.01"
                     value={adjustmentQuantity}
                     onChange={(e) => setAdjustmentQuantity(e.target.value)}
-                    placeholder={adjustmentModal.type === 'adjust' ? 'Ex: 50' : 'Ex: 10'}
+                    placeholder={adjustmentModal.type === 'adjust' ? t('inventory.quantityPlaceholderAdjust') : t('inventory.quantityPlaceholderAdd')}
                   />
                   {isCeramic && product.surface_par_boite && (
                     <p className="text-xs text-muted-foreground">
-                      1 boîte = {product.surface_par_boite} m²
+                      {t('inventory.boxEqualsM2', { value: product.surface_par_boite })}
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="reason">Raison *</Label>
+                  <Label htmlFor="reason">{t('inventory.reasonRequired')}</Label>
                   <Textarea
                     id="reason"
                     value={adjustmentReason}
                     onChange={(e) => setAdjustmentReason(e.target.value)}
-                    placeholder="Ex: Réception commande #123, Inventaire annuel, Perte/Casse..."
+                    placeholder={t('inventory.reasonPlaceholder')}
                     rows={3}
                   />
                 </div>
