@@ -1021,7 +1021,7 @@ export const InventoryManagement = () => {
                 {adjustmentQuantity && (
                   <div className="p-3 bg-primary/10 rounded-lg">
                     <p className="text-sm">
-                      Nouveau stock: <span className="font-bold">{newRaw.toFixed(2)}</span> {inputUnit}
+                      {t('inventory.newStock')}: <span className="font-bold">{newRaw.toFixed(2)}</span> {inputUnit}
                       {isCeramic && product.surface_par_boite && (
                         <span className="ml-1">(<span className="font-bold">{newDisplay.toFixed(2)}</span> m²)</span>
                       )}
@@ -1034,11 +1034,11 @@ export const InventoryManagement = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdjustmentModal({ open: false, product: null, type: 'add' })}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleAdjustment} disabled={adjustmentLoading || !adjustmentQuantity || !adjustmentReason}>
               {adjustmentLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
-              Confirmer
+              {t('common.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>
