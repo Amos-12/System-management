@@ -22,9 +22,10 @@ import {
   Lock
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { getDateFnsLocale, getCurrentLocale } from '@/lib/locale';
 import * as XLSX from 'xlsx';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTranslation } from 'react-i18next';
 
 interface SellerStats {
   seller_id: string;
