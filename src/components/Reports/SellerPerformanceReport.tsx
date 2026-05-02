@@ -387,7 +387,7 @@ export const SellerPerformanceReport = () => {
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
             <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
-            Classement des Vendeurs
+            {t('reports.seller.ranking')}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-6 pt-0">
