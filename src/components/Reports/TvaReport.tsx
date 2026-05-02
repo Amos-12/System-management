@@ -386,7 +386,7 @@ export const TvaReport = () => {
           <CardHeader className="p-3 sm:p-6">
             <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
               <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
-              Détail ({totalItems} ventes)
+              {t('reports.tva.detailTitle', { count: totalItems })}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 sm:p-6 pt-0 sm:pt-0">
@@ -394,13 +394,13 @@ export const TvaReport = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
-                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">N° Vente</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Client</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">HT</TableHead>
-                    <TableHead className="text-center text-xs sm:text-sm hidden sm:table-cell">TVA</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">TVA</TableHead>
-                    <TableHead className="text-right text-xs sm:text-sm">TTC</TableHead>
+                    <TableHead className="text-xs sm:text-sm">{t('reports.tva.colDate')}</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">{t('reports.tva.colSaleNumber')}</TableHead>
+                    <TableHead className="text-xs sm:text-sm">{t('reports.tva.colCustomer')}</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">{t('reports.tva.colHT')}</TableHead>
+                    <TableHead className="text-center text-xs sm:text-sm hidden sm:table-cell">{t('reports.tva.colTVA')}</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">{t('reports.tva.colTVA')}</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">{t('reports.tva.colTTC')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
