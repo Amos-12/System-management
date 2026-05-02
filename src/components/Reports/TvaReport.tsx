@@ -227,7 +227,7 @@ export const TvaReport = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return new Date(dateString).toLocaleDateString(getCurrentLocale(), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -235,7 +235,7 @@ export const TvaReport = () => {
   };
 
   const formatDateCompact = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return new Date(dateString).toLocaleDateString(getCurrentLocale(), {
       day: '2-digit',
       month: '2-digit'
     });
