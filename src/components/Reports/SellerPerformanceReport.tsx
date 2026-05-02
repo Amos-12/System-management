@@ -504,7 +504,7 @@ export const SellerPerformanceReport = () => {
                             </Table>
                           </div>
                         ) : (
-                          <p className="text-muted-foreground text-xs sm:text-sm">Aucun produit vendu</p>
+                          <p className="text-muted-foreground text-xs sm:text-sm">{t('reports.seller.noProductsSold')}</p>
                         )}
                       </div>
                     </CollapsibleContent>
