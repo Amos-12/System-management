@@ -323,7 +323,7 @@ export const TvaReport = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
           <Card className="border-l-4 border-l-blue-500">
             <CardContent className="p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-muted-foreground">Total HT</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">{t('reports.tva.totalHT')}</p>
               <p className="text-base sm:text-xl font-bold">
                 {displayCurrency === 'HTG' 
                   ? `${formatNumber(totals.unifiedTotalHT)} HTG`
