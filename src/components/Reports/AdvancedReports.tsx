@@ -521,11 +521,11 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
   };
 
   const exportToPDF = () => {
-    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: t('reports.advanced.premiumOnlyTitle'), description: t('reports.advanced.premiumOnlyDesc'), variant: "destructive" }); return; }
     if (!reportData || !companySettings) {
       toast({
-        title: "Erreur",
-        description: "Paramètres de l'entreprise non disponibles",
+        title: t('common.error'),
+        description: t('reports.advanced.settingsError'),
         variant: "destructive"
       });
       return;
@@ -549,8 +549,8 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
     generateAdvancedReportPDF(reportData, pdfCompanySettings, dateRange);
     
     toast({
-      title: "Export réussi",
-      description: "Le rapport PDF a été téléchargé avec succès",
+      title: t('reports.advanced.exportSuccessTitle'),
+      description: t('reports.advanced.exportPdfDesc'),
     });
   };
 
