@@ -390,7 +390,7 @@ export const AdvancedReports = () => {
     if (!reportData) return;
 
     const csvContent = `
-Rapport de Ventes - ${format(dateRange.from, 'dd/MM/yyyy', { locale: fr })} au ${format(dateRange.to, 'dd/MM/yyyy', { locale: fr })}
+Rapport de Ventes - ${format(dateRange.from, 'dd/MM/yyyy', { locale: getDateFnsLocale() })} au ${format(dateRange.to, 'dd/MM/yyyy', { locale: getDateFnsLocale() })}
 
 Résumé:
 Ventes USD,$ ${formatNumber(reportData.totalRevenueUSD)}
@@ -683,7 +683,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="flex-1 justify-start text-left font-normal h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
                       <CalendarIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                      {format(dateRange.from, 'dd/MM/yy', { locale: fr })}
+                      {format(dateRange.from, 'dd/MM/yy', { locale: getDateFnsLocale() })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -700,7 +700,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="flex-1 justify-start text-left font-normal h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
                       <CalendarIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                      {format(dateRange.to, 'dd/MM/yy', { locale: fr })}
+                      {format(dateRange.to, 'dd/MM/yy', { locale: getDateFnsLocale() })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
