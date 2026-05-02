@@ -935,7 +935,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
                       />
                     </div>
                     <div className="text-[10px] sm:text-sm text-muted-foreground mt-1">
-                      {method.percentage.toFixed(1)}% des ventes
+                      {method.percentage.toFixed(1)}{t('reports.advanced.ofSales')}
                     </div>
                   </div>
                 ))}
