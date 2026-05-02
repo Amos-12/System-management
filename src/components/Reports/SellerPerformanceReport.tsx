@@ -473,7 +473,7 @@ export const SellerPerformanceReport = () => {
                             <p className="text-xs sm:text-base font-semibold">{formatCurrency(seller.total_revenue_converted, displayCurrency)}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] sm:text-sm text-muted-foreground">Panier moy.</p>
+                            <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.avgCart')}</p>
                             <p className="text-xs sm:text-base font-semibold">{formatCurrency(seller.average_cart, displayCurrency)}</p>
                           </div>
                         </div>
