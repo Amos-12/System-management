@@ -86,6 +86,7 @@ export const AdvancedReports = () => {
   const { settings: companySettings } = useCompanySettings();
   const currencyCalc = useCurrencyCalculations();
   const { plan, isFreePlan } = useSubscription();
+  const { t } = useTranslation();
   
   const displayCurrency = companySettings?.displayCurrency || 'HTG';
   const usdHtgRate = companySettings?.usdHtgRate || 132;
