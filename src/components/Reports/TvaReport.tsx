@@ -271,7 +271,7 @@ export const TvaReport = () => {
         <CardHeader className="p-3 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Calculator className="w-4 h-4 sm:w-5 sm:h-5" />
-            Rapport TVA Collectée
+            {t('reports.tva.title')}
             <Badge 
               variant="outline" 
               className={`ml-auto text-xs px-2 py-0.5 ${
@@ -287,7 +287,7 @@ export const TvaReport = () => {
         <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 items-end">
             <div className="space-y-1 sm:space-y-2">
-              <Label className="text-xs sm:text-sm">Date début</Label>
+              <Label className="text-xs sm:text-sm">{t('reports.tva.dateFrom')}</Label>
               <Input
                 type="date"
                 value={dateFrom}
@@ -296,7 +296,7 @@ export const TvaReport = () => {
               />
             </div>
             <div className="space-y-1 sm:space-y-2">
-              <Label className="text-xs sm:text-sm">Date fin</Label>
+              <Label className="text-xs sm:text-sm">{t('reports.tva.dateTo')}</Label>
               <Input
                 type="date"
                 value={dateTo}
@@ -306,13 +306,12 @@ export const TvaReport = () => {
             </div>
             <Button onClick={fetchTvaData} disabled={loading} className="h-8 sm:h-10 text-xs sm:text-sm">
               <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Générer</span>
+              <span className="hidden sm:inline">{t('reports.tva.generate')}</span>
             </Button>
             {salesData.length > 0 && (
               <Button variant="outline" onClick={handleExportPDF} className="h-8 sm:h-10 text-xs sm:text-sm">
                 {isFreePlan ? <Lock className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" /> : <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />}
-                <span className="hidden sm:inline">Export PDF</span>
-                <span className="hidden sm:inline">Export PDF</span>
+                <span className="hidden sm:inline">{t('reports.tva.exportPdf')}</span>
               </Button>
             )}
           </div>
