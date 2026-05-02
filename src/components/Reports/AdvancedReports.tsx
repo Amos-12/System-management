@@ -826,7 +826,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
 
             <Card className="shadow-lg col-span-2 sm:col-span-1">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 sm:p-4 pb-1 sm:pb-2">
-                <CardTitle className="text-[10px] sm:text-sm font-medium">Panier Moyen</CardTitle>
+                <CardTitle className="text-[10px] sm:text-sm font-medium">{t('reports.advanced.avgCart')}</CardTitle>
                 <Target className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent className="p-2 sm:p-4 pt-0">
