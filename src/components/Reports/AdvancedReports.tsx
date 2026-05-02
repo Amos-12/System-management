@@ -660,7 +660,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
         <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
           <CardTitle className="flex items-center gap-2 text-sm sm:text-lg">
             <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
-            Rapports Avancés
+            {t('reports.advanced.title')}
             <Badge 
               variant="outline" 
               className={`ml-auto text-xs px-2 py-0.5 ${
