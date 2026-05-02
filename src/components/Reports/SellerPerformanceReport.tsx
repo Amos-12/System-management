@@ -435,7 +435,7 @@ export const SellerPerformanceReport = () => {
                           </div>
                           <div className="text-right hidden md:block">
                             <p className="font-semibold">{formatCurrency(seller.total_revenue_converted, displayCurrency)}</p>
-                            <p className="text-xs text-muted-foreground">Total converti</p>
+                            <p className="text-xs text-muted-foreground">{t('reports.seller.totalConvertedLabel')}</p>
                           </div>
                           <div className="text-right hidden lg:block">
                             <p className="font-semibold">{formatCurrency(seller.total_profit, displayCurrency)}</p>
