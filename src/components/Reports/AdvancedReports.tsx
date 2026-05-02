@@ -718,22 +718,22 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
 
             {/* Report Type */}
             <div className="space-y-1 sm:space-y-2">
-              <label className="text-xs sm:text-sm font-medium text-foreground">Type de rapport</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">{t('reports.advanced.reportType')}</label>
               <Select value={reportType} onValueChange={(value: any) => setReportType(value)}>
                 <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sales">Ventes</SelectItem>
-                  <SelectItem value="products">Produits</SelectItem>
-                  <SelectItem value="sellers">Vendeurs</SelectItem>
+                  <SelectItem value="sales">{t('reports.advanced.typeSales')}</SelectItem>
+                  <SelectItem value="products">{t('reports.advanced.typeProducts')}</SelectItem>
+                  <SelectItem value="sellers">{t('reports.advanced.typeSellers')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Dynamic Filters */}
             <div className="sm:col-span-2 lg:col-span-2">
-              <label className="text-xs sm:text-sm font-medium text-foreground block mb-1 sm:mb-2">Filtres</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground block mb-1 sm:mb-2">{t('reports.advanced.filters')}</label>
               {renderDynamicFilters()}
             </div>
           </div>
