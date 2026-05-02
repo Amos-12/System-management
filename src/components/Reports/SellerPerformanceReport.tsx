@@ -487,9 +487,9 @@ export const SellerPerformanceReport = () => {
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="text-xs sm:text-sm">Produit</TableHead>
-                                  <TableHead className="text-right text-xs sm:text-sm">Qté</TableHead>
-                                  <TableHead className="text-right text-xs sm:text-sm">Revenu</TableHead>
+                                  <TableHead className="text-xs sm:text-sm">{t('reports.seller.colProduct')}</TableHead>
+                                  <TableHead className="text-right text-xs sm:text-sm">{t('reports.seller.colQty')}</TableHead>
+                                  <TableHead className="text-right text-xs sm:text-sm">{t('reports.seller.colRevenue')}</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
