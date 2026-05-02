@@ -894,7 +894,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
                       <div className="min-w-0">
                         <div className="font-medium text-xs sm:text-base truncate">{product.product_name}</div>
                         <div className="text-[10px] sm:text-sm text-muted-foreground">
-                          {product.quantity_sold} unités
+                          {product.quantity_sold} {t('reports.advanced.units')}
                         </div>
                       </div>
                     </div>
