@@ -397,7 +397,7 @@ export const SellerPerformanceReport = () => {
             </div>
           ) : sellers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
-              Aucune vente trouvée pour cette période
+              {t('reports.seller.noSales')}
             </div>
           ) : (
             <div className="space-y-1.5 sm:space-y-2">
