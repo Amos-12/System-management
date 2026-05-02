@@ -842,7 +842,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
             <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
               <CardTitle className="flex items-center gap-2 text-sm sm:text-lg">
                 <PieChart className="w-4 h-4 sm:w-5 sm:h-5" />
-                Répartition par Catégorie
+                {t('reports.advanced.categoryDistribution')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-6 pt-0">
