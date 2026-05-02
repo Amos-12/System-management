@@ -272,8 +272,8 @@ export const SellerPerformanceReport = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div className="flex items-center gap-2">
           <div>
-            <h2 className="text-lg sm:text-2xl font-bold text-foreground">Performance des Vendeurs</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">Analyse des ventes par vendeur</p>
+            <h2 className="text-lg sm:text-2xl font-bold text-foreground">{t('reports.seller.title')}</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">{t('reports.seller.subtitle')}</p>
           </div>
           <Badge 
             variant="outline" 
@@ -292,11 +292,11 @@ export const SellerPerformanceReport = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">Aujourd'hui</SelectItem>
-              <SelectItem value="7">7 jours</SelectItem>
-              <SelectItem value="30">30 jours</SelectItem>
-              <SelectItem value="90">3 mois</SelectItem>
-              <SelectItem value="365">1 an</SelectItem>
+              <SelectItem value="1">{t('reports.seller.today')}</SelectItem>
+              <SelectItem value="7">{t('reports.seller.days7')}</SelectItem>
+              <SelectItem value="30">{t('reports.seller.days30')}</SelectItem>
+              <SelectItem value="90">{t('reports.seller.months3')}</SelectItem>
+              <SelectItem value="365">{t('reports.seller.year1')}</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={fetchSellerStats} disabled={loading}>
@@ -304,7 +304,7 @@ export const SellerPerformanceReport = () => {
           </Button>
           <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={exportToExcel} disabled={sellers.length === 0}>
             {isFreePlan ? <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />}
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline">{t('reports.seller.export')}</span>
           </Button>
         </div>
       </div>
