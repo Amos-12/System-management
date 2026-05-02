@@ -477,10 +477,10 @@ export const SellerPerformanceReport = () => {
                             <p className="text-xs sm:text-base font-semibold">{formatCurrency(seller.average_cart, displayCurrency)}</p>
                           </div>
                         </div>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">Taux: 1 USD = {companySettings.usd_htg_rate} HTG</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">{t('reports.seller.rate')}: 1 USD = {companySettings.usd_htg_rate} HTG</p>
                         <h4 className="font-medium mb-2 flex items-center gap-2 text-xs sm:text-sm">
                           <Package className="w-3 h-3 sm:w-4 sm:h-4" />
-                          Top 5 Produits
+                          {t('reports.seller.top5Products')}
                         </h4>
                         {seller.top_products.length > 0 ? (
                           <div className="overflow-x-auto">
