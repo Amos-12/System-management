@@ -469,7 +469,7 @@ export const SellerPerformanceReport = () => {
                             <p className="text-xs sm:text-base font-semibold text-blue-600">{formatCurrency(seller.total_revenue_htg, 'HTG')}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] sm:text-sm text-muted-foreground">Total converti ({displayCurrency})</p>
+                            <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.totalConvertedLabel')} ({displayCurrency})</p>
                             <p className="text-xs sm:text-base font-semibold">{formatCurrency(seller.total_revenue_converted, displayCurrency)}</p>
                           </div>
                           <div>
