@@ -515,8 +515,8 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
     XLSX.writeFile(wb, fileName);
     
     toast({
-      title: "Export réussi",
-      description: "Le rapport Excel complet a été téléchargé avec succès",
+      title: t('reports.advanced.exportSuccessTitle'),
+      description: t('reports.advanced.exportExcelDesc'),
     });
   };
 
