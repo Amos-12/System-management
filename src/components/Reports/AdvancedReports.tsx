@@ -563,13 +563,13 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
         {/* Seller filter */}
         {availableFilters.includes('seller') && (
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Vendeur</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('reports.advanced.seller')}</label>
             <Select value={selectedSeller} onValueChange={setSelectedSeller}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder="Tous" />
+                <SelectValue placeholder={t('reports.advanced.all')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value="all">{t('reports.advanced.all')}</SelectItem>
                 {sellers.map(s => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
@@ -581,17 +581,17 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
         {/* Payment method filter */}
         {availableFilters.includes('payment_method') && (
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Paiement</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('reports.advanced.payment')}</label>
             <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Tous" />
+                <SelectValue placeholder={t('reports.advanced.all')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="cash">Espèces</SelectItem>
-                <SelectItem value="card">Carte</SelectItem>
-                <SelectItem value="transfer">Virement</SelectItem>
-                <SelectItem value="credit">Crédit</SelectItem>
+                <SelectItem value="all">{t('reports.advanced.all')}</SelectItem>
+                <SelectItem value="cash">{t('reports.advanced.paymentCash')}</SelectItem>
+                <SelectItem value="card">{t('reports.advanced.paymentCard')}</SelectItem>
+                <SelectItem value="transfer">{t('reports.advanced.paymentTransfer')}</SelectItem>
+                <SelectItem value="credit">{t('reports.advanced.paymentCredit')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -600,13 +600,13 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
         {/* Currency filter */}
         {availableFilters.includes('currency') && (
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Devise</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('reports.advanced.currency')}</label>
             <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
               <SelectTrigger className="w-28">
-                <SelectValue placeholder="Toutes" />
+                <SelectValue placeholder={t('reports.advanced.allF')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Toutes</SelectItem>
+                <SelectItem value="all">{t('reports.advanced.allF')}</SelectItem>
                 <SelectItem value="USD">USD</SelectItem>
                 <SelectItem value="HTG">HTG</SelectItem>
               </SelectContent>
@@ -617,13 +617,13 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
         {/* Category filter */}
         {availableFilters.includes('category') && (
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Catégorie</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('reports.advanced.category')}</label>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder="Toutes" />
+                <SelectValue placeholder={t('reports.advanced.allF')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Toutes</SelectItem>
+                <SelectItem value="all">{t('reports.advanced.allF')}</SelectItem>
                 {categories.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
                 ))}
@@ -635,16 +635,16 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
         {/* Stock level filter */}
         {availableFilters.includes('stock_level') && (
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Niveau stock</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('reports.advanced.stockLevel')}</label>
             <Select value={selectedStockLevel} onValueChange={setSelectedStockLevel}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Tous" />
+                <SelectValue placeholder={t('reports.advanced.all')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="rupture">Rupture</SelectItem>
-                <SelectItem value="alerte">Alerte</SelectItem>
-                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="all">{t('reports.advanced.all')}</SelectItem>
+                <SelectItem value="rupture">{t('reports.advanced.stockRupture')}</SelectItem>
+                <SelectItem value="alerte">{t('reports.advanced.stockAlert')}</SelectItem>
+                <SelectItem value="normal">{t('reports.advanced.stockNormal')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
