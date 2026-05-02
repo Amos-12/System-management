@@ -315,7 +315,7 @@ export const SellerPerformanceReport = () => {
           <CardContent className="p-3 sm:pt-6 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">Ventes USD</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.salesUSD')}</p>
                 <p className="text-sm sm:text-lg font-bold">{formatCurrency(totalRevenueUSD, 'USD')}</p>
               </div>
               <div className="p-2 sm:p-3 bg-green-500/10 rounded-full">
