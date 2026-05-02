@@ -185,8 +185,8 @@ export const TvaReport = () => {
     } catch (error) {
       console.error('Error fetching TVA data:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les données TVA",
+        title: t('common.error'),
+        description: t('reports.tva.loadError'),
         variant: "destructive"
       });
     } finally {
