@@ -233,16 +233,16 @@ export const SellerPerformanceReport = () => {
   const displayCurrency = companySettings.default_display_currency as 'USD' | 'HTG';
 
   const exportToExcel = () => {
-    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: t('reports.tva.premiumOnlyTitle'), description: t('reports.tva.premiumOnlyDesc'), variant: "destructive" }); return; }
     const data = sellers.map((s, index) => ({
-      'Rang': index + 1,
-      'Vendeur': s.seller_name,
+      [t('common.rank') || 'Rang']: index + 1,
+      [t('reports.seller.colProduct') === 'Produit' ? 'Vendeur' : t('users.title')]: s.seller_name,
       'Ventes USD': s.total_revenue_usd,
       'Ventes HTG': s.total_revenue_htg,
       [`Total (${displayCurrency})`]: s.total_revenue_converted,
-      'Nombre de ventes': s.total_sales,
-      'Panier moyen': s.average_cart,
-      'Bénéfice': s.total_profit,
+      [t('reports.seller.totalSales')]: s.total_sales,
+      [t('reports.seller.avgCart')]: s.average_cart,
+      [t('reports.seller.profit')]: s.total_profit,
       'Tendance (%)': s.trend_percent.toFixed(1)
     }));
 
@@ -253,7 +253,7 @@ export const SellerPerformanceReport = () => {
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'HTG' = 'HTG') => {
-    const formatted = new Intl.NumberFormat('fr-FR', { 
+    const formatted = new Intl.NumberFormat(getCurrentLocale(), { 
       minimumFractionDigits: 0,
       maximumFractionDigits: 0 
     }).format(amount);
