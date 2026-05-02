@@ -357,7 +357,7 @@ export const SellerPerformanceReport = () => {
           <CardContent className="p-3 sm:pt-6 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">Ventes totales</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.totalSales')}</p>
                 <p className="text-sm sm:text-lg font-bold">{totalSales}</p>
               </div>
               <div className="p-2 sm:p-3 bg-blue-500/10 rounded-full">
