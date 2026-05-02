@@ -369,8 +369,8 @@ export const AdvancedReports = () => {
     } catch (error) {
       console.error('Error generating report:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de générer le rapport",
+        title: t('common.error'),
+        description: t('reports.advanced.generateError'),
         variant: "destructive"
       });
     } finally {
