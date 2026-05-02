@@ -342,7 +342,7 @@ export const TvaReport = () => {
 
           <Card className="border-l-4 border-l-orange-500">
             <CardContent className="p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-muted-foreground">TVA ({tvaRate}%)</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">{t('reports.tva.totalTVA', { rate: tvaRate })}</p>
               <p className="text-base sm:text-xl font-bold text-orange-600 dark:text-orange-400">
                 {displayCurrency === 'HTG' 
                   ? `${formatNumber(totals.unifiedTotalTVA)} HTG`
