@@ -421,7 +421,7 @@ export const SellerPerformanceReport = () => {
                           </div>
                           <div>
                             <p className="font-medium text-xs sm:text-sm">{seller.seller_name}</p>
-                            <p className="text-[10px] sm:text-sm text-muted-foreground">{seller.total_sales} ventes</p>
+                            <p className="text-[10px] sm:text-sm text-muted-foreground">{seller.total_sales} {t('reports.seller.sales')}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 sm:gap-4">
