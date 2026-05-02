@@ -866,7 +866,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
                         />
                       </div>
                       <div className="text-[10px] sm:text-sm text-muted-foreground text-center font-medium">
-                        {cat.percentage.toFixed(1)}% du CA
+                        {cat.percentage.toFixed(1)}{t('reports.advanced.ofRevenue')}
                       </div>
                     </div>
                   );
