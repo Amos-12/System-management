@@ -678,7 +678,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
             {/* Date Range */}
             <div className="space-y-1 sm:space-y-2">
-              <label className="text-xs sm:text-sm font-medium text-foreground">Période</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">{t('reports.advanced.period')}</label>
               <div className="flex items-center gap-1 sm:gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
