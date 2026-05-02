@@ -808,7 +808,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
                 <div className="text-sm sm:text-lg font-bold text-primary">
                   {formatCurrencyDisplay(reportData.totalRevenueConverted)}
                 </div>
-                <p className="text-[8px] sm:text-xs text-muted-foreground hidden sm:block">Taux: 1 USD = {companySettings?.usdHtgRate || 132} HTG</p>
+                <p className="text-[8px] sm:text-xs text-muted-foreground hidden sm:block">{t('reports.seller.rate')}: 1 USD = {companySettings?.usdHtgRate || 132} HTG</p>
               </CardContent>
             </Card>
 
