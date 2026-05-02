@@ -14,6 +14,8 @@ import { generateTvaReportPDF } from '@/lib/pdfGenerator';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTranslation } from 'react-i18next';
+import { getCurrentLocale } from '@/lib/locale';
 
 interface TvaSaleData {
   id: string;
