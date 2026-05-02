@@ -420,8 +420,8 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
     document.body.removeChild(link);
 
     toast({
-      title: "Succès",
-      description: "Rapport exporté avec succès"
+      title: t('reports.advanced.exportCsvSuccessTitle'),
+      description: t('reports.advanced.exportCsvDesc')
     });
   };
 
