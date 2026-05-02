@@ -789,7 +789,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
 
             <Card className="shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 sm:p-4 pb-1 sm:pb-2">
-                <CardTitle className="text-[10px] sm:text-sm font-medium">Ventes HTG</CardTitle>
+                <CardTitle className="text-[10px] sm:text-sm font-medium">{t('reports.advanced.salesHTG')}</CardTitle>
                 <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
               </CardHeader>
               <CardContent className="p-2 sm:p-4 pt-0">
