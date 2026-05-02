@@ -439,7 +439,7 @@ export const SellerPerformanceReport = () => {
                           </div>
                           <div className="text-right hidden lg:block">
                             <p className="font-semibold">{formatCurrency(seller.total_profit, displayCurrency)}</p>
-                            <p className="text-xs text-muted-foreground">Bénéfice</p>
+                            <p className="text-xs text-muted-foreground">{t('reports.seller.profit')}</p>
                           </div>
                           <Badge variant={seller.trend_percent >= 0 ? 'default' : 'destructive'} className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2">
                             {seller.trend_percent >= 0 ? (
