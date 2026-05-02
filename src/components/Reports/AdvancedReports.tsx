@@ -742,28 +742,28 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-2 border-t">
             <Button onClick={generateReport} disabled={loading} size="sm" className="gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm">
               <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
-              {loading ? 'Génération...' : 'Actualiser'}
+              {loading ? t('reports.advanced.generating') : t('reports.advanced.refresh')}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" disabled={!reportData} size="sm" className="gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm">
                   {isFreePlan ? <Lock className="w-3 h-3 sm:w-4 sm:h-4" /> : <Download className="w-3 h-3 sm:w-4 sm:h-4" />}
-                  <span className="hidden sm:inline">Exporter</span>
+                  <span className="hidden sm:inline">{t('reports.advanced.exportBtn')}</span>
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={exportToPDF}>
                   <FileDown className="w-4 h-4 mr-2" />
-                  Export PDF
+                  {t('reports.advanced.exportPdf')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={exportReport}>
                   <FileText className="w-4 h-4 mr-2" />
-                  Export rapide (CSV)
+                  {t('reports.advanced.exportCsvQuick')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={exportToExcel}>
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Export complet (Excel)
+                  {t('reports.advanced.exportExcelFull')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
