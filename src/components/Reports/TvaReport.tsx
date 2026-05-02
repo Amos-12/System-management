@@ -221,8 +221,8 @@ export const TvaReport = () => {
     );
     
     toast({
-      title: "Export réussi",
-      description: "Le rapport TVA a été téléchargé"
+      title: t('reports.tva.exportSuccessTitle'),
+      description: t('reports.tva.exportSuccessDesc')
     });
   };
 
