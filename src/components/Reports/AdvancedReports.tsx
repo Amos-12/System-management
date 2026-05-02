@@ -387,7 +387,7 @@ export const AdvancedReports = () => {
   };
 
   const exportReport = () => {
-    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: t('reports.advanced.premiumOnlyTitle'), description: t('reports.advanced.premiumOnlyDesc'), variant: "destructive" }); return; }
     if (!reportData) return;
 
     const csvContent = `
