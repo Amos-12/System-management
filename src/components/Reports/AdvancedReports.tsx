@@ -426,7 +426,7 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
   };
 
   const exportToExcel = () => {
-    if (isFreePlan) { toast({ title: "Fonctionnalité Premium", description: "Les exports sont disponibles dans les plans payants.", variant: "destructive" }); return; }
+    if (isFreePlan) { toast({ title: t('reports.advanced.premiumOnlyTitle'), description: t('reports.advanced.premiumOnlyDesc'), variant: "destructive" }); return; }
     if (!reportData) return;
 
     // Sheet 1: Résumé
