@@ -361,7 +361,7 @@ export const TvaReport = () => {
 
           <Card className="border-l-4 border-l-green-500">
             <CardContent className="p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-muted-foreground">Total TTC</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">{t('reports.tva.totalTTC')}</p>
               <p className="text-base sm:text-xl font-bold text-green-600 dark:text-green-400">
                 {displayCurrency === 'HTG' 
                   ? `${formatNumber(totals.unifiedTotalTTC)} HTG`
