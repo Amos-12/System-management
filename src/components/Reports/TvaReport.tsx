@@ -463,7 +463,7 @@ export const TvaReport = () => {
         <Card>
           <CardContent className="p-6 sm:p-8 text-center text-muted-foreground">
             <Calculator className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-sm sm:text-base">Sélectionnez une période et cliquez sur "Générer" pour voir le rapport TVA</p>
+            <p className="text-sm sm:text-base">{t('reports.tva.emptyState')}</p>
           </CardContent>
         </Card>
       )}
