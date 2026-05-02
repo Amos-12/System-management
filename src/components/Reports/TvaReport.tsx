@@ -81,8 +81,8 @@ export const TvaReport = () => {
   const fetchTvaData = async () => {
     if (!companySettings || !currencyCalc) {
       toast({
-        title: "Erreur",
-        description: "Paramètres de l'entreprise non chargés",
+        title: t('common.error'),
+        description: t('reports.tva.settingsNotLoaded'),
         variant: "destructive"
       });
       return;
