@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Search, Activity, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale';
 
 interface ActivityLog {
   id: string;
@@ -23,12 +24,15 @@ interface ActivityLog {
 }
 
 export const GlobalActivityLogs = () => {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [companies, setCompanies] = useState<Map<string, string>>(new Map());
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
+
+  const dateLocale = getDateFnsLocale();
 
   const fetchLogs = async () => {
     try {
@@ -47,7 +51,7 @@ export const GlobalActivityLogs = () => {
       setProfiles(new Map(profilesRes.data?.map(p => [p.user_id, p.full_name]) || []));
     } catch (err) {
       console.error('Error fetching logs:', err);
-      toast({ title: 'Erreur', description: 'Impossible de charger les logs', variant: 'destructive' });
+      toast({ title: t('activityLog.error'), description: t('activityLog.errorLoadLogs'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -65,6 +69,8 @@ export const GlobalActivityLogs = () => {
     return matchSearch && matchType;
   });
 
+  const getActionLabel = (action: string) => t(`activityLog.actions.${action}`, action.replace(/_/g, ' '));
+
   const getActionBadge = (action: string) => {
     const colors: Record<string, string> = {
       sale_created: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -75,7 +81,7 @@ export const GlobalActivityLogs = () => {
       stock_adjusted: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
       system_cleanup: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
     };
-    return <Badge className={colors[action] || 'bg-muted text-muted-foreground'}>{action.replace(/_/g, ' ')}</Badge>;
+    return <Badge className={colors[action] || 'bg-muted text-muted-foreground'}>{getActionLabel(action)}</Badge>;
   };
 
   return (
@@ -84,56 +90,56 @@ export const GlobalActivityLogs = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <Activity className="w-5 h-5" />
-            Logs d'activité ({filtered.length})
+            {t('activityLog.title')} ({filtered.length})
           </CardTitle>
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading}>
               <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-              Actualiser
+              {t('activityLog.refresh')}
             </Button>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Type" />
+                <SelectValue placeholder={t('activityLog.actionType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
+                <SelectItem value="all">{t('activityLog.allTypes')}</SelectItem>
                 {actionTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type.replace(/_/g, ' ')}</SelectItem>
+                  <SelectItem key={type} value={type}>{getActionLabel(type)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder={t('activityLog.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p className="text-center text-muted-foreground py-8">Chargement...</p>
+          <p className="text-center text-muted-foreground py-8">{t('activityLog.loading')}</p>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead>Entreprise</TableHead>
+                  <TableHead>{t('activityLog.date')}</TableHead>
+                  <TableHead>{t('activityLog.action')}</TableHead>
+                  <TableHead>{t('activityLog.description')}</TableHead>
+                  <TableHead>{t('activityLog.user')}</TableHead>
+                  <TableHead>{t('activityLog.company')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="whitespace-nowrap text-sm">
-                      {format(new Date(log.created_at), 'dd/MM/yy HH:mm', { locale: fr })}
+                      {format(new Date(log.created_at), 'dd/MM/yy HH:mm', { locale: dateLocale })}
                     </TableCell>
                     <TableCell>{getActionBadge(log.action_type)}</TableCell>
                     <TableCell className="max-w-xs truncate text-sm">{log.description}</TableCell>
                     <TableCell className="text-sm">
-                      {log.user_id ? profiles.get(log.user_id) || 'Inconnu' : 'Système'}
+                      {log.user_id ? profiles.get(log.user_id) || t('activityLog.unknown') : t('activityLog.system')}
                     </TableCell>
                     <TableCell className="text-sm">
                       {log.company_id ? companies.get(log.company_id) || '—' : '—'}
@@ -143,7 +149,7 @@ export const GlobalActivityLogs = () => {
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      Aucun log trouvé
+                      {t('activityLog.noLogsFound')}
                     </TableCell>
                   </TableRow>
                 )}
