@@ -132,6 +132,8 @@ export const CartSection: React.FC<CartSectionProps> = ({
   barresToTonnage,
   companySettings,
 }) => {
+  const { t } = useTranslation();
+  const getCategoryLabel = useCategoryLabel();
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   const totalItems = cart.reduce((sum, item) => sum + item.cartQuantity, 0);
