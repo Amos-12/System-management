@@ -325,10 +325,10 @@ export const CartSection: React.FC<CartSectionProps> = ({
       <div className="border-t p-3 flex gap-3 shrink-0 bg-background">
         <Button variant="outline" className="flex-1 gap-2" onClick={onContinueShopping}>
           <ArrowLeft className="w-4 h-4" />
-          Continuer
+          {t('seller.cartSection.continue')}
         </Button>
         <Button className="flex-1 gap-2" onClick={onCheckout}>
-          Finaliser
+          {t('seller.cartSection.checkout')}
           <ArrowRight className="w-4 h-4" />
         </Button>
       </div>
