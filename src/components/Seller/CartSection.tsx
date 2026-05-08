@@ -152,11 +152,11 @@ export const CartSection: React.FC<CartSectionProps> = ({
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
             <ShoppingCart className="w-8 h-8 text-muted-foreground/50" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">Panier vide</h3>
-          <p className="text-muted-foreground text-sm mb-4">Ajoutez des produits pour commencer</p>
+          <h3 className="text-lg font-semibold mb-2">{t('seller.cartSection.empty')}</h3>
+          <p className="text-muted-foreground text-sm mb-4">{t('seller.cartSection.emptyHint')}</p>
           <Button onClick={onContinueShopping} variant="default" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Parcourir les produits
+            {t('seller.cartSection.browseProducts')}
           </Button>
         </CardContent>
       </Card>
