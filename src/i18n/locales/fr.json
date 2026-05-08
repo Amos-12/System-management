@@ -891,6 +891,33 @@
       "cancel": "Annuler",
       "delete": "Supprimer",
       "loading": "Chargement..."
+    },
+    "cartSection": {
+      "empty": "Panier vide",
+      "emptyHint": "Ajoutez des produits pour commencer",
+      "browseProducts": "Parcourir les produits",
+      "title": "Panier",
+      "unitsShort": "u.",
+      "clearTitle": "Vider le panier ?",
+      "clearDesc": "Supprimer tous les {{count}} produits du panier ?",
+      "clearDesc_one": "Supprimer le produit du panier ?",
+      "cancel": "Annuler",
+      "clear": "Vider",
+      "continue": "Continuer",
+      "checkout": "Finaliser",
+      "categories": {
+        "ceramique": "Céramique",
+        "fer": "Fer",
+        "energie": "Énergie",
+        "blocs": "Blocs",
+        "vetements": "Vêtements",
+        "electronique": "Électronique",
+        "electromenager": "Électroménager",
+        "boissons": "Boissons",
+        "alimentaires": "Alimentaire",
+        "gazeuses": "Gazeuses",
+        "autres": "Autres"
+      }
     }
   },
   "help": {
