@@ -100,21 +100,9 @@ const getCategoryColor = (category: string) => {
   return colors[category] || 'bg-muted text-muted-foreground';
 };
 
-const getCategoryLabel = (category: string) => {
-  const labels: Record<string, string> = {
-    ceramique: 'Céramique',
-    fer: 'Fer',
-    energie: 'Énergie',
-    blocs: 'Blocs',
-    vetements: 'Vêtements',
-    electronique: 'Électronique',
-    electromenager: 'Électroménager',
-    boissons: 'Boissons',
-    alimentaires: 'Alimentaire',
-    gazeuses: 'Gazeuses',
-    autres: 'Autres',
-  };
-  return labels[category] || category;
+const useCategoryLabel = () => {
+  const { t } = useTranslation();
+  return (category: string) => t(`seller.cartSection.categories.${category}`, category);
 };
 
 const getCartItemSpecs = (item: CartItem): string[] => {
