@@ -156,6 +156,7 @@ const getCategoryColor = (category: string) => {
 };
 
 export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => {
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const { categories: dynamicCategories } = useCategories();
   const { sousCategories: dynamicSousCategories } = useSousCategories();
