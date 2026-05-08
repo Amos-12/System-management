@@ -891,6 +891,33 @@
       "cancel": "Cancel",
       "delete": "Delete",
       "loading": "Loading..."
+    },
+    "cartSection": {
+      "empty": "Empty cart",
+      "emptyHint": "Add products to get started",
+      "browseProducts": "Browse products",
+      "title": "Cart",
+      "unitsShort": "u.",
+      "clearTitle": "Clear cart?",
+      "clearDesc": "Remove all {{count}} products from the cart?",
+      "clearDesc_one": "Remove the product from the cart?",
+      "cancel": "Cancel",
+      "clear": "Clear",
+      "continue": "Continue",
+      "checkout": "Checkout",
+      "categories": {
+        "ceramique": "Ceramic",
+        "fer": "Iron",
+        "energie": "Energy",
+        "blocs": "Blocks",
+        "vetements": "Clothing",
+        "electronique": "Electronics",
+        "electromenager": "Appliances",
+        "boissons": "Beverages",
+        "alimentaires": "Food",
+        "gazeuses": "Sodas",
+        "autres": "Other"
+      }
     }
   },
   "help": {
