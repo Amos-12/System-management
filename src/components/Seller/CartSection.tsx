@@ -184,15 +184,15 @@ export const CartSection: React.FC<CartSectionProps> = ({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Vider le panier ?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('seller.cartSection.clearTitle')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Supprimer tous les {distinctProducts} produit{distinctProducts > 1 ? 's' : ''} du panier ?
+                    {t('seller.cartSection.clearDesc', { count: distinctProducts })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogCancel>{t('seller.cartSection.cancel')}</AlertDialogCancel>
                   <AlertDialogAction onClick={onClearCart} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Vider
+                    {t('seller.cartSection.clear')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
