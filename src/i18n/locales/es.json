@@ -891,6 +891,33 @@
       "cancel": "Cancelar",
       "delete": "Eliminar",
       "loading": "Cargando..."
+    },
+    "cartSection": {
+      "empty": "Carrito vacío",
+      "emptyHint": "Agregue productos para comenzar",
+      "browseProducts": "Explorar productos",
+      "title": "Carrito",
+      "unitsShort": "u.",
+      "clearTitle": "¿Vaciar el carrito?",
+      "clearDesc": "¿Eliminar todos los {{count}} productos del carrito?",
+      "clearDesc_one": "¿Eliminar el producto del carrito?",
+      "cancel": "Cancelar",
+      "clear": "Vaciar",
+      "continue": "Continuar",
+      "checkout": "Finalizar",
+      "categories": {
+        "ceramique": "Cerámica",
+        "fer": "Hierro",
+        "energie": "Energía",
+        "blocs": "Bloques",
+        "vetements": "Ropa",
+        "electronique": "Electrónica",
+        "electromenager": "Electrodomésticos",
+        "boissons": "Bebidas",
+        "alimentaires": "Alimentos",
+        "gazeuses": "Gaseosas",
+        "autres": "Otros"
+      }
     }
   },
   "help": {
