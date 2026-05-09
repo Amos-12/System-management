@@ -9,7 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Search, Building2, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/lib/locale';
 
 interface Company {
   id: string;
@@ -28,6 +29,7 @@ interface Company {
 }
 
 export const CompanyList = () => {
+  const { t } = useTranslation();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -63,12 +65,12 @@ export const CompanyList = () => {
       if (error) throw error;
 
       toast({
-        title: currentActive ? 'Entreprise suspendue' : 'Entreprise activée',
-        description: currentActive ? "L'entreprise a été suspendue." : "L'entreprise est maintenant active.",
+        title: currentActive ? t('superAdmin.companies_list.toast_suspended_title') : t('superAdmin.companies_list.toast_activated_title'),
+        description: currentActive ? t('superAdmin.companies_list.toast_suspended_desc') : t('superAdmin.companies_list.toast_activated_desc'),
       });
       fetchCompanies();
     } catch (err) {
-      toast({ title: 'Erreur', description: 'Impossible de modifier le statut', variant: 'destructive' });
+      toast({ title: t('superAdmin.common.error'), description: t('superAdmin.companies_list.toast_status_error'), variant: 'destructive' });
     }
   };
 
@@ -96,10 +98,10 @@ export const CompanyList = () => {
         .eq('id', companyId);
 
       if (error) throw error;
-      toast({ title: 'Plan modifié', description: `Plan changé en ${newPlan}` });
+      toast({ title: t('superAdmin.companies_list.toast_plan_changed'), description: t('superAdmin.companies_list.toast_plan_changed_desc', { plan: newPlan }) });
       fetchCompanies();
     } catch (err) {
-      toast({ title: 'Erreur', description: 'Impossible de changer le plan', variant: 'destructive' });
+      toast({ title: t('superAdmin.common.error'), description: t('superAdmin.companies_list.toast_plan_error'), variant: 'destructive' });
     }
   };
 
@@ -114,10 +116,10 @@ export const CompanyList = () => {
         .eq('id', companyId);
 
       if (error) throw error;
-      toast({ title: 'Essai prolongé', description: '30 jours supplémentaires ajoutés' });
+      toast({ title: t('superAdmin.companies_list.toast_extended'), description: t('superAdmin.companies_list.toast_extended_desc') });
       fetchCompanies();
     } catch (err) {
-      toast({ title: 'Erreur', description: 'Impossible de prolonger', variant: 'destructive' });
+      toast({ title: t('superAdmin.common.error'), description: t('superAdmin.companies_list.toast_extend_error'), variant: 'destructive' });
     }
   };
 
@@ -125,7 +127,7 @@ export const CompanyList = () => {
     navigator.clipboard.writeText(code);
     setCopiedId(companyId);
     setTimeout(() => setCopiedId(null), 2000);
-    toast({ title: 'Code copié', description: code });
+    toast({ title: t('superAdmin.companies_list.toast_code_copied'), description: code });
   };
 
   const filtered = companies.filter(
@@ -153,12 +155,12 @@ export const CompanyList = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <Building2 className="w-5 h-5" />
-            Entreprises ({filtered.length})
+            {t('superAdmin.companies_list.title', { count: filtered.length })}
           </CardTitle>
           <div className="relative w-full sm:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Rechercher..."
+              placeholder={t('superAdmin.common.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -168,18 +170,18 @@ export const CompanyList = () => {
       </CardHeader>
       <CardContent className="p-2 sm:p-6 pt-0">
         {loading ? (
-          <p className="text-center text-muted-foreground py-8">Chargement...</p>
+          <p className="text-center text-muted-foreground py-8">{t('superAdmin.common.loading')}</p>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs sm:text-sm">Entreprise</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Plan</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Statut</TableHead>
-                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Expiration</TableHead>
-                  <TableHead className="text-xs sm:text-sm hidden md:table-cell">Code invitation</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Actions</TableHead>
+                  <TableHead className="text-xs sm:text-sm">{t('superAdmin.companies_list.header_company')}</TableHead>
+                  <TableHead className="text-xs sm:text-sm">{t('superAdmin.companies_list.header_plan')}</TableHead>
+                  <TableHead className="text-xs sm:text-sm">{t('superAdmin.companies_list.header_status')}</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">{t('superAdmin.companies_list.header_expiration')}</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden md:table-cell">{t('superAdmin.companies_list.header_invitation')}</TableHead>
+                  <TableHead className="text-xs sm:text-sm">{t('superAdmin.companies_list.header_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -196,16 +198,16 @@ export const CompanyList = () => {
                       <TableCell className="p-2 sm:p-4">{getPlanBadge(company.subscription_plan)}</TableCell>
                       <TableCell className="p-2 sm:p-4">
                         {!company.is_active ? (
-                          <Badge variant="destructive" className="text-[10px] sm:text-xs">Suspendue</Badge>
+                          <Badge variant="destructive" className="text-[10px] sm:text-xs">{t('superAdmin.companies_list.status_suspended')}</Badge>
                         ) : isExpired ? (
-                          <Badge variant="outline" className="border-destructive text-destructive text-[10px] sm:text-xs">Expirée</Badge>
+                          <Badge variant="outline" className="border-destructive text-destructive text-[10px] sm:text-xs">{t('superAdmin.companies_list.status_expired')}</Badge>
                         ) : (
-                          <Badge variant="outline" className="border-green-500 text-green-600 text-[10px] sm:text-xs">Active</Badge>
+                          <Badge variant="outline" className="border-green-500 text-green-600 text-[10px] sm:text-xs">{t('superAdmin.companies_list.status_active')}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="p-2 sm:p-4 hidden sm:table-cell">
                         <span className={`text-xs sm:text-sm ${isExpired ? 'text-destructive font-medium' : ''}`}>
-                          {format(new Date(company.subscription_end), 'dd MMM yyyy', { locale: fr })}
+                          {format(new Date(company.subscription_end), 'dd MMM yyyy', { locale: getDateFnsLocale() })}
                         </span>
                       </TableCell>
                       <TableCell className="p-2 sm:p-4 hidden md:table-cell">
@@ -217,7 +219,7 @@ export const CompanyList = () => {
                             onClick={() => copyInvitationCode(company.invitation_code!, company.id)}
                           >
                             {copiedId === company.id ? (
-                              <><Check className="w-3 h-3 mr-1" /> Copié</>
+                              <><Check className="w-3 h-3 mr-1" /> {t('superAdmin.companies_list.copied')}</>
                             ) : (
                               <><Copy className="w-3 h-3 mr-1" /> {company.invitation_code}</>
                             )}
@@ -232,7 +234,7 @@ export const CompanyList = () => {
                             className="text-[10px] sm:text-xs h-7 px-2 sm:px-3"
                             onClick={() => handleToggleActive(company.id, company.is_active)}
                           >
-                            {company.is_active ? 'Suspendre' : 'Activer'}
+                            {company.is_active ? t('superAdmin.companies_list.suspend') : t('superAdmin.companies_list.activate')}
                           </Button>
                           <Select
                             value={company.subscription_plan}
@@ -249,7 +251,7 @@ export const CompanyList = () => {
                             </SelectContent>
                           </Select>
                           <Button variant="ghost" size="sm" className="h-7 text-[10px] sm:text-xs px-1.5 sm:px-3" onClick={() => handleExtendTrial(company.id)}>
-                            +30j
+                            {t('superAdmin.companies_list.extend_30d')}
                           </Button>
                         </div>
                       </TableCell>
@@ -259,7 +261,7 @@ export const CompanyList = () => {
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8 text-xs sm:text-sm">
-                      Aucune entreprise trouvée
+                      {t('superAdmin.companies_list.no_companies')}
                     </TableCell>
                   </TableRow>
                 )}

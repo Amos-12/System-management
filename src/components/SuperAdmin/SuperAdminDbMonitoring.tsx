@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Database, RefreshCw, Trash2, HardDrive, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface DbSizeInfo {
   size_mb: number;
@@ -20,6 +20,7 @@ interface TableCount {
 }
 
 export const SuperAdminDbMonitoring = () => {
+  const { t } = useTranslation();
   const [sizeInfo, setSizeInfo] = useState<DbSizeInfo | null>(null);
   const [tableCounts, setTableCounts] = useState<TableCount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +45,7 @@ export const SuperAdminDbMonitoring = () => {
       setTableCounts(counts.sort((a, b) => b.count - a.count));
     } catch (err) {
       console.error('Error fetching DB info:', err);
-      toast({ title: 'Erreur', description: 'Impossible de charger les données', variant: 'destructive' });
+      toast({ title: t('superAdmin.common.error'), description: t('superAdmin.db_monitoring.toast_load_error'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -55,12 +56,12 @@ export const SuperAdminDbMonitoring = () => {
   const handleCleanup = async () => {
     try {
       setCleaning(true);
-      const { data, error } = await supabase.rpc('cleanup_old_data');
+      const { error } = await supabase.rpc('cleanup_old_data');
       if (error) throw error;
-      toast({ title: 'Nettoyage terminé', description: `Données anciennes supprimées avec succès` });
+      toast({ title: t('superAdmin.db_monitoring.toast_cleanup_done'), description: t('superAdmin.db_monitoring.toast_cleanup_done_desc') });
       fetchData();
     } catch (err) {
-      toast({ title: 'Erreur', description: 'Échec du nettoyage', variant: 'destructive' });
+      toast({ title: t('superAdmin.common.error'), description: t('superAdmin.db_monitoring.toast_cleanup_error'), variant: 'destructive' });
     } finally {
       setCleaning(false);
     }
@@ -80,46 +81,45 @@ export const SuperAdminDbMonitoring = () => {
 
   return (
     <div className="space-y-6">
-      {/* DB Size Card */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <HardDrive className="w-5 h-5" />
-              Stockage Base de Données
+              {t('superAdmin.db_monitoring.storage_title')}
             </CardTitle>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
                 <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                Actualiser
+                {t('superAdmin.db_monitoring.refresh')}
               </Button>
               <Button variant="destructive" size="sm" onClick={handleCleanup} disabled={cleaning}>
                 <Trash2 className={`w-4 h-4 mr-1 ${cleaning ? 'animate-spin' : ''}`} />
-                Nettoyer
+                {t('superAdmin.db_monitoring.cleanup')}
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {loading || !sizeInfo ? (
-            <p className="text-center text-muted-foreground py-4">Chargement...</p>
+            <p className="text-center text-muted-foreground py-4">{t('superAdmin.common.loading')}</p>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Utilisation</span>
+                <span className="text-sm text-muted-foreground">{t('superAdmin.db_monitoring.usage')}</span>
                 <span className={`text-lg font-bold ${getStatusColor(sizeInfo.usage_percent)}`}>
                   {sizeInfo.usage_percent}%
                 </span>
               </div>
               <Progress value={sizeInfo.usage_percent} className={getProgressColor(sizeInfo.usage_percent)} />
               <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{sizeInfo.size_mb} MB utilisés</span>
-                <span>{sizeInfo.max_size_mb} MB max</span>
+                <span>{t('superAdmin.db_monitoring.mb_used', { size: sizeInfo.size_mb })}</span>
+                <span>{t('superAdmin.db_monitoring.mb_max', { max: sizeInfo.max_size_mb })}</span>
               </div>
               {sizeInfo.needs_cleanup && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
                   <AlertTriangle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Seuil critique atteint — nettoyage recommandé</span>
+                  <span className="text-sm font-medium">{t('superAdmin.db_monitoring.critical_threshold')}</span>
                 </div>
               )}
             </div>
@@ -127,17 +127,16 @@ export const SuperAdminDbMonitoring = () => {
         </CardContent>
       </Card>
 
-      {/* Table Counts */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="w-5 h-5" />
-            Nombre d'enregistrements par table
+            {t('superAdmin.db_monitoring.table_counts_title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-center text-muted-foreground py-4">Chargement...</p>
+            <p className="text-center text-muted-foreground py-4">{t('superAdmin.common.loading')}</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {tableCounts.map(tc => (

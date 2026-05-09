@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Search, Users, Shield, ShieldCheck, UserX } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/lib/locale';
 
 interface UserWithDetails {
   user_id: string;
@@ -24,6 +25,7 @@ interface UserWithDetails {
 }
 
 export const GlobalUsersPanel = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -71,7 +73,7 @@ export const GlobalUsersPanel = () => {
       setUsers(merged);
     } catch (err) {
       console.error('Error fetching users:', err);
-      toast({ title: 'Erreur', description: 'Impossible de charger les utilisateurs', variant: 'destructive' });
+      toast({ title: t('superAdmin.common.error'), description: t('superAdmin.users_list.toast_load_error'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -87,10 +89,10 @@ export const GlobalUsersPanel = () => {
         .eq('user_id', userId);
 
       if (error) throw error;
-      toast({ title: currentActive ? 'Utilisateur désactivé' : 'Utilisateur activé' });
+      toast({ title: currentActive ? t('superAdmin.users_list.toast_deactivated') : t('superAdmin.users_list.toast_activated') });
       fetchUsers();
     } catch (err) {
-      toast({ title: 'Erreur', description: 'Impossible de modifier le statut', variant: 'destructive' });
+      toast({ title: t('superAdmin.common.error'), description: t('superAdmin.users_list.toast_status_error'), variant: 'destructive' });
     }
   };
 
@@ -102,10 +104,10 @@ export const GlobalUsersPanel = () => {
         .eq('user_id', userId);
 
       if (error) throw error;
-      toast({ title: 'Rôle modifié', description: `Rôle changé en ${newRole}` });
+      toast({ title: t('superAdmin.users_list.toast_role_changed'), description: t('superAdmin.users_list.toast_role_changed_desc', { role: newRole }) });
       fetchUsers();
     } catch (err) {
-      toast({ title: 'Erreur', description: 'Impossible de changer le rôle', variant: 'destructive' });
+      toast({ title: t('superAdmin.common.error'), description: t('superAdmin.users_list.toast_role_error'), variant: 'destructive' });
     }
   };
 
@@ -132,41 +134,41 @@ export const GlobalUsersPanel = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Utilisateurs ({filtered.length})
+            {t('superAdmin.users_list.title', { count: filtered.length })}
           </CardTitle>
           <div className="flex gap-2">
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Rôle" />
+                <SelectValue placeholder={t('superAdmin.users_list.filter_role')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="seller">Vendeur</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
+                <SelectItem value="all">{t('superAdmin.common.all')}</SelectItem>
+                <SelectItem value="admin">{t('superAdmin.users_list.role_admin')}</SelectItem>
+                <SelectItem value="seller">{t('superAdmin.users_list.role_seller')}</SelectItem>
+                <SelectItem value="super_admin">{t('superAdmin.users_list.role_super_admin')}</SelectItem>
               </SelectContent>
             </Select>
             <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder={t('superAdmin.common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p className="text-center text-muted-foreground py-8">Chargement...</p>
+          <p className="text-center text-muted-foreground py-8">{t('superAdmin.common.loading')}</p>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead>Entreprise</TableHead>
-                  <TableHead>Rôle</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Inscrit le</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{t('superAdmin.users_list.header_user')}</TableHead>
+                  <TableHead>{t('superAdmin.users_list.header_company')}</TableHead>
+                  <TableHead>{t('superAdmin.users_list.header_role')}</TableHead>
+                  <TableHead>{t('superAdmin.users_list.header_status')}</TableHead>
+                  <TableHead>{t('superAdmin.users_list.header_registered')}</TableHead>
+                  <TableHead>{t('superAdmin.users_list.header_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -184,13 +186,13 @@ export const GlobalUsersPanel = () => {
                     <TableCell>{getRoleBadge(user.role)}</TableCell>
                     <TableCell>
                       {user.is_active ? (
-                        <Badge variant="outline" className="border-green-500 text-green-600">Actif</Badge>
+                        <Badge variant="outline" className="border-green-500 text-green-600">{t('superAdmin.users_list.active')}</Badge>
                       ) : (
-                        <Badge variant="destructive">Inactif</Badge>
+                        <Badge variant="destructive">{t('superAdmin.users_list.inactive')}</Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{format(new Date(user.created_at), 'dd MMM yyyy', { locale: fr })}</span>
+                      <span className="text-sm">{format(new Date(user.created_at), 'dd MMM yyyy', { locale: getDateFnsLocale() })}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 flex-wrap">
@@ -200,7 +202,7 @@ export const GlobalUsersPanel = () => {
                           onClick={() => handleToggleActive(user.user_id, user.is_active)}
                           disabled={user.role === 'super_admin'}
                         >
-                          {user.is_active ? 'Désactiver' : 'Activer'}
+                          {user.is_active ? t('superAdmin.users_list.deactivate') : t('superAdmin.users_list.activate')}
                         </Button>
                         {user.role !== 'super_admin' && (
                           <Select value={user.role} onValueChange={(v) => handleChangeRole(user.user_id, v)}>
@@ -208,8 +210,8 @@ export const GlobalUsersPanel = () => {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="seller">Vendeur</SelectItem>
+                              <SelectItem value="admin">{t('superAdmin.users_list.role_admin')}</SelectItem>
+                              <SelectItem value="seller">{t('superAdmin.users_list.role_seller')}</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
@@ -220,7 +222,7 @@ export const GlobalUsersPanel = () => {
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      Aucun utilisateur trouvé
+                      {t('superAdmin.users_list.no_users')}
                     </TableCell>
                   </TableRow>
                 )}
