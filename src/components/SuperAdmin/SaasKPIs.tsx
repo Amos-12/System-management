@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Building2, Users, DollarSign, Clock } from 'lucide-react';
 import { KPICard } from '@/components/Dashboard/KPICard';
+import { useTranslation } from 'react-i18next';
 
 interface SaasStats {
   totalCompanies: number;
@@ -13,6 +14,7 @@ interface SaasStats {
 }
 
 export const SaasKPIs = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<SaasStats>({
     totalCompanies: 0,
     activeCompanies: 0,
@@ -77,7 +79,7 @@ export const SaasKPIs = () => {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
       <KPICard
-        title="Entreprises"
+        title={t('superAdmin.kpis.companies')}
         value={stats.totalCompanies}
         previousValue={stats.activeCompanies}
         icon={Building2}
@@ -86,7 +88,7 @@ export const SaasKPIs = () => {
         size="sm"
       />
       <KPICard
-        title="Utilisateurs"
+        title={t('superAdmin.kpis.users')}
         value={stats.totalUsers}
         icon={Users}
         format="number"
@@ -94,7 +96,7 @@ export const SaasKPIs = () => {
         size="sm"
       />
       <KPICard
-        title="MRR"
+        title={t('superAdmin.kpis.mrr')}
         value={stats.mrr}
         icon={DollarSign}
         format="currency"
@@ -103,7 +105,7 @@ export const SaasKPIs = () => {
         size="sm"
       />
       <KPICard
-        title="En essai"
+        title={t('superAdmin.kpis.trial')}
         value={stats.trialCompanies}
         icon={Clock}
         format="number"

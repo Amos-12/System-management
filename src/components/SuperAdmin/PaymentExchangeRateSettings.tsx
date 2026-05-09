@@ -7,8 +7,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, DollarSign, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const PaymentExchangeRateSettings = () => {
+  const { t } = useTranslation();
   const [rate, setRate] = useState<string>('132.00');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,8 +38,8 @@ export const PaymentExchangeRateSettings = () => {
     } catch (error: any) {
       console.error('Error fetching rate:', error);
       toast({
-        title: 'Erreur',
-        description: 'Impossible de charger le taux de change',
+        title: t('superAdmin.common.error'),
+        description: t('superAdmin.exchange_rate.toast_load_error'),
         variant: 'destructive',
       });
     } finally {
@@ -49,8 +51,8 @@ export const PaymentExchangeRateSettings = () => {
     const numRate = parseFloat(rate);
     if (isNaN(numRate) || numRate <= 0) {
       toast({
-        title: 'Erreur',
-        description: 'Le taux doit être un nombre positif',
+        title: t('superAdmin.common.error'),
+        description: t('superAdmin.exchange_rate.toast_invalid_rate'),
         variant: 'destructive',
       });
       return;
@@ -69,14 +71,14 @@ export const PaymentExchangeRateSettings = () => {
       if (error) throw error;
 
       toast({
-        title: 'Succès',
-        description: 'Taux de change mis à jour',
+        title: t('superAdmin.exchange_rate.toast_success'),
+        description: t('superAdmin.exchange_rate.toast_updated'),
       });
     } catch (error: any) {
       console.error('Error saving rate:', error);
       toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible de mettre à jour le taux',
+        title: t('superAdmin.common.error'),
+        description: error.message || t('superAdmin.exchange_rate.toast_save_error'),
         variant: 'destructive',
       });
     } finally {
@@ -102,12 +104,12 @@ export const PaymentExchangeRateSettings = () => {
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
-                Taux de change pour paiements
+                {t('superAdmin.exchange_rate.title')}
               </div>
               <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </CardTitle>
             <CardDescription>
-              Configurez le taux de conversion USD → HTG utilisé pour MonCash et NatCash
+              {t('superAdmin.exchange_rate.description')}
             </CardDescription>
           </CardHeader>
         </CollapsibleTrigger>
@@ -120,9 +122,9 @@ export const PaymentExchangeRateSettings = () => {
           ) : (
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="exchange-rate">Taux USD/HTG</Label>
+                <Label htmlFor="exchange-rate">{t('superAdmin.exchange_rate.rate_label')}</Label>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">1 USD =</span>
+                  <span className="text-sm text-muted-foreground">{t('superAdmin.exchange_rate.one_usd')}</span>
                   <Input
                     id="exchange-rate"
                     type="number"
@@ -135,12 +137,12 @@ export const PaymentExchangeRateSettings = () => {
                   <span className="text-sm text-muted-foreground">HTG</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Les plans à $19, $39 et $59 seront convertis automatiquement en HTG selon ce taux.
+                  {t('superAdmin.exchange_rate.explanation')}
                 </p>
               </div>
 
               <div className="bg-muted/50 p-3 rounded-lg space-y-1 text-sm">
-                <p className="font-medium">Exemples de conversion :</p>
+                <p className="font-medium">{t('superAdmin.exchange_rate.examples_title')}</p>
                 <p className="text-muted-foreground">• Plan Basic ($19) → {(19 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
                 <p className="text-muted-foreground">• Plan Pro ($39) → {(39 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
                 <p className="text-muted-foreground">• Plan Premium ($59) → {(59 * parseFloat(rate || '0')).toFixed(2)} HTG</p>
@@ -150,10 +152,10 @@ export const PaymentExchangeRateSettings = () => {
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Enregistrement...
+                    {t('superAdmin.exchange_rate.saving')}
                   </>
                 ) : (
-                  'Enregistrer le taux'
+                  t('superAdmin.exchange_rate.save')
                 )}
               </Button>
             </CardContent>
