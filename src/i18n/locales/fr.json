@@ -1145,7 +1145,47 @@
     "lockedReports": "Rapports avancés",
     "lockedReportsDesc": "Les rapports avancés et exports sont disponibles dans les plans payants.",
     "lockedTva": "Rapport TVA",
-    "lockedTvaDesc": "Le rapport TVA détaillé est disponible dans les plans payants."
+    "lockedTvaDesc": "Le rapport TVA détaillé est disponible dans les plans payants.",
+    "expired": {
+      "title_trial": "Votre période d'essai est terminée",
+      "title_subscription": "Votre abonnement a expiré",
+      "subtitle": "L'accès à {{company}} est temporairement suspendu. Choisissez un plan pour continuer.",
+      "method_card": "Carte bancaire",
+      "method_moncash": "MonCash",
+      "popular": "Populaire",
+      "per_month": "/mois",
+      "choose": "Choisir {{plan}}",
+      "logout": "Se déconnecter",
+      "session_expired": "Session expirée",
+      "session_expired_desc": "Veuillez vous reconnecter pour continuer.",
+      "error": "Erreur",
+      "checkout_error": "Impossible de créer la session de paiement",
+      "feature_users_5": "5 utilisateurs",
+      "feature_users_15": "15 utilisateurs",
+      "feature_users_unlimited": "Utilisateurs illimités",
+      "feature_products_200": "200 produits",
+      "feature_products_1000": "1000 produits",
+      "feature_products_unlimited": "Produits illimités",
+      "feature_support_email": "Support email",
+      "feature_support_priority": "Support prioritaire",
+      "feature_support_dedicated": "Support dédié"
+    },
+    "locked": {
+      "default_title": "Fonctionnalité Premium",
+      "default_desc": "Cette fonctionnalité est disponible dans les plans payants.",
+      "upgrade_to": "Passer au plan {{plan}}"
+    },
+    "upgrade_banner": {
+      "trial_label": "Plan d'essai gratuit",
+      "days_remaining_one": "· {{count}}j restant",
+      "days_remaining_other": "· {{count}}j restants",
+      "expired": "· Expiré",
+      "upgrade": "Upgrade",
+      "session_expired": "Session expirée",
+      "session_expired_desc": "Veuillez vous reconnecter.",
+      "error": "Erreur",
+      "checkout_error": "Impossible de créer la session de paiement"
+    }
   },
   "language": {
     "fr": "Français",
@@ -1444,5 +1484,38 @@
       "system_cleanup": "Nettoyage système",
       "settings_updated": "Paramètres modifiés"
     }
+  },
+  "sellerDashboard": {
+    "goals_title": "Objectifs du Jour",
+    "goal_sales": "Ventes",
+    "goal_revenue": "Revenu",
+    "goal_achieved": "🎉 Objectif atteint !",
+    "goal_remaining_sales_one": "{{count}} vente restante",
+    "goal_remaining_sales_other": "{{count}} ventes restantes",
+    "goal_remaining_usd": "${{amount}} restants",
+    "goal_remaining_htg": "{{amount}} HTG restants",
+    "goal_basis": "Objectifs basés sur votre moyenne +20%",
+    "trend_title": "Tendance des 7 derniers jours",
+    "tooltip_revenue": "Revenu:",
+    "tooltip_sales": "Ventes:",
+    "legend_revenue": "Revenu ({{currency}})",
+    "legend_sales": "Ventes",
+    "comparison_title": "Comparaison de Performance",
+    "comparison_vs": "vs",
+    "updated_at": "MàJ:",
+    "refresh": "Actualiser",
+    "kpi_revenue_today": "Revenu Aujourd'hui",
+    "kpi_sales": "Ventes",
+    "kpi_avg_basket": "Panier Moyen",
+    "kpi_total_sales": "Total Ventes",
+    "cmp_today_vs_yesterday": "Aujourd'hui vs Hier",
+    "cmp_this_week": "Cette Semaine",
+    "cmp_this_month": "Ce Mois",
+    "top_products": "Top 5 Produits",
+    "no_sales_recorded": "Aucune vente enregistrée",
+    "recent_sales": "Ventes Récentes",
+    "no_recent_sales": "Aucune vente récente",
+    "units": "unités",
+    "loading": "Chargement..."
   }
 }

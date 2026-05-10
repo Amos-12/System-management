@@ -5,19 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Crown, CreditCard, Smartphone, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  features: string[];
-}
-
-const plans: Plan[] = [
-  { id: 'basic', name: 'Basic', price: 19, features: ['5 utilisateurs', '200 produits', 'Support email'] },
-  { id: 'pro', name: 'Pro', price: 39, features: ['15 utilisateurs', '1000 produits', 'Support prioritaire'] },
-  { id: 'premium', name: 'Premium', price: 59, features: ['Utilisateurs illimités', 'Produits illimités', 'Support dédié'] },
-];
+import { useTranslation } from 'react-i18next';
+import { Trans } from 'react-i18next';
 
 interface ExpiredScreenProps {
   companyName: string;
@@ -26,20 +15,26 @@ interface ExpiredScreenProps {
 }
 
 export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScreenProps) => {
+  const { t } = useTranslation();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<'stripe' | 'moncash'>('stripe');
+
+  const plans = [
+    { id: 'basic', name: 'Basic', price: 19, features: [t('subscription.expired.feature_users_5'), t('subscription.expired.feature_products_200'), t('subscription.expired.feature_support_email')] },
+    { id: 'pro', name: 'Pro', price: 39, features: [t('subscription.expired.feature_users_15'), t('subscription.expired.feature_products_1000'), t('subscription.expired.feature_support_priority')] },
+    { id: 'premium', name: 'Premium', price: 59, features: [t('subscription.expired.feature_users_unlimited'), t('subscription.expired.feature_products_unlimited'), t('subscription.expired.feature_support_dedicated')] },
+  ];
 
   const handleCheckout = async (planId: string) => {
     setLoadingPlan(planId);
     try {
-      // Ensure we have a valid session before calling the edge function
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
           toast({
-            title: 'Session expirée',
-            description: 'Veuillez vous reconnecter pour continuer.',
+            title: t('subscription.expired.session_expired'),
+            description: t('subscription.expired.session_expired_desc'),
             variant: 'destructive',
           });
           return;
@@ -56,8 +51,8 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
       }
     } catch (err: any) {
       toast({
-        title: 'Erreur',
-        description: err.message || 'Impossible de créer la session de paiement',
+        title: t('subscription.expired.error'),
+        description: err.message || t('subscription.expired.checkout_error'),
         variant: 'destructive',
       });
     } finally {
@@ -73,15 +68,17 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
           <h1 className="text-2xl font-bold">
-            {currentPlan === 'trial' ? 'Votre période d\'essai est terminée' : 'Votre abonnement a expiré'}
+            {currentPlan === 'trial' ? t('subscription.expired.title_trial') : t('subscription.expired.title_subscription')}
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            L'accès à <span className="font-semibold">{companyName}</span> est temporairement suspendu.
-            Choisissez un plan pour continuer.
+            <Trans
+              i18nKey="subscription.expired.subtitle"
+              values={{ company: companyName }}
+              components={{ 1: <span className="font-semibold" /> }}
+            />
           </p>
         </div>
 
-        {/* Payment method selector */}
         <div className="flex justify-center gap-3">
           <Button
             variant={selectedMethod === 'stripe' ? 'default' : 'outline'}
@@ -90,7 +87,7 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
             className="gap-2"
           >
             <CreditCard className="w-4 h-4" />
-            Carte bancaire
+            {t('subscription.expired.method_card')}
           </Button>
           <Button
             variant={selectedMethod === 'moncash' ? 'default' : 'outline'}
@@ -99,7 +96,7 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
             className="gap-2"
           >
             <Smartphone className="w-4 h-4" />
-            MonCash
+            {t('subscription.expired.method_moncash')}
           </Button>
         </div>
 
@@ -112,11 +109,11 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
                   {plan.id === 'pro' && (
                     <Badge className="bg-primary text-primary-foreground">
                       <Crown className="w-3 h-3 mr-1" />
-                      Populaire
+                      {t('subscription.expired.popular')}
                     </Badge>
                   )}
                 </div>
-                <p className="text-3xl font-bold">${plan.price}<span className="text-sm text-muted-foreground font-normal">/mois</span></p>
+                <p className="text-3xl font-bold">${plan.price}<span className="text-sm text-muted-foreground font-normal">{t('subscription.expired.per_month')}</span></p>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ul className="space-y-2 text-sm">
@@ -138,7 +135,7 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
                   ) : (
                     <>
                       {selectedMethod === 'stripe' ? <CreditCard className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
-                      Choisir {plan.name}
+                      {t('subscription.expired.choose', { plan: plan.name })}
                     </>
                   )}
                 </Button>
@@ -149,7 +146,7 @@ export const ExpiredScreen = ({ companyName, currentPlan, onLogout }: ExpiredScr
 
         <div className="text-center">
           <Button variant="outline" onClick={onLogout}>
-            Se déconnecter
+            {t('subscription.expired.logout')}
           </Button>
         </div>
       </div>

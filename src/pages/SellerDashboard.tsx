@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useSaleCalculations, SaleForCalc } from '@/hooks/useSaleCalculations';
 import { startOfDay, startOfWeek, startOfMonth } from 'date-fns';
+import { getCurrentLocale } from '@/lib/locale';
 import logo from '@/assets/logo.png';
 
 interface EnrichedSale {
@@ -250,8 +251,8 @@ const SellerDashboard = () => {
                   <span>{t('sales.totalPeriod', { period: periodLabels[periodFilter] })}:</span>
                   <span className="font-semibold text-foreground">
                     {displayCurrency === 'USD' 
-                      ? `$${periodTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                      : `${periodTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} HTG`
+                      ? `$${periodTotal.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                      : `${periodTotal.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} HTG`
                     }
                   </span>
                 </div>
@@ -281,7 +282,7 @@ const SellerDashboard = () => {
                         </div>
                         <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 sm:gap-2 flex-wrap">
                           <span>
-                            {new Date(sale.created_at).toLocaleString('fr-FR', {
+                            {new Date(sale.created_at).toLocaleString(getCurrentLocale(), {
                               day: '2-digit',
                               month: 'short',
                               hour: '2-digit',
@@ -290,15 +291,15 @@ const SellerDashboard = () => {
                           </span>
                           <span className="hidden sm:inline">•</span>
                           <span className="px-1.5 py-0.5 bg-muted rounded text-[9px] sm:text-xs capitalize">
-                            {sale.payment_method === 'espece' ? 'Espèces' : sale.payment_method === 'cheque' ? 'Chèque' : sale.payment_method === 'virement' ? 'Virement' : sale.payment_method || 'N/A'}
+                            {sale.payment_method === 'espece' ? t('sales.cash') : sale.payment_method === 'cheque' ? t('sales.check') : sale.payment_method === 'virement' ? t('sales.transfer') : sale.payment_method || 'N/A'}
                           </span>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-2">
                         <div className="font-bold text-xs sm:text-sm text-success">
                           {displayCurrency === 'USD' 
-                            ? `$${sale.displayAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                            : `${sale.displayAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} HTG`
+                            ? `$${sale.displayAmount.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                            : `${sale.displayAmount.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} HTG`
                           }
                         </div>
                       </div>

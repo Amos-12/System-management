@@ -1145,7 +1145,47 @@
     "lockedReports": "Advanced Reports",
     "lockedReportsDesc": "Advanced reports and exports are available in paid plans.",
     "lockedTva": "Tax Report",
-    "lockedTvaDesc": "The detailed tax report is available in paid plans."
+    "lockedTvaDesc": "The detailed tax report is available in paid plans.",
+    "expired": {
+      "title_trial": "Your trial period has ended",
+      "title_subscription": "Your subscription has expired",
+      "subtitle": "Access to {{company}} is temporarily suspended. Choose a plan to continue.",
+      "method_card": "Credit card",
+      "method_moncash": "MonCash",
+      "popular": "Popular",
+      "per_month": "/month",
+      "choose": "Choose {{plan}}",
+      "logout": "Sign out",
+      "session_expired": "Session expired",
+      "session_expired_desc": "Please sign in again to continue.",
+      "error": "Error",
+      "checkout_error": "Could not create payment session",
+      "feature_users_5": "5 users",
+      "feature_users_15": "15 users",
+      "feature_users_unlimited": "Unlimited users",
+      "feature_products_200": "200 products",
+      "feature_products_1000": "1000 products",
+      "feature_products_unlimited": "Unlimited products",
+      "feature_support_email": "Email support",
+      "feature_support_priority": "Priority support",
+      "feature_support_dedicated": "Dedicated support"
+    },
+    "locked": {
+      "default_title": "Premium feature",
+      "default_desc": "This feature is available on paid plans.",
+      "upgrade_to": "Upgrade to {{plan}}"
+    },
+    "upgrade_banner": {
+      "trial_label": "Free trial plan",
+      "days_remaining_one": "· {{count}}d left",
+      "days_remaining_other": "· {{count}}d left",
+      "expired": "· Expired",
+      "upgrade": "Upgrade",
+      "session_expired": "Session expired",
+      "session_expired_desc": "Please sign in again.",
+      "error": "Error",
+      "checkout_error": "Could not create payment session"
+    }
   },
   "language": {
     "fr": "Français",
@@ -1444,5 +1484,38 @@
       "system_cleanup": "System cleanup",
       "settings_updated": "Settings updated"
     }
+  },
+  "sellerDashboard": {
+    "goals_title": "Today's Goals",
+    "goal_sales": "Sales",
+    "goal_revenue": "Revenue",
+    "goal_achieved": "🎉 Goal reached!",
+    "goal_remaining_sales_one": "{{count}} sale remaining",
+    "goal_remaining_sales_other": "{{count}} sales remaining",
+    "goal_remaining_usd": "${{amount}} remaining",
+    "goal_remaining_htg": "{{amount}} HTG remaining",
+    "goal_basis": "Goals based on your average +20%",
+    "trend_title": "Last 7 days trend",
+    "tooltip_revenue": "Revenue:",
+    "tooltip_sales": "Sales:",
+    "legend_revenue": "Revenue ({{currency}})",
+    "legend_sales": "Sales",
+    "comparison_title": "Performance Comparison",
+    "comparison_vs": "vs",
+    "updated_at": "Updated:",
+    "refresh": "Refresh",
+    "kpi_revenue_today": "Today's Revenue",
+    "kpi_sales": "Sales",
+    "kpi_avg_basket": "Average Basket",
+    "kpi_total_sales": "Total Sales",
+    "cmp_today_vs_yesterday": "Today vs Yesterday",
+    "cmp_this_week": "This Week",
+    "cmp_this_month": "This Month",
+    "top_products": "Top 5 Products",
+    "no_sales_recorded": "No sales recorded",
+    "recent_sales": "Recent Sales",
+    "no_recent_sales": "No recent sales",
+    "units": "units",
+    "loading": "Loading..."
   }
 }
