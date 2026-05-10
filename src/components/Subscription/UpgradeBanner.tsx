@@ -55,7 +55,7 @@ export const UpgradeBanner = () => {
               {t('subscription.upgrade_banner.trial_label')}
               <span className="text-muted-foreground font-normal ml-1.5">
                 {daysRemaining > 0
-                  ? t('subscription.upgrade_banner.days_remaining', { count: daysRemaining, defaultValue_one: '· {{count}}j restant', defaultValue_other: '· {{count}}j restants' })
+                  ? t('subscription.upgrade_banner.days_remaining', { count: daysRemaining })
                   : t('subscription.upgrade_banner.expired')}
               </span>
             </p>
