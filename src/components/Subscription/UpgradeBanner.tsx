@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export const UpgradeBanner = () => {
+  const { t } = useTranslation();
   const { isFreePlan, daysRemaining, loading } = useSubscription();
   const [upgrading, setUpgrading] = useState(false);
 
@@ -14,12 +16,11 @@ export const UpgradeBanner = () => {
   const handleUpgrade = async () => {
     setUpgrading(true);
     try {
-      // Ensure valid session
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
-          toast({ title: 'Session expirée', description: 'Veuillez vous reconnecter.', variant: 'destructive' });
+          toast({ title: t('subscription.upgrade_banner.session_expired'), description: t('subscription.upgrade_banner.session_expired_desc'), variant: 'destructive' });
           return;
         }
       }
@@ -33,8 +34,8 @@ export const UpgradeBanner = () => {
       }
     } catch (err: any) {
       toast({
-        title: 'Erreur',
-        description: err.message || 'Impossible de créer la session de paiement',
+        title: t('subscription.upgrade_banner.error'),
+        description: err.message || t('subscription.upgrade_banner.checkout_error'),
         variant: 'destructive',
       });
     } finally {
@@ -51,9 +52,11 @@ export const UpgradeBanner = () => {
           </div>
           <div className="min-w-0">
             <p className="font-medium text-xs text-foreground truncate">
-              Plan d'essai gratuit
+              {t('subscription.upgrade_banner.trial_label')}
               <span className="text-muted-foreground font-normal ml-1.5">
-                {daysRemaining > 0 ? `· ${daysRemaining}j restant${daysRemaining > 1 ? 's' : ''}` : '· Expiré'}
+                {daysRemaining > 0
+                  ? t('subscription.upgrade_banner.days_remaining', { count: daysRemaining, defaultValue_one: '· {{count}}j restant', defaultValue_other: '· {{count}}j restants' })
+                  : t('subscription.upgrade_banner.expired')}
               </span>
             </p>
           </div>
@@ -69,7 +72,7 @@ export const UpgradeBanner = () => {
           ) : (
             <>
               <Crown className="w-3 h-3" />
-              Upgrade
+              {t('subscription.upgrade_banner.upgrade')}
               <ArrowRight className="w-3 h-3" />
             </>
           )}
