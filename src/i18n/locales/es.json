@@ -1145,7 +1145,47 @@
     "lockedReports": "Informes avanzados",
     "lockedReportsDesc": "Los informes avanzados y exportaciones están disponibles en los planes de pago.",
     "lockedTva": "Informe IVA",
-    "lockedTvaDesc": "El informe detallado de IVA está disponible en los planes de pago."
+    "lockedTvaDesc": "El informe detallado de IVA está disponible en los planes de pago.",
+    "expired": {
+      "title_trial": "Tu período de prueba ha terminado",
+      "title_subscription": "Tu suscripción ha caducado",
+      "subtitle": "El acceso a {{company}} está temporalmente suspendido. Elige un plan para continuar.",
+      "method_card": "Tarjeta bancaria",
+      "method_moncash": "MonCash",
+      "popular": "Popular",
+      "per_month": "/mes",
+      "choose": "Elegir {{plan}}",
+      "logout": "Cerrar sesión",
+      "session_expired": "Sesión expirada",
+      "session_expired_desc": "Por favor, vuelve a iniciar sesión para continuar.",
+      "error": "Error",
+      "checkout_error": "No se pudo crear la sesión de pago",
+      "feature_users_5": "5 usuarios",
+      "feature_users_15": "15 usuarios",
+      "feature_users_unlimited": "Usuarios ilimitados",
+      "feature_products_200": "200 productos",
+      "feature_products_1000": "1000 productos",
+      "feature_products_unlimited": "Productos ilimitados",
+      "feature_support_email": "Soporte por email",
+      "feature_support_priority": "Soporte prioritario",
+      "feature_support_dedicated": "Soporte dedicado"
+    },
+    "locked": {
+      "default_title": "Función Premium",
+      "default_desc": "Esta función está disponible en los planes de pago.",
+      "upgrade_to": "Cambiar al plan {{plan}}"
+    },
+    "upgrade_banner": {
+      "trial_label": "Plan de prueba gratuito",
+      "days_remaining_one": "· {{count}}d restante",
+      "days_remaining_other": "· {{count}}d restantes",
+      "expired": "· Expirado",
+      "upgrade": "Mejorar",
+      "session_expired": "Sesión expirada",
+      "session_expired_desc": "Por favor, vuelve a iniciar sesión.",
+      "error": "Error",
+      "checkout_error": "No se pudo crear la sesión de pago"
+    }
   },
   "language": {
     "fr": "Français",
