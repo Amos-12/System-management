@@ -1484,5 +1484,23 @@
       "system_cleanup": "Nettoyage système",
       "settings_updated": "Paramètres modifiés"
     }
+  },
+  "sellerDashboard": {
+    "goals_title": "Objectifs du Jour",
+    "goal_sales": "Ventes",
+    "goal_revenue": "Revenu",
+    "goal_achieved": "🎉 Objectif atteint !",
+    "goal_remaining_sales_one": "{{count}} vente restante",
+    "goal_remaining_sales_other": "{{count}} ventes restantes",
+    "goal_remaining_usd": "${{amount}} restants",
+    "goal_remaining_htg": "{{amount}} HTG restants",
+    "goal_basis": "Objectifs basés sur votre moyenne +20%",
+    "trend_title": "Tendance des 7 derniers jours",
+    "tooltip_revenue": "Revenu:",
+    "tooltip_sales": "Ventes:",
+    "legend_revenue": "Revenu ({{currency}})",
+    "legend_sales": "Ventes",
+    "comparison_title": "Comparaison de Performance",
+    "comparison_vs": "vs"
   }
 }
