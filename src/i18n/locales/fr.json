@@ -1501,6 +1501,21 @@
     "legend_revenue": "Revenu ({{currency}})",
     "legend_sales": "Ventes",
     "comparison_title": "Comparaison de Performance",
-    "comparison_vs": "vs"
+    "comparison_vs": "vs",
+    "updated_at": "MàJ:",
+    "refresh": "Actualiser",
+    "kpi_revenue_today": "Revenu Aujourd'hui",
+    "kpi_sales": "Ventes",
+    "kpi_avg_basket": "Panier Moyen",
+    "kpi_total_sales": "Total Ventes",
+    "cmp_today_vs_yesterday": "Aujourd'hui vs Hier",
+    "cmp_this_week": "Cette Semaine",
+    "cmp_this_month": "Ce Mois",
+    "top_products": "Top 5 Produits",
+    "no_sales_recorded": "Aucune vente enregistrée",
+    "recent_sales": "Ventes Récentes",
+    "no_recent_sales": "Aucune vente récente",
+    "units": "unités",
+    "loading": "Chargement..."
   }
 }

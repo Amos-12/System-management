@@ -1501,6 +1501,21 @@
     "legend_revenue": "Ingresos ({{currency}})",
     "legend_sales": "Ventas",
     "comparison_title": "Comparación de Rendimiento",
-    "comparison_vs": "vs"
+    "comparison_vs": "vs",
+    "updated_at": "Act.:",
+    "refresh": "Actualizar",
+    "kpi_revenue_today": "Ingresos de hoy",
+    "kpi_sales": "Ventas",
+    "kpi_avg_basket": "Cesta promedio",
+    "kpi_total_sales": "Total ventas",
+    "cmp_today_vs_yesterday": "Hoy vs Ayer",
+    "cmp_this_week": "Esta semana",
+    "cmp_this_month": "Este mes",
+    "top_products": "Top 5 Productos",
+    "no_sales_recorded": "No hay ventas registradas",
+    "recent_sales": "Ventas recientes",
+    "no_recent_sales": "Sin ventas recientes",
+    "units": "unidades",
+    "loading": "Cargando..."
   }
 }
