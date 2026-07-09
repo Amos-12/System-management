@@ -46,9 +46,10 @@ export const CompanySettings = () => {
         .single();
 
       if (error) throw error;
-      setSettings(data);
-      if (data.logo_url) {
-        setLogoPreview(data.logo_url);
+      const row = data as any;
+      setSettings(row);
+      if (row?.logo_url) {
+        setLogoPreview(row.logo_url);
       }
     } catch (error) {
       console.error('Error fetching company settings:', error);
