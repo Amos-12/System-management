@@ -221,7 +221,7 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
       
       if (data && data.length > 0) {
         // Seller has specific category restrictions
-        setAuthorizedCategories(data.map(d => d.category));
+        setAuthorizedCategories((data as any[]).map(d => d.category));
       } else {
         // Seller has no restrictions = empty array (all categories)
         setAuthorizedCategories([]);
