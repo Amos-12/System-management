@@ -28,7 +28,7 @@ export const SaleDetailsDialog = ({ saleId, open, onOpenChange }: SaleDetailsDia
 
   const loadCompanySettings = async () => {
     const { data } = await supabase
-      .from('company_settings')
+      .from('company_settings' as any)
       .select('*')
       .single();
     if (data) {

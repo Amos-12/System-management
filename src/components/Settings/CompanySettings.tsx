@@ -40,7 +40,7 @@ export const CompanySettings = () => {
   const fetchSettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('company_settings')
+        .from('company_settings' as any)
         .select('*')
         .limit(1)
         .single();
@@ -105,7 +105,7 @@ export const CompanySettings = () => {
 
       // Update settings with new logo URL
       const { error: updateError } = await supabase
-        .from('company_settings')
+        .from('company_settings' as any)
         .update({ logo_url: publicUrl })
         .eq('id', settings.id);
 
@@ -135,7 +135,7 @@ export const CompanySettings = () => {
     setSaving(true);
     try {
       const { error } = await supabase
-        .from('company_settings')
+        .from('company_settings' as any)
         .update({
           company_name: settings.company_name,
           company_description: settings.company_description,

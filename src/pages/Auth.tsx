@@ -53,7 +53,7 @@ const Auth = () => {
   useEffect(() => {
     const fetchCompanySettings = async () => {
       const { data } = await supabase
-        .from('company_settings')
+        .from('company_settings' as any)
         .select('*')
         .single();
       if (data) {

@@ -213,7 +213,7 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
     try {
       console.log('🔍 Loading categories for user:', user.id);
       const { data, error } = await supabase
-        .from('seller_authorized_categories')
+        .from('seller_authorized_categories' as any)
         .select('category')
         .eq('user_id', user.id);
 
@@ -236,7 +236,7 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
   const fetchCompanySettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('company_settings')
+        .from('company_settings' as any)
         .select('*')
         .limit(1)
         .single();

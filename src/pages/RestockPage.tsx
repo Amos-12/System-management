@@ -109,7 +109,7 @@ const RestockPage = () => {
         // Record stock movement
         const { data: { user } } = await supabase.auth.getUser();
         const { error: movementError } = await supabase
-          .from('stock_movements')
+          .from('stock_movements' as any)
           .insert({
             product_id: selectedProduct,
             movement_type: 'in',
@@ -140,7 +140,7 @@ const RestockPage = () => {
         // Record stock movement
         const { data: { user } } = await supabase.auth.getUser();
         const { error: movementError } = await supabase
-          .from('stock_movements')
+          .from('stock_movements' as any)
           .insert({
             product_id: selectedProduct,
             movement_type: 'in',
