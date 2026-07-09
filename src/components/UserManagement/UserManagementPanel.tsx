@@ -209,7 +209,7 @@ export const UserManagementPanel = () => {
       setSelectedUserCategories({
         userId,
         userName,
-        categories: data?.map(d => d.category) || []
+        categories: (data as any[])?.map(d => d.category) || []
       });
       setIsCategoryDialogOpen(true);
     } catch (error) {
