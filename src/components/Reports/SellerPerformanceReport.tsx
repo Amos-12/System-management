@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -18,21 +17,16 @@ import {
   ChevronUp,
   Download,
   RefreshCw,
-  Package,
-  Lock
+  Package
 } from 'lucide-react';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import { getDateFnsLocale, getCurrentLocale } from '@/lib/locale';
+import { format, subDays, startOfDay, endOfDay, subMonths } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useTranslation } from 'react-i18next';
 
 interface SellerStats {
   seller_id: string;
   seller_name: string;
-  total_revenue_usd: number;
-  total_revenue_htg: number;
-  total_revenue_converted: number;
+  total_revenue: number;
   total_sales: number;
   total_profit: number;
   average_cart: number;
@@ -40,36 +34,11 @@ interface SellerStats {
   top_products: { name: string; quantity: number; revenue: number }[];
 }
 
-interface CompanySettings {
-  usd_htg_rate: number;
-  default_display_currency: string;
-}
-
 export const SellerPerformanceReport = () => {
   const [sellers, setSellers] = useState<SellerStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30');
   const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
-  const [companySettings, setCompanySettings] = useState<CompanySettings>({ usd_htg_rate: 132, default_display_currency: 'HTG' });
-  const { plan, isFreePlan } = useSubscription();
-  const { t } = useTranslation();
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      const { data } = await supabase
-        .from('companies')
-        .select('usd_htg_rate, default_display_currency')
-        .limit(1)
-        .single();
-      if (data) {
-        setCompanySettings({
-          usd_htg_rate: data.usd_htg_rate || 132,
-          default_display_currency: data.default_display_currency || 'HTG'
-        });
-      }
-    };
-    fetchSettings();
-  }, []);
 
   const fetchSellerStats = async () => {
     setLoading(true);
@@ -96,7 +65,7 @@ export const SellerPerformanceReport = () => {
         userRoles?.some(r => r.user_id === p.user_id)
       ) || [];
 
-      // Fetch current period sales with sale_items including currency
+      // Fetch current period sales
       const { data: currentSales } = await supabase
         .from('sales')
         .select(`
@@ -108,8 +77,7 @@ export const SellerPerformanceReport = () => {
             product_name,
             quantity,
             subtotal,
-            profit_amount,
-            currency
+            profit_amount
           )
         `)
         .gte('created_at', startDate)
@@ -129,9 +97,7 @@ export const SellerPerformanceReport = () => {
         sellerStatsMap.set(profile.user_id, {
           seller_id: profile.user_id,
           seller_name: profile.full_name,
-          total_revenue_usd: 0,
-          total_revenue_htg: 0,
-          total_revenue_converted: 0,
+          total_revenue: 0,
           total_sales: 0,
           total_profit: 0,
           average_cart: 0,
@@ -146,38 +112,21 @@ export const SellerPerformanceReport = () => {
       currentSales?.forEach(sale => {
         const stats = sellerStatsMap.get(sale.seller_id);
         if (stats) {
+          stats.total_revenue += sale.total_amount || 0;
           stats.total_sales += 1;
           
           sale.sale_items?.forEach((item: any) => {
-            const currency = item.currency || 'HTG';
-            const amount = item.subtotal || 0;
-            
-            if (currency === 'USD') {
-              stats.total_revenue_usd += amount;
-              stats.total_revenue_converted += companySettings.default_display_currency === 'USD' 
-                ? amount 
-                : amount * companySettings.usd_htg_rate;
-            } else {
-              stats.total_revenue_htg += amount;
-              stats.total_revenue_converted += companySettings.default_display_currency === 'USD' 
-                ? amount / companySettings.usd_htg_rate 
-                : amount;
-            }
-            
             stats.total_profit += item.profit_amount || 0;
             
-            // Track products for this seller (convert to display currency for proper comparison)
+            // Track products for this seller
             if (!productSalesMap.has(sale.seller_id)) {
               productSalesMap.set(sale.seller_id, new Map());
             }
             const sellerProducts = productSalesMap.get(sale.seller_id)!;
             const existing = sellerProducts.get(item.product_name) || { quantity: 0, revenue: 0 };
-            const revenueConverted = companySettings.default_display_currency === 'USD'
-              ? (currency === 'USD' ? amount : amount / companySettings.usd_htg_rate)
-              : (currency === 'USD' ? amount * companySettings.usd_htg_rate : amount);
             sellerProducts.set(item.product_name, {
               quantity: existing.quantity + item.quantity,
-              revenue: existing.revenue + revenueConverted
+              revenue: existing.revenue + item.subtotal
             });
           });
         }
@@ -193,13 +142,13 @@ export const SellerPerformanceReport = () => {
       // Finalize stats
       sellerStatsMap.forEach((stats, sellerId) => {
         if (stats.total_sales > 0) {
-          stats.average_cart = stats.total_revenue_converted / stats.total_sales;
+          stats.average_cart = stats.total_revenue / stats.total_sales;
         }
         
         const prevRevenue = prevRevenueMap.get(sellerId) || 0;
         if (prevRevenue > 0) {
-          stats.trend_percent = ((stats.total_revenue_converted - prevRevenue) / prevRevenue) * 100;
-        } else if (stats.total_revenue_converted > 0) {
+          stats.trend_percent = ((stats.total_revenue - prevRevenue) / prevRevenue) * 100;
+        } else if (stats.total_revenue > 0) {
           stats.trend_percent = 100;
         }
 
@@ -216,7 +165,7 @@ export const SellerPerformanceReport = () => {
       // Sort by revenue
       const sortedSellers = Array.from(sellerStatsMap.values())
         .filter(s => s.total_sales > 0)
-        .sort((a, b) => b.total_revenue_converted - a.total_revenue_converted);
+        .sort((a, b) => b.total_revenue - a.total_revenue);
 
       setSellers(sortedSellers);
     } catch (error) {
@@ -228,21 +177,16 @@ export const SellerPerformanceReport = () => {
 
   useEffect(() => {
     fetchSellerStats();
-  }, [period, companySettings]);
-
-  const displayCurrency = companySettings.default_display_currency as 'USD' | 'HTG';
+  }, [period]);
 
   const exportToExcel = () => {
-    if (isFreePlan) { toast({ title: t('reports.tva.premiumOnlyTitle'), description: t('reports.tva.premiumOnlyDesc'), variant: "destructive" }); return; }
     const data = sellers.map((s, index) => ({
-      [t('common.rank') || 'Rang']: index + 1,
-      [t('reports.seller.colProduct') === 'Produit' ? 'Vendeur' : t('users.title')]: s.seller_name,
-      'Ventes USD': s.total_revenue_usd,
-      'Ventes HTG': s.total_revenue_htg,
-      [`Total (${displayCurrency})`]: s.total_revenue_converted,
-      [t('reports.seller.totalSales')]: s.total_sales,
-      [t('reports.seller.avgCart')]: s.average_cart,
-      [t('reports.seller.profit')]: s.total_profit,
+      'Rang': index + 1,
+      'Vendeur': s.seller_name,
+      'Chiffre d\'affaires': s.total_revenue,
+      'Nombre de ventes': s.total_sales,
+      'Panier moyen': s.average_cart,
+      'Bénéfice': s.total_profit,
       'Tendance (%)': s.trend_percent.toFixed(1)
     }));
 
@@ -252,130 +196,101 @@ export const SellerPerformanceReport = () => {
     XLSX.writeFile(wb, `performance_vendeurs_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
-  const formatCurrency = (amount: number, currency: 'USD' | 'HTG' = 'HTG') => {
-    const formatted = new Intl.NumberFormat(getCurrentLocale(), { 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', { 
       minimumFractionDigits: 0,
       maximumFractionDigits: 0 
-    }).format(amount);
-    return currency === 'USD' ? `$ ${formatted}` : `${formatted} HTG`;
+    }).format(amount) + ' HTG';
   };
 
-  const totalRevenueUSD = sellers.reduce((sum, s) => sum + s.total_revenue_usd, 0);
-  const totalRevenueHTG = sellers.reduce((sum, s) => sum + s.total_revenue_htg, 0);
-  const totalRevenueConverted = sellers.reduce((sum, s) => sum + s.total_revenue_converted, 0);
+  const totalRevenue = sellers.reduce((sum, s) => sum + s.total_revenue, 0);
   const totalSales = sellers.reduce((sum, s) => sum + s.total_sales, 0);
   const totalProfit = sellers.reduce((sum, s) => sum + s.total_profit, 0);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div>
-            <h2 className="text-lg sm:text-2xl font-bold text-foreground">{t('reports.seller.title')}</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">{t('reports.seller.subtitle')}</p>
-          </div>
-          <Badge 
-            variant="outline" 
-            className={`text-xs px-2 py-0.5 ${
-              companySettings.default_display_currency === 'USD' 
-                ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700' 
-                : 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700'
-            }`}
-          >
-            {companySettings.default_display_currency === 'USD' ? '$ USD' : 'HTG'}
-          </Badge>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Performance des Vendeurs</h2>
+          <p className="text-muted-foreground">Analyse des ventes par vendeur</p>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2">
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-28 sm:w-40 text-xs sm:text-sm">
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">{t('reports.seller.today')}</SelectItem>
-              <SelectItem value="7">{t('reports.seller.days7')}</SelectItem>
-              <SelectItem value="30">{t('reports.seller.days30')}</SelectItem>
-              <SelectItem value="90">{t('reports.seller.months3')}</SelectItem>
-              <SelectItem value="365">{t('reports.seller.year1')}</SelectItem>
+              <SelectItem value="1">Aujourd'hui</SelectItem>
+              <SelectItem value="7">7 derniers jours</SelectItem>
+              <SelectItem value="30">30 derniers jours</SelectItem>
+              <SelectItem value="90">3 mois</SelectItem>
+              <SelectItem value="365">1 an</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={fetchSellerStats} disabled={loading}>
-            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="icon" onClick={fetchSellerStats} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={exportToExcel} disabled={sellers.length === 0}>
-            {isFreePlan ? <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />}
-            <span className="hidden sm:inline">{t('reports.seller.export')}</span>
+          <Button variant="outline" onClick={exportToExcel} disabled={sellers.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Export
           </Button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-3 sm:pt-6 sm:p-6">
+          <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.salesUSD')}</p>
-                <p className="text-sm sm:text-lg font-bold">{formatCurrency(totalRevenueUSD, 'USD')}</p>
+                <p className="text-sm text-muted-foreground">Chiffre d'affaires total</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
               </div>
-              <div className="p-2 sm:p-3 bg-green-500/10 rounded-full">
-                <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-green-500" />
+              <div className="p-3 bg-primary/10 rounded-full">
+                <DollarSign className="w-6 h-6 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-3 sm:pt-6 sm:p-6">
+          <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.salesHTG')}</p>
-                <p className="text-sm sm:text-lg font-bold">{formatCurrency(totalRevenueHTG, 'HTG')}</p>
+                <p className="text-sm text-muted-foreground">Ventes totales</p>
+                <p className="text-2xl font-bold">{totalSales}</p>
               </div>
-              <div className="p-2 sm:p-3 bg-primary/10 rounded-full">
-                <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-primary col-span-2 sm:col-span-1">
-          <CardContent className="p-3 sm:pt-6 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.totalConverted', { currency: displayCurrency })}</p>
-                <p className="text-sm sm:text-lg font-bold text-primary">{formatCurrency(totalRevenueConverted, displayCurrency)}</p>
-              </div>
-              <div className="p-2 sm:p-3 bg-primary/10 rounded-full">
-                <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
+              <div className="p-3 bg-blue-500/10 rounded-full">
+                <ShoppingCart className="w-6 h-6 text-blue-500" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-3 sm:pt-6 sm:p-6">
+          <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.totalSales')}</p>
-                <p className="text-sm sm:text-lg font-bold">{totalSales}</p>
+                <p className="text-sm text-muted-foreground">Bénéfice total</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalProfit)}</p>
               </div>
-              <div className="p-2 sm:p-3 bg-blue-500/10 rounded-full">
-                <ShoppingCart className="w-4 h-4 sm:w-6 sm:h-6 text-blue-500" />
+              <div className="p-3 bg-green-500/10 rounded-full">
+                <TrendingUp className="w-6 h-6 text-green-500" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-3 sm:pt-6 sm:p-6">
+          <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.activeSellers')}</p>
-                <p className="text-sm sm:text-lg font-bold">{sellers.length}</p>
+                <p className="text-sm text-muted-foreground">Vendeurs actifs</p>
+                <p className="text-2xl font-bold">{sellers.length}</p>
               </div>
-              <div className="p-2 sm:p-3 bg-purple-500/10 rounded-full">
-                <Users className="w-4 h-4 sm:w-6 sm:h-6 text-purple-500" />
+              <div className="p-3 bg-purple-500/10 rounded-full">
+                <Users className="w-6 h-6 text-purple-500" />
               </div>
             </div>
           </CardContent>
@@ -384,23 +299,23 @@ export const SellerPerformanceReport = () => {
 
       {/* Sellers Table */}
       <Card>
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
-            {t('reports.seller.ranking')}
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-yellow-500" />
+            Classement des Vendeurs
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-2 sm:p-6 pt-0">
+        <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <RefreshCw className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : sellers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              {t('reports.seller.noSales')}
+            <div className="text-center py-8 text-muted-foreground">
+              Aucune vente trouvée pour cette période
             </div>
           ) : (
-            <div className="space-y-1.5 sm:space-y-2">
+            <div className="space-y-2">
               {sellers.map((seller, index) => (
                 <Collapsible 
                   key={seller.seller_id}
@@ -409,9 +324,9 @@ export const SellerPerformanceReport = () => {
                 >
                   <div className="border rounded-lg overflow-hidden">
                     <CollapsibleTrigger asChild>
-                      <div className="flex items-center justify-between p-2.5 sm:p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center gap-2 sm:gap-4">
-                          <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold ${
+                      <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                             index === 0 ? 'bg-yellow-500 text-yellow-950' :
                             index === 1 ? 'bg-gray-300 text-gray-700' :
                             index === 2 ? 'bg-amber-600 text-amber-50' :
@@ -420,91 +335,80 @@ export const SellerPerformanceReport = () => {
                             {index + 1}
                           </div>
                           <div>
-                            <p className="font-medium text-xs sm:text-sm">{seller.seller_name}</p>
-                            <p className="text-[10px] sm:text-sm text-muted-foreground">{seller.total_sales} {t('reports.seller.sales')}</p>
+                            <p className="font-medium">{seller.seller_name}</p>
+                            <p className="text-sm text-muted-foreground">{seller.total_sales} ventes</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 sm:gap-4">
-                          {/* Mobile: show converted total only */}
-                          <div className="text-right sm:hidden">
-                            <p className="text-xs font-semibold">{formatCurrency(seller.total_revenue_converted, displayCurrency)}</p>
-                          </div>
+                        <div className="flex items-center gap-6">
                           <div className="text-right hidden sm:block">
-                            <p className="text-sm text-green-600">{formatCurrency(seller.total_revenue_usd, 'USD')}</p>
-                            <p className="text-sm text-blue-600">{formatCurrency(seller.total_revenue_htg, 'HTG')}</p>
+                            <p className="font-semibold">{formatCurrency(seller.total_revenue)}</p>
+                            <p className="text-sm text-muted-foreground">CA</p>
                           </div>
                           <div className="text-right hidden md:block">
-                            <p className="font-semibold">{formatCurrency(seller.total_revenue_converted, displayCurrency)}</p>
-                            <p className="text-xs text-muted-foreground">{t('reports.seller.totalConvertedLabel')}</p>
+                            <p className="font-semibold">{formatCurrency(seller.total_profit)}</p>
+                            <p className="text-sm text-muted-foreground">Bénéfice</p>
                           </div>
                           <div className="text-right hidden lg:block">
-                            <p className="font-semibold">{formatCurrency(seller.total_profit, displayCurrency)}</p>
-                            <p className="text-xs text-muted-foreground">{t('reports.seller.profit')}</p>
+                            <p className="font-semibold">{formatCurrency(seller.average_cart)}</p>
+                            <p className="text-sm text-muted-foreground">Panier moy.</p>
                           </div>
-                          <Badge variant={seller.trend_percent >= 0 ? 'default' : 'destructive'} className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2">
+                          <Badge variant={seller.trend_percent >= 0 ? 'default' : 'destructive'} className="flex items-center gap-1">
                             {seller.trend_percent >= 0 ? (
-                              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                              <TrendingUp className="w-3 h-3" />
                             ) : (
-                              <TrendingDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                              <TrendingDown className="w-3 h-3" />
                             )}
-                            {Math.abs(seller.trend_percent).toFixed(0)}%
+                            {Math.abs(seller.trend_percent).toFixed(1)}%
                           </Badge>
                           {expandedSeller === seller.seller_id ? (
-                            <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                            <ChevronUp className="w-5 h-5 text-muted-foreground" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                            <ChevronDown className="w-5 h-5 text-muted-foreground" />
                           )}
                         </div>
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="border-t bg-muted/30 p-3 sm:p-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-4">
+                      <div className="border-t bg-muted/30 p-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4 sm:hidden">
                           <div>
-                            <p className="text-[10px] sm:text-sm text-muted-foreground">USD</p>
-                            <p className="text-xs sm:text-base font-semibold text-green-600">{formatCurrency(seller.total_revenue_usd, 'USD')}</p>
+                            <p className="text-sm text-muted-foreground">CA</p>
+                            <p className="font-semibold">{formatCurrency(seller.total_revenue)}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] sm:text-sm text-muted-foreground">HTG</p>
-                            <p className="text-xs sm:text-base font-semibold text-blue-600">{formatCurrency(seller.total_revenue_htg, 'HTG')}</p>
+                            <p className="text-sm text-muted-foreground">Bénéfice</p>
+                            <p className="font-semibold">{formatCurrency(seller.total_profit)}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.totalConvertedLabel')} ({displayCurrency})</p>
-                            <p className="text-xs sm:text-base font-semibold">{formatCurrency(seller.total_revenue_converted, displayCurrency)}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] sm:text-sm text-muted-foreground">{t('reports.seller.avgCart')}</p>
-                            <p className="text-xs sm:text-base font-semibold">{formatCurrency(seller.average_cart, displayCurrency)}</p>
+                            <p className="text-sm text-muted-foreground">Panier moy.</p>
+                            <p className="font-semibold">{formatCurrency(seller.average_cart)}</p>
                           </div>
                         </div>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">{t('reports.seller.rate')}: 1 USD = {companySettings.usd_htg_rate} HTG</p>
-                        <h4 className="font-medium mb-2 flex items-center gap-2 text-xs sm:text-sm">
-                          <Package className="w-3 h-3 sm:w-4 sm:h-4" />
-                          {t('reports.seller.top5Products')}
+                        <h4 className="font-medium mb-2 flex items-center gap-2">
+                          <Package className="w-4 h-4" />
+                          Top 5 Produits vendus
                         </h4>
                         {seller.top_products.length > 0 ? (
-                          <div className="overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="text-xs sm:text-sm">{t('reports.seller.colProduct')}</TableHead>
-                                  <TableHead className="text-right text-xs sm:text-sm">{t('reports.seller.colQty')}</TableHead>
-                                  <TableHead className="text-right text-xs sm:text-sm">{t('reports.seller.colRevenue')}</TableHead>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Produit</TableHead>
+                                <TableHead className="text-right">Quantité</TableHead>
+                                <TableHead className="text-right">Revenu</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {seller.top_products.map((product, idx) => (
+                                <TableRow key={idx}>
+                                  <TableCell className="font-medium">{product.name}</TableCell>
+                                  <TableCell className="text-right">{product.quantity}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(product.revenue)}</TableCell>
                                 </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {seller.top_products.map((product, idx) => (
-                                  <TableRow key={idx}>
-                                    <TableCell className="font-medium text-xs sm:text-sm max-w-[120px] sm:max-w-none truncate">{product.name}</TableCell>
-                                    <TableCell className="text-right text-xs sm:text-sm">{product.quantity}</TableCell>
-                                    <TableCell className="text-right text-xs sm:text-sm">{formatCurrency(product.revenue, displayCurrency)}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
+                              ))}
+                            </TableBody>
+                          </Table>
                         ) : (
-                          <p className="text-muted-foreground text-xs sm:text-sm">{t('reports.seller.noProductsSold')}</p>
+                          <p className="text-muted-foreground text-sm">Aucun produit vendu</p>
                         )}
                       </div>
                     </CollapsibleContent>

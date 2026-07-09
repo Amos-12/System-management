@@ -47,15 +47,6 @@ Deno.serve(async (req) => {
       throw new Error('Non authentifié');
     }
 
-    // Get user's company_id
-    const { data: userProfile } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('user_id', user.id)
-      .single();
-
-    const companyId = userProfile?.company_id;
-
     // Verify admin role
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
@@ -75,24 +66,11 @@ Deno.serve(async (req) => {
 
     console.log('Starting sale deletion for sale:', saleId);
 
-    // Verify sale belongs to user's company
-    const { data: saleData, error: saleCheckError } = await supabase
-      .from('sales')
-      .select('id, company_id')
-      .eq('id', saleId)
-      .eq('company_id', companyId)
-      .single();
-
-    if (saleCheckError || !saleData) {
-      throw new Error('Vente introuvable ou non autorisée');
-    }
-
     // 1. Get all sale items for this sale
     const { data: saleItems, error: itemsError } = await supabase
       .from('sale_items')
       .select('id, product_id, quantity, product_name')
-      .eq('sale_id', saleId)
-      .eq('company_id', companyId);
+      .eq('sale_id', saleId);
 
     if (itemsError) {
       console.error('Error fetching sale items:', itemsError);
@@ -159,7 +137,6 @@ Deno.serve(async (req) => {
         .from('stock_movements')
         .insert({
           product_id: item.product_id,
-          company_id: companyId,
           movement_type: 'in',
           quantity: item.quantity,
           previous_quantity: productData.category === 'fer' ? previousStockBarre : 
@@ -216,7 +193,6 @@ Deno.serve(async (req) => {
       .from('activity_logs')
       .insert({
         user_id: user.id,
-        company_id: companyId,
         action_type: 'sale_deleted',
         entity_type: 'sale',
         entity_id: saleId,

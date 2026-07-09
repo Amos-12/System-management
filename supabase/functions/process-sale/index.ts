@@ -12,7 +12,6 @@ interface SaleItem {
   unit: string
   unit_price: number
   subtotal: number
-  currency?: 'USD' | 'HTG'
 }
 
 interface SaleRequest {
@@ -23,7 +22,6 @@ interface SaleRequest {
   discount_type: 'percentage' | 'amount' | 'none'
   discount_value: number
   discount_amount: number
-  discount_currency?: 'USD' | 'HTG'
   customer_address?: string | null
   items: SaleItem[]
 }
@@ -81,21 +79,6 @@ Deno.serve(async (req) => {
     }
 
     console.log('✅ User authenticated:', user.id)
-
-    // STEP 2.5: Get user's company_id
-    const { data: userProfile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('company_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !userProfile?.company_id) {
-      console.error('❌ Failed to get user company:', profileError)
-      throw new Error('User is not associated with a company')
-    }
-
-    const companyId = userProfile.company_id
-    console.log('🏢 Company:', companyId)
 
     // STEP 3: Parse and validate request body
     let saleData: SaleRequest
@@ -164,13 +147,11 @@ Deno.serve(async (req) => {
       .insert([{
         customer_name: saleData.customer_name,
         seller_id: user.id,
-        company_id: companyId,
         total_amount: saleData.total_amount,
         subtotal: saleData.subtotal,
         discount_type: saleData.discount_type,
         discount_value: saleData.discount_value,
         discount_amount: saleData.discount_amount,
-        discount_currency: saleData.discount_currency || 'HTG',
         notes: saleData.customer_address,
         payment_method: saleData.payment_method,
       }])
@@ -209,21 +190,18 @@ Deno.serve(async (req) => {
       const purchasePriceAtSale = currentProduct.purchase_price || 0
       const profitAmount = (item.unit_price - purchasePriceAtSale) * item.quantity
 
-      // Insert sale item with profit data, currency and unit
+      // Insert sale item with profit data
       const { error: itemError } = await supabaseClient
         .from('sale_items')
         .insert([{
           sale_id: sale.id,
           product_id: item.product_id,
-          company_id: companyId,
           product_name: item.product_name,
           quantity: item.quantity,
-          unit: item.unit,
           unit_price: item.unit_price,
           subtotal: item.subtotal,
           purchase_price_at_sale: purchasePriceAtSale,
-          profit_amount: profitAmount,
-          currency: item.currency || 'HTG'
+          profit_amount: profitAmount
         }])
 
       if (itemError) {
@@ -297,7 +275,6 @@ Deno.serve(async (req) => {
         .from('stock_movements')
         .insert([{
           product_id: item.product_id,
-          company_id: companyId,
           movement_type: 'out',
           quantity: -item.quantity,
           previous_quantity: previousQuantity,
@@ -327,14 +304,12 @@ Deno.serve(async (req) => {
         .from('activity_logs')
         .insert({
           user_id: user.id,
-          company_id: companyId,
           action_type: 'sale_created',
           entity_type: 'sale',
           entity_id: sale.id,
-          description: `Vente de ${saleData.total_amount.toFixed(2)} ${saleData.discount_currency || 'HTG'} créée par ${profile?.full_name || 'Vendeur'} pour ${saleData.customer_name || 'Client anonyme'}`,
+          description: `Vente de ${saleData.total_amount.toFixed(2)} HTG créée par ${profile?.full_name || 'Vendeur'} pour ${saleData.customer_name || 'Client anonyme'}`,
           metadata: {
             total_amount: saleData.total_amount,
-            currency: saleData.discount_currency || 'HTG',
             items_count: saleData.items.length,
             payment_method: saleData.payment_method
           }

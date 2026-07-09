@@ -8,15 +8,11 @@ import {
   Package, 
   AlertTriangle, 
   CheckCircle, 
-  RefreshCw,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Settings2
+  TrendingDown,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useTranslation } from 'react-i18next';
-import { formatLocalizedDate, formatLocalizedDateTime, formatLocalizedTime } from '@/lib/locale';
 
 interface StockMovement {
   id: string;
@@ -43,7 +39,6 @@ interface Product {
 }
 
 export const StockAlerts = () => {
-  const { t } = useTranslation();
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,8 +56,8 @@ export const StockAlerts = () => {
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
-        title: t('common.error'),
-        description: t('stockAlerts.loadError'),
+        title: "Erreur",
+        description: "Impossible de charger les notifications",
         variant: "destructive"
       });
     } finally {
@@ -102,128 +97,93 @@ export const StockAlerts = () => {
     setLowStockProducts(lowStock);
   };
 
-  const getMovementBadge = (type: string, quantity: number) => {
+  const getMovementTypeColor = (type: string) => {
     switch (type) {
       case 'in':
-        return (
-          <Badge className="bg-green-600 text-white text-[10px] sm:text-xs">
-            <ArrowUpCircle className="w-3 h-3 mr-1" />
-            +{quantity}
-          </Badge>
-        );
+        return 'default';
       case 'out':
-        return (
-          <Badge className="bg-red-600 text-white text-[10px] sm:text-xs">
-            <ArrowDownCircle className="w-3 h-3 mr-1" />
-            -{Math.abs(quantity)}
-          </Badge>
-        );
+        return 'destructive';
       case 'adjustment':
-        return (
-          <Badge className="bg-blue-600 text-white text-[10px] sm:text-xs">
-            <Settings2 className="w-3 h-3 mr-1" />
-            {quantity >= 0 ? '+' : ''}{quantity}
-          </Badge>
-        );
+        return 'outline';
       default:
-        return (
-          <Badge variant="secondary" className="text-[10px] sm:text-xs">
-            {quantity}
-          </Badge>
-        );
+        return 'secondary';
     }
   };
 
   const getMovementIcon = (type: string) => {
     switch (type) {
       case 'in':
-        return <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />;
+        return <TrendingDown className="w-4 h-4 rotate-180" />;
       case 'out':
-        return <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />;
-      case 'adjustment':
-        return <Settings2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />;
+        return <TrendingDown className="w-4 h-4" />;
       default:
-        return <Package className="w-4 h-4 sm:w-5 sm:h-5" />;
+        return <Package className="w-4 h-4" />;
     }
-  };
-
-  const formatDateCompact = (dateString: string) => {
-    return formatLocalizedDate(dateString, {
-      day: '2-digit',
-      month: '2-digit'
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return formatLocalizedTime(dateString, {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-6 h-6 sm:w-8 sm:h-8 text-primary animate-spin" />
-          <span className="ml-2 text-sm sm:text-base text-muted-foreground">{t('common.loading')}</span>
+        <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+        <span className="ml-2 text-muted-foreground">Chargement...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg sm:text-2xl font-bold">Notifications et Alertes</h2>
-        <Button onClick={fetchData} variant="outline" size="sm" className="h-8 sm:h-9">
-          <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-          <span className="hidden sm:inline">{t('common.refresh')}</span>
+        <h2 className="text-2xl font-bold">Notifications et Alertes</h2>
+        <Button onClick={fetchData} variant="outline" size="sm">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Actualiser
         </Button>
       </div>
 
       {/* Alertes Stock Faible */}
       {lowStockProducts.length > 0 && (
-        <Alert className="border-warning p-3 sm:p-4">
+        <Alert className="border-warning">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-xs sm:text-sm">
-            <strong>{t('stockAlerts.lowStockAlertTitle')}</strong> {t('stockAlerts.lowStockAlertDescription', { count: lowStockProducts.length })}
+          <AlertDescription>
+            <strong>Alerte Stock Faible:</strong> {lowStockProducts.length} produit(s) nécessitent un réapprovisionnement.
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Produits en Stock Faible */}
         <Card className="shadow-lg">
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-              {t('stockAlerts.lowStockTitle', { count: lowStockProducts.length })}
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" />
+              Stock Faible ({lowStockProducts.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-2 sm:p-6 pt-0 sm:pt-0">
+          <CardContent>
             {lowStockProducts.length === 0 ? (
-              <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-success opacity-50" />
-                 <p className="text-xs sm:text-sm">{t('stockAlerts.allProductsSufficient')}</p>
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="w-12 h-12 mx-auto mb-4 text-success opacity-50" />
+                <p>Tous les produits ont un stock suffisant</p>
               </div>
             ) : (
-              <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {lowStockProducts.map((product) => (
                   <div 
                     key={product.id} 
-                    className="flex items-center justify-between p-2 sm:p-3 border rounded-lg bg-warning/5"
+                    className="flex items-center justify-between p-3 border rounded-lg bg-warning/5"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-xs sm:text-sm truncate">{product.name}</div>
-                      <div className="text-[10px] sm:text-sm text-muted-foreground hidden sm:block">
-                         {t('common.category')}: {product.category}
+                    <div>
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Catégorie: {product.category}
                       </div>
                     </div>
-                    <div className="text-right ml-2 flex-shrink-0">
-                      <div className="font-bold text-warning text-xs sm:text-sm">
-                         {product.quantity} {t('stockAlerts.units')}
+                    <div className="text-right">
+                      <div className="font-bold text-warning">
+                        {product.quantity} unités
                       </div>
-                      <div className="text-[10px] sm:text-xs text-muted-foreground">
-                         {t('stockAlerts.threshold')}: {product.alert_threshold}
+                      <div className="text-xs text-muted-foreground">
+                        Seuil: {product.alert_threshold}
                       </div>
                     </div>
                   </div>
@@ -235,45 +195,46 @@ export const StockAlerts = () => {
 
         {/* Mouvements de Stock Récents */}
         <Card className="shadow-lg">
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-              {t('stockAlerts.recentMovementsTitle', { count: movements.length })}
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5" />
+              Mouvements Récents ({movements.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-2 sm:p-6 pt-0 sm:pt-0">
+          <CardContent>
             {movements.length === 0 ? (
-              <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                <Package className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-                 <p className="text-xs sm:text-sm">{t('stockAlerts.noRecentMovements')}</p>
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Aucun mouvement de stock récent</p>
               </div>
             ) : (
-              <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {movements.map((movement) => (
                   <div 
                     key={movement.id} 
-                    className="flex items-center justify-between p-2 sm:p-3 border rounded-lg hover:bg-accent transition-smooth"
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-smooth"
                   >
-                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                      <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-secondary flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-secondary">
                         {getMovementIcon(movement.movement_type)}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-xs sm:text-sm truncate">
-                           {movement.products?.name || t('stockAlerts.unknownProduct')}
+                      <div>
+                        <div className="font-medium">
+                          {movement.products?.name || 'Produit inconnu'}
                         </div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block">
+                        <div className="text-sm text-muted-foreground">
                           {movement.reason}
                         </div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground">
-                          <span className="sm:hidden">{formatDateCompact(movement.created_at)} {formatTime(movement.created_at)}</span>
-                           <span className="hidden sm:inline">{formatLocalizedDateTime(movement.created_at)}</span>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(movement.created_at).toLocaleString('fr-FR')}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right ml-2 flex-shrink-0">
-                      {getMovementBadge(movement.movement_type, movement.quantity)}
-                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                    <div className="text-right">
+                      <Badge variant={getMovementTypeColor(movement.movement_type)}>
+                        {movement.quantity > 0 ? '+' : ''}{movement.quantity}
+                      </Badge>
+                      <div className="text-xs text-muted-foreground mt-1">
                         {movement.previous_quantity} → {movement.new_quantity}
                       </div>
                     </div>

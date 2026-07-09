@@ -49,7 +49,7 @@ export const StatsCard = ({
       </CardHeader>
       <CardContent>
         <div className="flex items-end justify-between">
-          <div className={`text-lg font-bold ${getValueColor()} break-all`}>
+          <div className={`text-2xl font-bold ${getValueColor()}`}>
             {value}
           </div>
           {change && (

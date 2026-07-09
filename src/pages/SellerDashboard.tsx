@@ -1,105 +1,44 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveDashboardLayout } from '@/components/Layout/ResponsiveDashboardLayout';
 import { SellerWorkflow } from '@/components/Seller/SellerWorkflow';
-import { ProformaWorkflow } from '@/components/Seller/ProformaWorkflow';
 import { SellerDashboardStats } from '@/components/Dashboard/SellerDashboardStats';
 import { StockAlerts } from '@/components/Notifications/StockAlerts';
 import { ProductManagement } from '@/components/Products/ProductManagement';
-import { SaleDetailsDialog } from '@/components/Sales/SaleDetailsDialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSubscription } from '@/hooks/useSubscription';
-import { ExpiredScreen } from '@/components/Subscription/ExpiredScreen';
-import { UpgradeBanner } from '@/components/Subscription/UpgradeBanner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   TrendingUp,
   Receipt,
-  Calendar,
-  Eye
+  ShoppingCart,
+  Package,
+  Home,
+  AlertCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useSaleCalculations, SaleForCalc } from '@/hooks/useSaleCalculations';
-import { startOfDay, startOfWeek, startOfMonth } from 'date-fns';
-import { getCurrentLocale } from '@/lib/locale';
 import logo from '@/assets/logo.png';
 
-interface EnrichedSale {
+interface Sale {
   id: string;
   customer_name?: string;
   total_amount: number;
   payment_method: string;
   created_at: string;
-  discount_amount?: number;
-  discount_currency?: string;
-  subtotal?: number;
-  displayAmount: number;
-}
-
-// Cart item type for proforma conversion
-interface ProformaCartItem {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  currency: 'USD' | 'HTG';
-  cartQuantity: number;
-  displayUnit?: string;
-  actualPrice?: number;
-  sourceUnit?: 'barre' | 'tonne';
-  sourceValue?: number;
-  unit: string;
-  quantity: number;
-  alert_threshold: number;
-  is_active: boolean;
-  sale_type: 'retail' | 'wholesale';
-  // Other optional fields
-  diametre?: string;
-  dimension?: string;
-  surface_par_boite?: number;
-  prix_m2?: number;
-  longueur_barre?: number;
-  prix_par_barre?: number;
-  bars_per_ton?: number;
 }
 
 const SellerDashboard = () => {
-  const { t } = useTranslation();
-  const { user, loading: authLoading, role, signOut } = useAuth();
-  const saleCalc = useSaleCalculations();
-  const { isExpired, plan, isFreePlan, companyName, loading: subLoading } = useSubscription();
-
-  if (!subLoading && isExpired) {
-    return <ExpiredScreen companyName={companyName} currentPlan={plan} onLogout={signOut} />;
-  }
-  const [sales, setSales] = useState<EnrichedSale[]>([]);
+  const { user, loading: authLoading, role } = useAuth();
+  const [sales, setSales] = useState<Sale[]>([]);
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [loadingApproval, setLoadingApproval] = useState(true);
-  const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
-  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
-  const [showSaleDetails, setShowSaleDetails] = useState(false);
-  
-  // State for proforma to sale conversion
-  const [proformaCart, setProformaCart] = useState<ProformaCartItem[] | undefined>(undefined);
-  const [proformaCustomerName, setProformaCustomerName] = useState<string | undefined>(undefined);
-
-  // Use hook values with fallbacks
-  const displayCurrency = saleCalc?.displayCurrency || 'HTG';
 
   useEffect(() => {
     if (user && !authLoading) {
       checkApprovalStatus();
-    }
-  }, [user, authLoading]);
-
-  // Refetch sales when period filter changes
-  useEffect(() => {
-    if (user && !authLoading && saleCalc && currentSection === 'history') {
       fetchMySales();
     }
-  }, [periodFilter, currentSection, saleCalc]);
+  }, [user, authLoading]);
 
   const checkApprovalStatus = async () => {
     if (!user) return;
@@ -122,73 +61,22 @@ const SellerDashboard = () => {
     }
   };
 
-  const fetchMySales = useCallback(async () => {
-    if (!user || !saleCalc) return;
+  const fetchMySales = async () => {
+    if (!user) return;
 
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('sales')
-        .select('id, created_at, total_amount, subtotal, discount_amount, discount_currency, discount_type, discount_value, customer_name, payment_method')
+        .select('*')
         .eq('seller_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      // Apply period filter
-      const now = new Date();
-      if (periodFilter === 'today') {
-        query = query.gte('created_at', startOfDay(now).toISOString());
-      } else if (periodFilter === 'week') {
-        query = query.gte('created_at', startOfWeek(now, { weekStartsOn: 1 }).toISOString());
-      } else if (periodFilter === 'month') {
-        query = query.gte('created_at', startOfMonth(now).toISOString());
-      } else {
-        // Only limit when showing all
-        query = query.limit(20);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        setSales([]);
-        return;
-      }
-
-      // Fetch sale items for proper calculation
-      const saleIds = data.map(s => s.id);
-      const { data: saleItems } = await supabase
-        .from('sale_items')
-        .select('sale_id, subtotal, currency, profit_amount')
-        .in('sale_id', saleIds);
-
-      // Calculate proper TTC for each sale using the centralized hook
-      const enrichedSales: EnrichedSale[] = data.map(sale => {
-        const itemsForSale = (saleItems || []).filter(item => item.sale_id === sale.id);
-        const result = saleCalc.calculateSaleTotal(sale as SaleForCalc, itemsForSale);
-        
-        return {
-          ...sale,
-          displayAmount: result.totalTTC
-        };
-      });
-
-      setSales(enrichedSales);
+      setSales(data || []);
     } catch (error) {
       console.error('Error fetching sales:', error);
     }
-  }, [user, saleCalc, periodFilter]);
-
-  // Handler for converting proforma to sale
-  const handleConvertProformaToSale = (items: ProformaCartItem[], customerName: string) => {
-    setProformaCart(items);
-    setProformaCustomerName(customerName);
-    setCurrentSection('sale');
-  };
-
-  // Clear proforma data after sale completion
-  const handleSaleComplete = () => {
-    setProformaCart(undefined);
-    setProformaCustomerName(undefined);
-    fetchMySales();
   };
 
   const renderContent = () => {
@@ -196,112 +84,40 @@ const SellerDashboard = () => {
       case 'dashboard':
         return <SellerDashboardStats />;
       case 'sale':
-        return (
-          <SellerWorkflow 
-            onSaleComplete={handleSaleComplete}
-            initialCart={proformaCart as any}
-            initialCustomerName={proformaCustomerName}
-          />
-        );
-      case 'proforma':
-        return <ProformaWorkflow onConvertToSale={handleConvertProformaToSale as any} />;
+        return <SellerWorkflow onSaleComplete={fetchMySales} />;
       case 'products':
         return <ProductManagement />;
       case 'notifications':
         return <StockAlerts />;
       case 'history':
-        const periodLabels: Record<string, string> = {
-          all: t('common.recent20'),
-          today: t('common.today'),
-          week: t('common.thisWeek'),
-          month: t('common.thisMonth')
-        };
-        
-        // Calculate total for filtered period using displayAmount (properly calculated TTC)
-        const periodTotal = sales.reduce((sum, sale) => sum + sale.displayAmount, 0);
-        
         return (
           <Card className="shadow-lg">
-            <CardHeader className="pb-2 sm:pb-4 px-3 sm:px-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                  {t('sales.mySales')}
-                  <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
-                    ({t('sales.salesCount', { count: sales.length })})
-                  </span>
-                </CardTitle>
-                <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as typeof periodFilter)}>
-                  <SelectTrigger className="w-36 h-8 text-xs">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('common.recent20')}</SelectItem>
-                    <SelectItem value="today">{t('common.today')}</SelectItem>
-                    <SelectItem value="week">{t('common.thisWeek')}</SelectItem>
-                    <SelectItem value="month">{t('common.thisMonth')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Period stats */}
-              {sales.length > 0 && (
-                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                  <span>{t('sales.totalPeriod', { period: periodLabels[periodFilter] })}:</span>
-                  <span className="font-semibold text-foreground">
-                    {displayCurrency === 'USD' 
-                      ? `$${periodTotal.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                      : `${periodTotal.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} HTG`
-                    }
-                  </span>
-                </div>
-              )}
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Mes Dernières Ventes (10 plus récentes)
+              </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 sm:px-6">
+            <CardContent>
               {sales.length === 0 ? (
-                <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                  <Receipt className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-                  <p className="text-xs sm:text-sm">{t('sales.noSalesPeriod')}</p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Receipt className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Aucune vente enregistrée</p>
                 </div>
               ) : (
-                <div className="space-y-2 sm:space-y-3">
+                <div className="space-y-3">
                   {sales.map((sale) => (
-                    <div 
-                      key={sale.id} 
-                      className="flex items-center justify-between p-2 sm:p-3 border rounded-lg hover:bg-accent/50 transition-all cursor-pointer group"
-                      onClick={() => {
-                        setSelectedSaleId(sale.id);
-                        setShowSaleDetails(true);
-                      }}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-xs sm:text-sm truncate max-w-[140px] sm:max-w-none flex items-center gap-1">
-                          {sale.customer_name || t('sales.anonymousClient')}
-                          <Eye className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div key={sale.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-smooth">
+                      <div>
+                        <div className="font-medium">
+                          {sale.customer_name || 'Client non renseigné'}
                         </div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 sm:gap-2 flex-wrap">
-                          <span>
-                            {new Date(sale.created_at).toLocaleString(getCurrentLocale(), {
-                              day: '2-digit',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="px-1.5 py-0.5 bg-muted rounded text-[9px] sm:text-xs capitalize">
-                            {sale.payment_method === 'espece' ? t('sales.cash') : sale.payment_method === 'cheque' ? t('sales.check') : sale.payment_method === 'virement' ? t('sales.transfer') : sale.payment_method || 'N/A'}
-                          </span>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(sale.created_at).toLocaleString('fr-FR')} • {sale.payment_method}
                         </div>
                       </div>
-                      <div className="text-right flex-shrink-0 ml-2">
-                        <div className="font-bold text-xs sm:text-sm text-success">
-                          {displayCurrency === 'USD' 
-                            ? `$${sale.displayAmount.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                            : `${sale.displayAmount.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} HTG`
-                          }
-                        </div>
+                      <div className="text-right">
+                        <div className="font-bold text-success">{sale.total_amount.toFixed(2)} HTG</div>
                       </div>
                     </div>
                   ))}
@@ -320,7 +136,7 @@ const SellerDashboard = () => {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-light via-background to-secondary">
         <div className="text-center">
           <img src={logo} alt="Logo" className="w-14 h-14 object-contain mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">{t('dashboard.loadingDashboard')}</p>
+          <p className="text-muted-foreground">Chargement du tableau de bord...</p>
         </div>
       </div>
     );
@@ -330,7 +146,7 @@ const SellerDashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-light via-background to-secondary">
         <div className="text-center">
-          <p className="text-muted-foreground">{t('auth.pleaseLogin')}</p>
+          <p className="text-muted-foreground">Veuillez vous connecter</p>
         </div>
       </div>
     );
@@ -344,21 +160,14 @@ const SellerDashboard = () => {
 
   return (
     <ResponsiveDashboardLayout 
-      title={t('dashboard.sellerTitle')} 
+      title="Espace Vendeur" 
       role="seller" 
       currentSection={currentSection} 
       onSectionChange={setCurrentSection}
     >
       <div className="space-y-6">
-        <UpgradeBanner />
         {renderContent()}
       </div>
-
-      <SaleDetailsDialog
-        saleId={selectedSaleId}
-        open={showSaleDetails}
-        onOpenChange={setShowSaleDetails}
-      />
     </ResponsiveDashboardLayout>
   );
 };
