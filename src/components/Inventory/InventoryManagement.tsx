@@ -298,7 +298,7 @@ export const InventoryManagement = () => {
 
       // Record stock movement
       const { error: movementError } = await supabase
-        .from('stock_movements')
+        .from('stock_movements' as any)
         .insert({
           product_id: product.id,
           movement_type: movementType,

@@ -200,7 +200,7 @@ export const UserManagementPanel = () => {
   const loadUserCategories = async (userId: string, userName: string) => {
     try {
       const { data, error } = await supabase
-        .from('seller_authorized_categories')
+        .from('seller_authorized_categories' as any)
         .select('category')
         .eq('user_id', userId);
 
@@ -238,7 +238,7 @@ export const UserManagementPanel = () => {
 
       // Delete all existing categories for this user
       await supabase
-        .from('seller_authorized_categories')
+        .from('seller_authorized_categories' as any)
         .delete()
         .eq('user_id', userId);
 
@@ -250,7 +250,7 @@ export const UserManagementPanel = () => {
         }));
 
         const { error } = await supabase
-          .from('seller_authorized_categories')
+          .from('seller_authorized_categories' as any)
           .insert(rows);
 
         if (error) throw error;
