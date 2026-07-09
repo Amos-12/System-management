@@ -1,47 +1,46 @@
-## Problème
+## Objectif
 
-Dans `SellerDashboardStats.tsx`, les statistiques sont calculées en récupérant TOUTES les ventes via `.select('id, total_amount')` puis en comptant côté client avec `allSales.length`. Supabase limite les requêtes à **1000 lignes par défaut**, donc le compteur plafonne à 1000 dès qu'un vendeur dépasse ce seuil, et les revenus totaux sont sous-évalués.
+Passer des catégories figées (enum `product_category`) à des catégories **dynamiques** gérées par l'admin, propagées aux produits, ventes et autorisations vendeur. Chaque nouvelle catégorie est visible en base mais **non autorisée par défaut** aux vendeurs — l'admin l'assigne manuellement.
 
-De plus, la requête `sale_items` utilise `.in('sale_id', allSales.map(...))` qui échoue silencieusement (URL trop longue) au-delà de quelques centaines d'IDs — ce qui explique aussi que les stats ne s'affichent plus / restent vides pour les vendeurs actifs.
+## Approche
 
-## Correctifs
+Utiliser la table `categories` déjà présente comme source de vérité. Ajouter une colonne `category_id uuid` en parallèle de l'enum `category` existant sur toutes les tables concernées, migrer les données, puis basculer le code. L'enum reste en base pour éviter une migration destructive, mais devient déprécié et non utilisé côté UI.
 
-1. **Remplacer les `SELECT` de comptage par `head: true, count: 'exact'`** pour obtenir le nombre réel de ventes (aujourd'hui / semaine / mois / total) sans limite de 1000.
-2. **Calculer les revenus via agrégation** : soit en paginant explicitement (batches de 1000), soit en utilisant plusieurs requêtes ciblées avec `range()` jusqu'à épuisement. Approche retenue : boucle de pagination par 1000 pour cumuler `total_amount` par période, uniquement quand nécessaire.
-3. **Top produits** : au lieu de `.in('sale_id', [...idsMassifs])`, requêter directement `sale_items` filtré par `seller_id` via jointure implicite — utiliser une requête sur `sale_items` avec `sales!inner(seller_id)` et filtre `.eq('sales.seller_id', user.id)`, puis paginer.
-4. **Aucune modification de logique métier** : les périodes (jour / 7j glissants / 30j) et l'affichage restent identiques.
+### Migration SQL (une seule migration)
 
-### Détails techniques
+1. `categories` : garantir colonnes `id`, `company_id`, `name`, `slug`, `is_active`, `created_by`, `created_at`. RLS multi-tenant + policies admin (insert/update/delete) + read pour utilisateurs de la même compagnie.
+2. Seed : pour chaque `company_id` distinct, insérer les 12 valeurs de l'enum comme catégories initiales (slug = valeur enum).
+3. Ajouter `category_id uuid REFERENCES categories(id)` sur : `products`, `sale_items`, `seller_authorized_categories`, `sous_categories`, `specifications_modeles`.
+4. Backfill : `UPDATE ... SET category_id = (SELECT id FROM categories WHERE slug = <table>.category::text AND company_id = <table>.company_id)`.
+5. Rendre `category_id` NOT NULL sur `products` et `seller_authorized_categories` (les deux tables où c'est structurant).
+6. Ajouter contrainte unique `(company_id, user_id, category_id)` sur `seller_authorized_categories` (en plus de l'existante sur enum).
+7. Adapter la fonction `get_seller_authorized_categories` pour retourner `category_id uuid` en plus (nouvelle fonction `get_seller_authorized_category_ids`).
 
-```ts
-// Compteurs sans limite
-const { count: totalCount } = await supabase
-  .from('sales')
-  .select('id', { count: 'exact', head: true })
-  .eq('seller_id', user.id);
+### UI / Code
 
-// Somme paginée
-async function sumRevenue(fromISO?: string) {
-  let total = 0, from = 0; const size = 1000;
-  while (true) {
-    let q = supabase.from('sales').select('total_amount')
-      .eq('seller_id', user.id).range(from, from + size - 1);
-    if (fromISO) q = q.gte('created_at', fromISO);
-    const { data, error } = await q;
-    if (error) throw error;
-    total += (data ?? []).reduce((s, r) => s + Number(r.total_amount), 0);
-    if (!data || data.length < size) break;
-    from += size;
-  }
-  return total;
-}
+- **Nouveau composant admin** `CategoryManagement.tsx` (dans Settings ou UserManagement) : liste + création / renommage / désactivation des catégories de la compagnie. CRUD sur `categories`.
+- **Hook** `useCategories()` : charge les catégories actives de la compagnie via `useCompany()`.
+- **ProductManagement** : le select de catégorie lit `useCategories()` au lieu de l'enum. À la création/édition, envoie `category_id` (et conserve `category` = slug pour compat).
+- **UserManagementPanel** (assignation vendeur) : liste dynamique depuis `useCategories()`, insertion dans `seller_authorized_categories` avec `category_id` + `category` (slug).
+- **SellerWorkflow** : le filtre de catégories utilise `category_id` via les `seller_authorized_categories` chargées.
+- **InventoryManagement, StockAlerts, AdvancedReports, RestockPage, SaleDetailsDialog** : afficher `categories.name` via jointure (`.select('..., categories(name)')`) au lieu du label enum figé.
 
-// Top produits via jointure
-supabase.from('sale_items')
-  .select('product_name, quantity, subtotal, sales!inner(seller_id)')
-  .eq('sales.seller_id', user.id);
-```
+### Comportement "assigné manuellement"
 
-## Fichier modifié
+- Aucun trigger d'auto-assignation à la création d'une catégorie.
+- Dans l'UI d'assignation vendeur, les nouvelles catégories apparaissent, non cochées. L'admin coche pour autoriser.
+- La logique existante `get_seller_authorized_categories` (retour vide = tout autorisé) est conservée mais côté UI on considère qu'un vendeur sans lignes voit tout — l'admin doit ajouter au moins une ligne pour restreindre. **À confirmer si tu préfères l'inverse** (défaut = rien autorisé).
 
-- `src/components/Dashboard/SellerDashboardStats.tsx` — refonte de `fetchStats()` uniquement.
+## Fichiers touchés
+
+- Migration : `supabase/migrations/*_dynamic_categories.sql`
+- Nouveau : `src/components/Categories/CategoryManagement.tsx`, `src/hooks/useCategories.ts`
+- Modifiés : `ProductManagement.tsx`, `UserManagementPanel.tsx`, `SellerWorkflow.tsx`, `InventoryManagement.tsx`, `StockAlerts.tsx`, `AdvancedReports.tsx`, `RestockPage.tsx`, `SaleDetailsDialog.tsx`, page admin pour exposer `CategoryManagement`.
+
+## Points d'attention
+
+- L'enum PG `product_category` reste (impossible à drop sans casser triggers/policies existantes) mais devient inutile côté UI. Les inserts continuent à écrire `category` (slug) pour compat des colonnes NOT NULL existantes.
+- Le seeding par entreprise se base sur les 12 valeurs enum actuelles — cohérent avec les données existantes.
+- Toute nouvelle catégorie créée par l'admin ne pourra pas être écrite dans la colonne enum `category` : les inserts produits devront progressivement basculer sur `category_id` uniquement. **Étape 2 (hors de ce plan) : rendre `products.category` nullable** une fois l'UI stabilisée.
+
+Confirme ce plan pour que je lance la migration + le refactor.
