@@ -41,87 +41,110 @@ export const SellerDashboardStats = () => {
     if (!user) return;
 
     try {
-      // Total sales count and revenue
-      const { data: allSales, error: allError } = await supabase
-        .from('sales')
-        .select('id, total_amount')
-        .eq('seller_id', user.id);
+      const PAGE = 1000;
 
-      if (allError) throw allError;
+      // Helper: count exact without downloading rows
+      const countSales = async (fromISO?: string) => {
+        let q = supabase
+          .from('sales')
+          .select('id', { count: 'exact', head: true })
+          .eq('seller_id', user.id);
+        if (fromISO) q = q.gte('created_at', fromISO);
+        const { count, error } = await q;
+        if (error) throw error;
+        return count ?? 0;
+      };
 
-      // Today's sales
+      // Helper: paginated sum of total_amount
+      const sumRevenue = async (fromISO?: string) => {
+        let total = 0;
+        let from = 0;
+        while (true) {
+          let q = supabase
+            .from('sales')
+            .select('total_amount')
+            .eq('seller_id', user.id)
+            .range(from, from + PAGE - 1);
+          if (fromISO) q = q.gte('created_at', fromISO);
+          const { data, error } = await q;
+          if (error) throw error;
+          const rows = data ?? [];
+          total += rows.reduce((s, r: any) => s + Number(r.total_amount), 0);
+          if (rows.length < PAGE) break;
+          from += PAGE;
+        }
+        return total;
+      };
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
-      const { data: todaySales, error: todayError } = await supabase
-        .from('sales')
-        .select('total_amount')
-        .eq('seller_id', user.id)
-        .gte('created_at', today.toISOString());
-
-      if (todayError) throw todayError;
-
-      // Week sales
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       weekAgo.setHours(0, 0, 0, 0);
-
-      const { data: weekSales, error: weekError } = await supabase
-        .from('sales')
-        .select('total_amount')
-        .eq('seller_id', user.id)
-        .gte('created_at', weekAgo.toISOString());
-
-      if (weekError) throw weekError;
-
-      // Month sales
       const monthAgo = new Date();
       monthAgo.setDate(monthAgo.getDate() - 30);
       monthAgo.setHours(0, 0, 0, 0);
 
-      const { data: monthSales, error: monthError } = await supabase
-        .from('sales')
-        .select('total_amount')
-        .eq('seller_id', user.id)
-        .gte('created_at', monthAgo.toISOString());
+      const [
+        totalSalesCount,
+        todaySalesCount,
+        weekSalesCount,
+        monthSalesCount,
+        totalRevenue,
+        todayRevenue,
+        weekRevenue,
+        monthRevenue,
+      ] = await Promise.all([
+        countSales(),
+        countSales(today.toISOString()),
+        countSales(weekAgo.toISOString()),
+        countSales(monthAgo.toISOString()),
+        sumRevenue(),
+        sumRevenue(today.toISOString()),
+        sumRevenue(weekAgo.toISOString()),
+        sumRevenue(monthAgo.toISOString()),
+      ]);
 
-      if (monthError) throw monthError;
-
-      // Top products
-      const { data: saleItems, error: itemsError } = await supabase
-        .from('sale_items')
-        .select('product_name, quantity, subtotal, sale_id')
-        .in('sale_id', allSales?.map(s => s.id) || []);
-
-      if (itemsError) throw itemsError;
-
-      const productStats = saleItems?.reduce((acc: any, item: any) => {
-        if (!acc[item.product_name]) {
-          acc[item.product_name] = { product_name: item.product_name, quantity: 0, revenue: 0 };
+      // Top products via join, paginated (avoids .in() with huge id list)
+      const productStats: Record<string, { product_name: string; quantity: number; revenue: number }> = {};
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('sale_items')
+          .select('product_name, quantity, subtotal, sales!inner(seller_id)')
+          .eq('sales.seller_id', user.id)
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as any[];
+        for (const item of rows) {
+          const key = item.product_name;
+          if (!productStats[key]) {
+            productStats[key] = { product_name: key, quantity: 0, revenue: 0 };
+          }
+          productStats[key].quantity += Number(item.quantity);
+          productStats[key].revenue += Number(item.subtotal);
         }
-        acc[item.product_name].quantity += item.quantity;
-        acc[item.product_name].revenue += Number(item.subtotal);
-        return acc;
-      }, {});
+        if (rows.length < PAGE) break;
+        from += PAGE;
+      }
 
-      const topProducts = Object.values(productStats || {})
-        .sort((a: any, b: any) => b.revenue - a.revenue)
+      const topProducts = Object.values(productStats)
+        .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 5);
 
-      const totalRevenue = allSales?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
-      const averageSale = allSales?.length ? totalRevenue / allSales.length : 0;
+      const averageSale = totalSalesCount ? totalRevenue / totalSalesCount : 0;
 
       setStats({
-        totalSales: allSales?.length || 0,
-        todaySales: todaySales?.length || 0,
+        totalSales: totalSalesCount,
+        todaySales: todaySalesCount,
         totalRevenue,
-        todayRevenue: todaySales?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0,
-        weekSales: weekSales?.length || 0,
-        weekRevenue: weekSales?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0,
-        monthSales: monthSales?.length || 0,
-        monthRevenue: monthSales?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0,
+        todayRevenue,
+        weekSales: weekSalesCount,
+        weekRevenue,
+        monthSales: monthSalesCount,
+        monthRevenue,
         averageSale,
-        topProducts: topProducts as any
+        topProducts: topProducts as any,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
