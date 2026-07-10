@@ -65,10 +65,11 @@ interface Product {
   vetement_couleur?: string;
 }
 
-type ProductCategory = 'alimentaires' | 'boissons' | 'gazeuses' | 'electronique' | 'autres' | 'ceramique' | 'fer' | 'materiaux_de_construction' | 'energie' | 'blocs' | 'vetements';
+type ProductCategory = string;
 
 export const ProductManagement = () => {
   const { user, role } = useAuth();
+  const { categories: companyCategories } = useCompanyCategories(true);
   const isAdmin = role === 'admin';
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -166,19 +167,8 @@ export const ProductManagement = () => {
     return { value: product.quantity.toString(), unit: product.unit || 'unités', raw: product.quantity };
   };
 
-  const categories = [
-    { value: 'alimentaires', label: 'Alimentaires' },
-    { value: 'boissons', label: 'Boissons' },
-    { value: 'gazeuses', label: 'Gazeuses' },
-    { value: 'electronique', label: 'Électronique' },
-    { value: 'ceramique', label: 'Céramique' },
-    { value: 'fer', label: 'Fer / Acier' },
-    { value: 'materiaux_de_construction', label: 'Matériaux de construction' },
-    { value: 'energie', label: 'Énergie' },
-    { value: 'blocs', label: 'Blocs' },
-    { value: 'vetements', label: 'Vêtements' },
-    { value: 'autres', label: 'Autres' }
-  ];
+  const categories = companyCategories.map(c => ({ value: c.slug, label: c.nom, id: c.id }));
+
 
   useEffect(() => {
     fetchProducts();
