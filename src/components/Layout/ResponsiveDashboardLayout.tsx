@@ -19,7 +19,8 @@ import {
   ClipboardList,
   Database,
   Warehouse,
-  UserCheck
+  UserCheck,
+  Tag
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
