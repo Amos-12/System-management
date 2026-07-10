@@ -603,28 +603,33 @@ export const UserManagementPanel = () => {
           <div className="space-y-4">
             <div className="p-3 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">
-                {selectedUserCategories.categories.length === 0 
+                {selectedUserCategories.categorieIds.length === 0
                   ? "✅ Ce vendeur a accès à toutes les catégories"
-                  : `🔒 Ce vendeur n'a accès qu'aux ${selectedUserCategories.categories.length} catégorie(s) sélectionnée(s)`
+                  : `🔒 Ce vendeur n'a accès qu'aux ${selectedUserCategories.categorieIds.length} catégorie(s) sélectionnée(s)`
                 }
               </p>
             </div>
-            <div className="space-y-3">
-              {ALL_CATEGORIES.map(cat => (
-                <div key={cat.value} className="flex items-center gap-3 p-2 hover:bg-muted rounded-md">
+            <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+              {companyCategories.map(cat => (
+                <div key={cat.id} className="flex items-center gap-3 p-2 hover:bg-muted rounded-md">
                   <Checkbox
-                    id={`cat-${cat.value}`}
-                    checked={selectedUserCategories.categories.includes(cat.value)}
-                    onCheckedChange={(checked) => toggleCategory(cat.value, checked)}
+                    id={`cat-${cat.id}`}
+                    checked={selectedUserCategories.categorieIds.includes(cat.id)}
+                    onCheckedChange={(checked) => toggleCategory(cat.id, checked)}
                   />
-                  <Label 
-                    htmlFor={`cat-${cat.value}`} 
+                  <Label
+                    htmlFor={`cat-${cat.id}`}
                     className="flex-1 cursor-pointer text-sm"
                   >
-                    {cat.label}
+                    {cat.nom}
                   </Label>
                 </div>
               ))}
+              {companyCategories.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Aucune catégorie. Créez-en dans « Catégories ».
+                </p>
+              )}
             </div>
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button 
