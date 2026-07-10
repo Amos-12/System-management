@@ -72,10 +72,10 @@ export const CategoryManagement = () => {
     if (!toDelete) return;
     try {
       // On désactive plutôt que de supprimer si la catégorie est utilisée
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from('products')
         .select('id', { count: 'exact', head: true })
-        .eq('categorie_id' as any, toDelete.id as any);
+        .eq('categorie_id', toDelete.id);
 
       if ((count || 0) > 0) {
         const { error } = await (supabase as any).from('categories').update({ is_active: false }).eq('id', toDelete.id);
