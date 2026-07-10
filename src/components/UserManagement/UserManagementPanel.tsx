@@ -191,79 +191,93 @@ export const UserManagementPanel = () => {
     try {
       const { data, error } = await supabase
         .from('seller_authorized_categories' as any)
-        .select('category')
-        .eq('user_id', userId);
+        .select('categorie_id, category');
 
+      const rows = (data as any[]) || [];
+      const userRows = rows.filter(r => (r as any).user_id === userId || true);
       if (error) throw error;
 
-      setSelectedUserCategories({
-        userId,
-        userName,
-        categories: (data as any[])?.map(d => d.category) || []
-      });
+      // Reload strictly for this user
+      const { data: mine } = await supabase
+        .from('seller_authorized_categories' as any)
+        .select('categorie_id, category')
+        .eq('user_id', userId);
+
+      const ids: string[] = [];
+      for (const r of ((mine as any[]) || [])) {
+        if (r.categorie_id) ids.push(r.categorie_id);
+        else if (r.category) {
+          const match = companyCategories.find(c => c.slug === r.category);
+          if (match) ids.push(match.id);
+        }
+      }
+
+      setSelectedUserCategories({ userId, userName, categorieIds: Array.from(new Set(ids)) });
       setIsCategoryDialogOpen(true);
     } catch (error) {
       console.error('Error loading categories:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les catégories",
-        variant: "destructive"
-      });
+      toast({ title: "Erreur", description: "Impossible de charger les catégories", variant: "destructive" });
     }
   };
 
-  const toggleCategory = (category: string, checked: boolean | string) => {
+  const toggleCategory = (categorieId: string, checked: boolean | string) => {
     const isChecked = checked === true;
     setSelectedUserCategories(prev => ({
       ...prev,
-      categories: isChecked
-        ? [...prev.categories, category]
-        : prev.categories.filter(c => c !== category)
+      categorieIds: isChecked
+        ? [...prev.categorieIds, categorieId]
+        : prev.categorieIds.filter(c => c !== categorieId)
     }));
   };
 
   const saveUserCategories = async () => {
     try {
-      const { userId, categories } = selectedUserCategories;
+      const { userId, categorieIds } = selectedUserCategories;
 
-      // Delete all existing categories for this user
+      // Récupérer le company_id du vendeur
+      const { data: prof } = await supabase.from('profiles').select('company_id').eq('user_id', userId).single();
+      const company_id = (prof as any)?.company_id;
+
       await supabase
         .from('seller_authorized_categories' as any)
         .delete()
         .eq('user_id', userId);
 
-      // Insert new categories if any selected
-      if (categories.length > 0) {
-        const rows = categories.map(cat => ({
-          user_id: userId,
-          category: cat as any
-        }));
+      if (categorieIds.length > 0) {
+        const rows = categorieIds.map(id => {
+          const cat = companyCategories.find(c => c.id === id);
+          const slug = cat?.slug;
+          const useEnum = slug && ENUM_CATEGORY_SLUGS.has(slug);
+          return {
+            user_id: userId,
+            company_id,
+            categorie_id: id,
+            category: useEnum ? slug : null,
+          };
+        });
 
         const { error } = await supabase
           .from('seller_authorized_categories' as any)
-          .insert(rows);
+          .insert(rows as any);
 
         if (error) throw error;
       }
 
       toast({
         title: "Succès",
-        description: categories.length > 0 
-          ? "Catégories autorisées mises à jour" 
+        description: categorieIds.length > 0
+          ? "Catégories autorisées mises à jour"
           : "Toutes les catégories sont maintenant accessibles"
       });
 
       setIsCategoryDialogOpen(false);
-      setSelectedUserCategories({ userId: '', userName: '', categories: [] });
-    } catch (error) {
+      setSelectedUserCategories({ userId: '', userName: '', categorieIds: [] });
+    } catch (error: any) {
       console.error('Error saving categories:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder les catégories",
-        variant: "destructive"
-      });
+      toast({ title: "Erreur", description: error.message || "Impossible de sauvegarder les catégories", variant: "destructive" });
     }
   };
+
 
   const handleDeleteUser = async (userId: string, userName: string, userRole: string, isActive: boolean) => {
     try {
