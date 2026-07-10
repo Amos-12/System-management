@@ -21,6 +21,7 @@ import { Package, Plus, Edit, Trash2, AlertCircle, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useCompanyCategories, ENUM_CATEGORY_SLUGS } from '@/hooks/useCompanyCategories';
 
 interface Product {
   id: string;
@@ -64,10 +65,11 @@ interface Product {
   vetement_couleur?: string;
 }
 
-type ProductCategory = 'alimentaires' | 'boissons' | 'gazeuses' | 'electronique' | 'autres' | 'ceramique' | 'fer' | 'materiaux_de_construction' | 'energie' | 'blocs' | 'vetements';
+type ProductCategory = string;
 
 export const ProductManagement = () => {
   const { user, role } = useAuth();
+  const { categories: companyCategories } = useCompanyCategories(true);
   const isAdmin = role === 'admin';
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -165,19 +167,8 @@ export const ProductManagement = () => {
     return { value: product.quantity.toString(), unit: product.unit || 'unités', raw: product.quantity };
   };
 
-  const categories = [
-    { value: 'alimentaires', label: 'Alimentaires' },
-    { value: 'boissons', label: 'Boissons' },
-    { value: 'gazeuses', label: 'Gazeuses' },
-    { value: 'electronique', label: 'Électronique' },
-    { value: 'ceramique', label: 'Céramique' },
-    { value: 'fer', label: 'Fer / Acier' },
-    { value: 'materiaux_de_construction', label: 'Matériaux de construction' },
-    { value: 'energie', label: 'Énergie' },
-    { value: 'blocs', label: 'Blocs' },
-    { value: 'vetements', label: 'Vêtements' },
-    { value: 'autres', label: 'Autres' }
-  ];
+  const categories = companyCategories.map(c => ({ value: c.slug, label: c.nom, id: c.id }));
+
 
   useEffect(() => {
     fetchProducts();
@@ -400,9 +391,13 @@ export const ProductManagement = () => {
     }
 
     try {
+      const selectedCat = companyCategories.find(c => c.slug === formData.category);
+      const isEnumSlug = ENUM_CATEGORY_SLUGS.has(formData.category);
+
       const productData: any = {
         name: formData.name,
-        category: formData.category,
+        category: isEnumSlug ? formData.category : null,
+        categorie_id: selectedCat?.id ?? null,
         unit: formData.unit,
         alert_threshold: parseInt(formData.alert_threshold),
         description: formData.description || null,

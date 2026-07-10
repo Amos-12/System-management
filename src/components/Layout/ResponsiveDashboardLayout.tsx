@@ -19,7 +19,8 @@ import {
   ClipboardList,
   Database,
   Warehouse,
-  UserCheck
+  UserCheck,
+  Tag
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,6 +99,7 @@ export const ResponsiveDashboardLayout = ({
   const adminNavItems = [
     { icon: Home, label: 'Dashboard', value: 'dashboard' },
     { icon: Package, label: 'Produits', value: 'products' },
+    { icon: Tag, label: 'Catégories', value: 'categories' },
     { icon: ShoppingCart, label: 'Ventes', value: 'sales' },
     { icon: Warehouse, label: 'Inventaire', value: 'inventory', route: '/inventory' },
     { icon: Users, label: 'Utilisateurs', value: 'users' },
