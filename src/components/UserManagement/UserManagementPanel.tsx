@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Users, UserCheck, Mail, Calendar, Search, UserPlus, RefreshCcw, Settings, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useCompanyCategories, ENUM_CATEGORY_SLUGS } from '@/hooks/useCompanyCategories';
 
 interface User {
   id: string;
@@ -22,21 +23,10 @@ interface User {
   created_at: string;
 }
 
-const ALL_CATEGORIES = [
-  { value: 'alimentaires', label: 'Alimentaires' },
-  { value: 'boissons', label: 'Boissons' },
-  { value: 'gazeuses', label: 'Gazeuses' },
-  { value: 'electronique', label: 'Électronique' },
-  { value: 'ceramique', label: 'Céramique' },
-  { value: 'fer', label: 'Fer / Acier' },
-  { value: 'materiaux_de_construction', label: 'Matériaux de construction' },
-  { value: 'energie', label: 'Énergie' },
-  { value: 'blocs', label: 'Blocs' },
-  { value: 'vetements', label: 'Vêtements' },
-  { value: 'autres', label: 'Autres' }
-];
+// Les catégories sont chargées dynamiquement via useCompanyCategories
 
 export const UserManagementPanel = () => {
+  const { categories: companyCategories } = useCompanyCategories(true);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,8 +35,8 @@ export const UserManagementPanel = () => {
   const [selectedUserCategories, setSelectedUserCategories] = useState<{
     userId: string;
     userName: string;
-    categories: string[];
-  }>({ userId: '', userName: '', categories: [] });
+    categorieIds: string[];
+  }>({ userId: '', userName: '', categorieIds: [] });
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
 
   const fetchUsers = async () => {
