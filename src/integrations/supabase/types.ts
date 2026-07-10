@@ -298,7 +298,7 @@ export type Database = {
           bloc_type: string | null
           capacite: number | null
           categorie_id: string | null
-          category: Database["public"]["Enums"]["product_category"]
+          category: Database["public"]["Enums"]["product_category"] | null
           company_id: string
           created_at: string
           created_by: string | null
@@ -350,7 +350,7 @@ export type Database = {
           bloc_type?: string | null
           capacite?: number | null
           categorie_id?: string | null
-          category: Database["public"]["Enums"]["product_category"]
+          category?: Database["public"]["Enums"]["product_category"] | null
           company_id: string
           created_at?: string
           created_by?: string | null
@@ -402,7 +402,7 @@ export type Database = {
           bloc_type?: string | null
           capacite?: number | null
           categorie_id?: string | null
-          category?: Database["public"]["Enums"]["product_category"]
+          category?: Database["public"]["Enums"]["product_category"] | null
           company_id?: string
           created_at?: string
           created_by?: string | null
@@ -743,7 +743,8 @@ export type Database = {
         Row: {
           assigned_at: string | null
           assigned_by: string | null
-          category: Database["public"]["Enums"]["product_category"]
+          categorie_id: string | null
+          category: Database["public"]["Enums"]["product_category"] | null
           company_id: string
           id: string
           user_id: string
@@ -751,7 +752,8 @@ export type Database = {
         Insert: {
           assigned_at?: string | null
           assigned_by?: string | null
-          category: Database["public"]["Enums"]["product_category"]
+          categorie_id?: string | null
+          category?: Database["public"]["Enums"]["product_category"] | null
           company_id: string
           id?: string
           user_id: string
@@ -759,12 +761,20 @@ export type Database = {
         Update: {
           assigned_at?: string | null
           assigned_by?: string | null
-          category?: Database["public"]["Enums"]["product_category"]
+          categorie_id?: string | null
+          category?: Database["public"]["Enums"]["product_category"] | null
           company_id?: string
           id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "seller_authorized_categories_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "seller_authorized_categories_company_id_fkey"
             columns: ["company_id"]
@@ -1092,6 +1102,12 @@ export type Database = {
       cleanup_database_history: { Args: never; Returns: undefined }
       cleanup_old_data: { Args: never; Returns: Json }
       delete_user_account: { Args: { target_user_id: string }; Returns: Json }
+      get_seller_authorized_categorie_ids: {
+        Args: { _user_id: string }
+        Returns: {
+          categorie_id: string
+        }[]
+      }
       get_seller_authorized_categories: {
         Args: { _user_id: string }
         Returns: {
