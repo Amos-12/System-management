@@ -391,9 +391,13 @@ export const ProductManagement = () => {
     }
 
     try {
+      const selectedCat = companyCategories.find(c => c.slug === formData.category);
+      const isEnumSlug = ENUM_CATEGORY_SLUGS.has(formData.category);
+
       const productData: any = {
         name: formData.name,
-        category: formData.category,
+        category: isEnumSlug ? formData.category : null,
+        categorie_id: selectedCat?.id ?? null,
         unit: formData.unit,
         alert_threshold: parseInt(formData.alert_threshold),
         description: formData.description || null,
