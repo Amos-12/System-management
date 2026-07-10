@@ -207,28 +207,26 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
   const loadAuthorizedCategories = async () => {
     if (!user?.id) {
       console.log('⚠️ No user ID available yet');
-      return; // Don't set anything, wait for user
+      return;
     }
-    
+
     try {
-      console.log('🔍 Loading categories for user:', user.id);
       const { data, error } = await supabase
         .from('seller_authorized_categories' as any)
-        .select('category')
+        .select('category, categorie_id')
         .eq('user_id', user.id);
 
       if (error) throw error;
-      
-      if (data && data.length > 0) {
-        // Seller has specific category restrictions
-        setAuthorizedCategories((data as any[]).map(d => d.category));
+
+      const rows = (data as any[]) || [];
+      if (rows.length > 0) {
+        // On collecte les categorie_id ; si absent (ligne héritée), on fallback via slug -> resolve dans fetchProducts
+        setAuthorizedCategories(rows.map(r => r.categorie_id || r.category).filter(Boolean));
       } else {
-        // Seller has no restrictions = empty array (all categories)
         setAuthorizedCategories([]);
       }
     } catch (error) {
       console.error('Error loading authorized categories:', error);
-      // Default to all categories on error
       setAuthorizedCategories([]);
     }
   };
@@ -264,12 +262,18 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
         .from('products')
         .select('*')
         .eq('is_active', true);
-      
-      // Filter by authorized categories if restrictions exist (non-empty array)
+
+      // Filtrage par catégories autorisées : les valeurs sont soit des uuid (categorie_id), soit des slugs (héritage)
       if (authorizedCategories.length > 0) {
-        query = query.in('category', authorizedCategories as any);
+        const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const ids = authorizedCategories.filter(v => uuidRe.test(v));
+        const slugs = authorizedCategories.filter(v => !uuidRe.test(v));
+        const orParts: string[] = [];
+        if (ids.length) orParts.push(`categorie_id.in.(${ids.join(',')})`);
+        if (slugs.length) orParts.push(`category.in.(${slugs.join(',')})`);
+        if (orParts.length) query = query.or(orParts.join(','));
       }
-      
+
       const { data, error } = await query.order('name');
 
       if (error) throw error;
