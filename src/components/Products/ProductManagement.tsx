@@ -21,6 +21,7 @@ import { Package, Plus, Edit, Trash2, AlertCircle, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useCompanyCategories, ENUM_CATEGORY_SLUGS } from '@/hooks/useCompanyCategories';
 
 interface Product {
   id: string;
