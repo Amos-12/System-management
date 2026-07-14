@@ -20,7 +20,8 @@ import {
   Database,
   Warehouse,
   UserCheck,
-  Tag
+  Tag,
+  Wallet
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,6 +102,7 @@ export const ResponsiveDashboardLayout = ({
     { icon: Package, label: 'Produits', value: 'products' },
     { icon: Tag, label: 'Catégories', value: 'categories' },
     { icon: ShoppingCart, label: 'Ventes', value: 'sales' },
+    { icon: Wallet, label: 'Dépenses', value: 'expenses', route: '/expenses' },
     { icon: Warehouse, label: 'Inventaire', value: 'inventory', route: '/inventory' },
     { icon: Users, label: 'Utilisateurs', value: 'users' },
     { icon: UserCheck, label: 'Perf. Vendeurs', value: 'seller-reports' },
@@ -114,7 +116,8 @@ export const ResponsiveDashboardLayout = ({
   const sellerNavItems = [
     { icon: Home, label: 'Dashboard', value: 'dashboard' },
     { icon: ShoppingCart, label: 'Nouvelle vente', value: 'sale' },
-    { icon: TrendingUp, label: 'Mes ventes', value: 'history' }
+    { icon: TrendingUp, label: 'Mes ventes', value: 'history' },
+    { icon: Wallet, label: 'Dépenses', value: 'expenses', route: '/expenses' }
   ];
 
   const navItems = role === 'admin' ? adminNavItems : sellerNavItems;
