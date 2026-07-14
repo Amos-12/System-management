@@ -21,6 +21,7 @@ import { Calendar, TrendingUp, Package, DollarSign, ShoppingCart, Users, Target 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { StatsCard } from './StatsCard';
+import { PeriodOverview } from './PeriodOverview';
 
 interface RevenueData {
   date: string;
@@ -460,6 +461,8 @@ export const AdminDashboardCharts = () => {
 
   return (
     <div className="space-y-6">
+      <PeriodOverview />
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard

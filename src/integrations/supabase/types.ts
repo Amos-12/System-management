@@ -226,6 +226,98 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_categories: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category_id: string | null
+          company_id: string
+          created_at: string
+          currency: string
+          description: string | null
+          expense_date: string
+          id: string
+          libelle: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          company_id: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          libelle: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          company_id?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          libelle?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1102,6 +1194,20 @@ export type Database = {
       cleanup_database_history: { Args: never; Returns: undefined }
       cleanup_old_data: { Args: never; Returns: Json }
       delete_user_account: { Args: { target_user_id: string }; Returns: Json }
+      get_expenses_totals: {
+        Args: { _end: string; _start: string; _user_id?: string }
+        Returns: {
+          expenses_count: number
+          total_amount: number
+        }[]
+      }
+      get_sales_totals: {
+        Args: { _end: string; _start: string }
+        Returns: {
+          sales_count: number
+          total_amount: number
+        }[]
+      }
       get_seller_authorized_categorie_ids: {
         Args: { _user_id: string }
         Returns: {

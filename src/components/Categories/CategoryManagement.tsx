@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Tag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Tag, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyCategories, slugify, ENUM_CATEGORY_SLUGS, CompanyCategory } from '@/hooks/useCompanyCategories';
@@ -17,18 +17,22 @@ export const CategoryManagement = () => {
   const { categories, loading, refetch } = useCompanyCategories(false);
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<CompanyCategory | null>(null);
-  const [form, setForm] = useState({ nom: '', description: '', is_active: true, ordre: 0 });
+  const [form, setForm] = useState({ nom: '', is_active: true, ordre: 0 });
   const [toDelete, setToDelete] = useState<CompanyCategory | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const isLegacy = (cat: CompanyCategory) => ENUM_CATEGORY_SLUGS.has(cat.slug);
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ nom: '', description: '', is_active: true, ordre: (categories[categories.length - 1]?.ordre || 0) + 1 });
+    const maxOrdre = categories.reduce((m, c) => Math.max(m, c.ordre || 0), 0);
+    setForm({ nom: '', is_active: true, ordre: maxOrdre + 1 });
     setIsOpen(true);
   };
 
   const openEdit = (cat: CompanyCategory) => {
     setEditing(cat);
-    setForm({ nom: cat.nom, description: '', is_active: cat.is_active, ordre: cat.ordre || 0 });
+    setForm({ nom: cat.nom, is_active: cat.is_active, ordre: cat.ordre || 0 });
     setIsOpen(true);
   };
 
@@ -37,41 +41,70 @@ export const CategoryManagement = () => {
       toast({ title: 'Erreur', description: 'Le nom est requis', variant: 'destructive' });
       return;
     }
+    setSaving(true);
     try {
-      const { data: profile } = await supabase.auth.getUser();
-      const userId = profile.user?.id;
-      if (!userId) throw new Error('Non authentifié');
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !userData.user) throw new Error('Non authentifié');
+      const userId = userData.user.id;
 
-      const { data: prof } = await supabase.from('profiles').select('company_id').eq('user_id', userId).single();
+      const { data: prof, error: profErr } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('user_id', userId)
+        .single();
+      if (profErr) throw profErr;
       const company_id = (prof as any)?.company_id;
+      if (!company_id) throw new Error('Aucune entreprise associée à votre compte');
 
-      const payload: any = {
-        nom: form.nom.trim(),
-        slug: slugify(form.nom),
-        is_active: form.is_active,
-        ordre: form.ordre,
-      };
-
-      if (editing) {
-        const { error } = await (supabase as any).from('categories').update(payload).eq('id', editing.id);
+      if (editing && isLegacy(editing)) {
+        // Legacy: only allow ordre + is_active changes
+        const { error } = await (supabase as any)
+          .from('categories')
+          .update({ is_active: form.is_active, ordre: form.ordre })
+          .eq('id', editing.id);
+        if (error) throw error;
+        toast({ title: 'Catégorie mise à jour' });
+      } else if (editing) {
+        const { error } = await (supabase as any)
+          .from('categories')
+          .update({
+            nom: form.nom.trim(),
+            slug: slugify(form.nom),
+            is_active: form.is_active,
+            ordre: form.ordre,
+          })
+          .eq('id', editing.id);
         if (error) throw error;
         toast({ title: 'Catégorie modifiée' });
       } else {
-        const { error } = await (supabase as any).from('categories').insert({ ...payload, company_id });
+        const { error } = await (supabase as any).from('categories').insert({
+          nom: form.nom.trim(),
+          slug: slugify(form.nom),
+          is_active: form.is_active,
+          ordre: form.ordre,
+          company_id,
+        });
         if (error) throw error;
-        toast({ title: 'Catégorie créée', description: "N'oubliez pas de l'assigner aux vendeurs dans la gestion des utilisateurs." });
+        toast({ title: 'Catégorie créée' });
       }
       setIsOpen(false);
       refetch();
     } catch (e: any) {
+      console.error('Category save error:', e);
       toast({ title: 'Erreur', description: e.message || 'Impossible de sauvegarder', variant: 'destructive' });
+    } finally {
+      setSaving(false);
     }
   };
 
   const confirmDelete = async () => {
     if (!toDelete) return;
+    if (isLegacy(toDelete)) {
+      toast({ title: 'Impossible', description: 'Les catégories système ne peuvent pas être supprimées.', variant: 'destructive' });
+      setToDelete(null);
+      return;
+    }
     try {
-      // On désactive plutôt que de supprimer si la catégorie est utilisée
       const { count } = await (supabase as any)
         .from('products')
         .select('id', { count: 'exact', head: true })
@@ -80,7 +113,7 @@ export const CategoryManagement = () => {
       if ((count || 0) > 0) {
         const { error } = await (supabase as any).from('categories').update({ is_active: false }).eq('id', toDelete.id);
         if (error) throw error;
-        toast({ title: 'Catégorie désactivée', description: `${count} produit(s) l'utilisent, elle a été désactivée au lieu d'être supprimée.` });
+        toast({ title: 'Catégorie désactivée', description: `${count} produit(s) l'utilisent, elle a été désactivée.` });
       } else {
         const { error } = await (supabase as any).from('categories').delete().eq('id', toDelete.id);
         if (error) throw error;
@@ -89,6 +122,7 @@ export const CategoryManagement = () => {
       setToDelete(null);
       refetch();
     } catch (e: any) {
+      console.error('Category delete error:', e);
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
     }
   };
@@ -129,11 +163,16 @@ export const CategoryManagement = () => {
               <TableBody>
                 {categories.map(cat => (
                   <TableRow key={cat.id}>
-                    <TableCell className="font-medium">{cat.nom}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {isLegacy(cat) && <Lock className="h-3 w-3 text-muted-foreground" />}
+                        {cat.nom}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{cat.slug}</TableCell>
                     <TableCell>
-                      {ENUM_CATEGORY_SLUGS.has(cat.slug) ? (
-                        <Badge variant="secondary">Standard</Badge>
+                      {isLegacy(cat) ? (
+                        <Badge variant="secondary">Système</Badge>
                       ) : (
                         <Badge>Personnalisée</Badge>
                       )}
@@ -145,7 +184,7 @@ export const CategoryManagement = () => {
                       <Button size="sm" variant="ghost" onClick={() => openEdit(cat)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {!ENUM_CATEGORY_SLUGS.has(cat.slug) && (
+                      {!isLegacy(cat) && (
                         <Button size="sm" variant="ghost" onClick={() => setToDelete(cat)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -156,7 +195,7 @@ export const CategoryManagement = () => {
                 {categories.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      Aucune catégorie. Créez-en une pour commencer.
+                      Aucune catégorie visible. Vérifiez votre compte entreprise.
                     </TableCell>
                   </TableRow>
                 )}
@@ -174,8 +213,18 @@ export const CategoryManagement = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Nom *</Label>
-              <Input value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} placeholder="Ex : Peinture" />
-              <p className="text-xs text-muted-foreground">Slug généré : {slugify(form.nom) || '—'}</p>
+              <Input
+                value={form.nom}
+                onChange={e => setForm({ ...form, nom: e.target.value })}
+                placeholder="Ex : Peinture"
+                disabled={editing ? isLegacy(editing) : false}
+              />
+              {editing && isLegacy(editing) && (
+                <p className="text-xs text-muted-foreground">Catégorie système — le nom ne peut pas être modifié.</p>
+              )}
+              {!editing && (
+                <p className="text-xs text-muted-foreground">Slug généré : {slugify(form.nom) || '—'}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Ordre d'affichage</Label>
@@ -188,7 +237,7 @@ export const CategoryManagement = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
-            <Button onClick={save}>Enregistrer</Button>
+            <Button onClick={save} disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
