@@ -37,6 +37,7 @@ export const SalesManagement = () => {
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [totalSales, setTotalSales] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
@@ -58,45 +59,61 @@ export const SalesManagement = () => {
 
   const fetchSales = async () => {
     try {
+      // 1. Accurate total count (bypasses 1000-row limit)
+      const { count: exactCount } = await supabase
+        .from('sales')
+        .select('id', { count: 'exact', head: true });
+      setTotalSales(exactCount || 0);
+
+      // 2. Aggregate totals via RPC (server-side sum, no row limit)
+      const startOfEpoch = new Date(0).toISOString();
+      const farFuture = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: allTotals } = await (supabase as any).rpc('get_sales_totals', {
+        _start: startOfEpoch,
+        _end: farFuture,
+      });
+      if (allTotals && allTotals[0]) {
+        setTotalRevenue(Number(allTotals[0].total_amount) || 0);
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const { data: todayTotals } = await (supabase as any).rpc('get_sales_totals', {
+        _start: today.toISOString(),
+        _end: tomorrow.toISOString(),
+      });
+      if (todayTotals && todayTotals[0]) {
+        setTodayRevenue(Number(todayTotals[0].total_amount) || 0);
+      }
+
+      // 3. Fetch recent sales for the table (paginated to last 500 for display)
       const { data, error } = await supabase
         .from('sales')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(0, 499);
 
       if (error) throw error;
 
-      // Fetch seller names separately
-      const salesWithSellers = await Promise.all(
-        (data || []).map(async (sale) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('user_id', sale.seller_id)
-            .single();
-          
-          return {
-            ...sale,
-            profiles: profileData || { full_name: 'N/A' }
-          };
-        })
-      );
+      // Batch-load sellers in a single query
+      const sellerIds = Array.from(new Set((data || []).map((s: any) => s.seller_id).filter(Boolean))) as string[];
+      let profileMap: Record<string, string> = {};
+      if (sellerIds.length) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', sellerIds);
+        profiles?.forEach((p: any) => { profileMap[p.user_id] = p.full_name; });
+      }
+
+      const salesWithSellers = (data || []).map((sale: any) => ({
+        ...sale,
+        profiles: { full_name: profileMap[sale.seller_id] || 'N/A' },
+      }));
 
       setSales(salesWithSellers as Sale[]);
-
-      // Calculate total revenue
-      const total = data?.reduce((sum, sale) => sum + parseFloat(sale.total_amount.toString()), 0) || 0;
-      setTotalRevenue(total);
-
-      // Calculate today's revenue
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayTotal = data?.filter(sale => {
-        const saleDate = new Date(sale.created_at);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate.getTime() === today.getTime();
-      }).reduce((sum, sale) => sum + parseFloat(sale.total_amount.toString()), 0) || 0;
-      setTodayRevenue(todayTotal);
-
     } catch (error) {
       console.error('Error fetching sales:', error);
       toast({
@@ -196,7 +213,7 @@ export const SalesManagement = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total des ventes</p>
-                <p className="text-2xl font-bold text-primary">{sales.length}</p>
+                <p className="text-2xl font-bold text-primary">{totalSales}</p>
               </div>
               <ShoppingCart className="w-8 h-8 text-primary opacity-50" />
             </div>
