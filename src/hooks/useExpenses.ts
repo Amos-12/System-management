@@ -66,7 +66,7 @@ export function useExpenses(startDate: string, endDate: string) {
     }
 
     // Enrich with author names in one query
-    const ids = Array.from(new Set((data || []).map((e: any) => e.user_id)));
+    const ids = Array.from(new Set((data || []).map((e: any) => e.user_id as string))) as string[];
     let authorMap: Record<string, string> = {};
     if (ids.length) {
       const { data: profiles } = await supabase
