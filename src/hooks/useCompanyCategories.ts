@@ -40,7 +40,12 @@ export function useCompanyCategories(activeOnly = true) {
       .order('nom', { ascending: true });
     if (activeOnly) query = query.eq('is_active', true);
     const { data, error } = await query;
-    if (!error) setCategories((data as CompanyCategory[]) || []);
+    if (error) {
+      console.error('[useCompanyCategories] fetch error:', error);
+      setCategories([]);
+    } else {
+      setCategories((data as CompanyCategory[]) || []);
+    }
     setLoading(false);
   }, [activeOnly]);
 

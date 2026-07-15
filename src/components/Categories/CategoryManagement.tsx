@@ -91,7 +91,8 @@ export const CategoryManagement = () => {
       refetch();
     } catch (e: any) {
       console.error('Category save error:', e);
-      toast({ title: 'Erreur', description: e.message || 'Impossible de sauvegarder', variant: 'destructive' });
+      const details = [e?.message, e?.details, e?.hint].filter(Boolean).join(' — ');
+      toast({ title: 'Erreur', description: details || 'Impossible de sauvegarder', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
