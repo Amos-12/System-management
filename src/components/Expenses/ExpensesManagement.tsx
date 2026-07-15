@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useExpenses, Expense } from '@/hooks/useExpenses';
 import { PeriodFilter, PeriodRange, defaultPeriod } from '@/components/common/PeriodFilter';
 import { ExpenseFormDialog } from './ExpenseFormDialog';
-import { ExpenseCategoryManager } from './ExpenseCategoryManager';
+
 import { format } from 'date-fns';
 
 export const ExpensesManagement = () => {
@@ -82,7 +82,6 @@ export const ExpensesManagement = () => {
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Libellé</TableHead>
-                <TableHead>Catégorie</TableHead>
                 <TableHead>Auteur</TableHead>
                 <TableHead className="text-right">Montant</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -90,9 +89,9 @@ export const ExpensesManagement = () => {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8">Chargement…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8">Chargement…</TableCell></TableRow>
               ) : expenses.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune dépense sur la période</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune dépense sur la période</TableCell></TableRow>
               ) : expenses.map(e => (
                 <TableRow key={e.id}>
                   <TableCell>{format(new Date(e.expense_date), 'dd/MM/yyyy')}</TableCell>
@@ -100,7 +99,6 @@ export const ExpensesManagement = () => {
                     <div className="font-medium">{e.libelle}</div>
                     {e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}
                   </TableCell>
-                  <TableCell>{e.category?.nom ? <Badge variant="secondary">{e.category.nom}</Badge> : '—'}</TableCell>
                   <TableCell>{e.author?.full_name}</TableCell>
                   <TableCell className="text-right font-bold">{Number(e.amount).toFixed(2)} {e.currency}</TableCell>
                   <TableCell className="text-right space-x-1">
@@ -134,7 +132,7 @@ export const ExpensesManagement = () => {
         </CardContent>
       </Card>
 
-      {isAdmin && <ExpenseCategoryManager />}
+      
 
       <ExpenseFormDialog
         open={dialogOpen}

@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useExpenseCategories, Expense } from '@/hooks/useExpenses';
+import { Expense } from '@/hooks/useExpenses';
 
 interface Props {
   open: boolean;
@@ -17,14 +17,12 @@ interface Props {
 }
 
 export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) => {
-  const { categories } = useExpenseCategories();
   const [form, setForm] = useState({
     libelle: '',
     description: '',
     amount: '',
     currency: 'HTG',
     expense_date: new Date().toISOString().slice(0, 10),
-    category_id: '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -36,7 +34,6 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
         amount: String(editing.amount),
         currency: editing.currency,
         expense_date: editing.expense_date,
-        category_id: editing.category_id || '',
       });
     } else {
       setForm({
@@ -45,7 +42,6 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
         amount: '',
         currency: 'HTG',
         expense_date: new Date().toISOString().slice(0, 10),
-        category_id: '',
       });
     }
   }, [editing, open]);
@@ -74,7 +70,6 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
         amount: parseFloat(form.amount),
         currency: form.currency,
         expense_date: form.expense_date,
-        category_id: form.category_id || null,
       };
 
       if (editing) {
@@ -126,23 +121,9 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Date *</Label>
-              <Input type="date" value={form.expense_date} onChange={(e) => setForm({ ...form, expense_date: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Catégorie</Label>
-              <Select value={form.category_id || 'none'} onValueChange={(v) => setForm({ ...form, category_id: v === 'none' ? '' : v })}>
-                <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Aucune</SelectItem>
-                  {categories.filter(c => c.is_active).map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>Date *</Label>
+            <Input type="date" value={form.expense_date} onChange={(e) => setForm({ ...form, expense_date: e.target.value })} />
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
