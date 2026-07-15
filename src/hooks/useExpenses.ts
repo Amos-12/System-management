@@ -10,38 +10,9 @@ export interface Expense {
   amount: number;
   currency: string;
   expense_date: string;
-  category_id: string | null;
   created_at: string;
   updated_at: string;
-  category?: { id: string; nom: string } | null;
   author?: { full_name: string } | null;
-}
-
-export interface ExpenseCategory {
-  id: string;
-  nom: string;
-  is_active: boolean;
-}
-
-export function useExpenseCategories() {
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data } = await (supabase as any)
-      .from('expense_categories')
-      .select('id, nom, is_active')
-      .order('nom');
-    setCategories((data as ExpenseCategory[]) || []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  return { categories, loading, refetch: load };
 }
 
 export function useExpenses(startDate: string, endDate: string) {
@@ -52,7 +23,7 @@ export function useExpenses(startDate: string, endDate: string) {
     setLoading(true);
     const { data, error } = await (supabase as any)
       .from('expenses')
-      .select('*, category:category_id(id, nom)')
+      .select('*')
       .gte('expense_date', startDate)
       .lte('expense_date', endDate)
       .order('expense_date', { ascending: false })
@@ -65,7 +36,6 @@ export function useExpenses(startDate: string, endDate: string) {
       return;
     }
 
-    // Enrich with author names in one query
     const ids = Array.from(new Set((data || []).map((e: any) => e.user_id as string))) as string[];
     let authorMap: Record<string, string> = {};
     if (ids.length) {

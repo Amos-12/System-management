@@ -226,45 +226,9 @@ export type Database = {
         }
         Relationships: []
       }
-      expense_categories: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          is_active: boolean
-          nom: string
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          nom: string
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          nom?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expense_categories_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       expenses: {
         Row: {
           amount: number
-          category_id: string | null
           company_id: string
           created_at: string
           currency: string
@@ -277,7 +241,6 @@ export type Database = {
         }
         Insert: {
           amount: number
-          category_id?: string | null
           company_id: string
           created_at?: string
           currency?: string
@@ -290,7 +253,6 @@ export type Database = {
         }
         Update: {
           amount?: number
-          category_id?: string | null
           company_id?: string
           created_at?: string
           currency?: string
@@ -302,13 +264,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "expenses_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "expense_categories"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "expenses_company_id_fkey"
             columns: ["company_id"]

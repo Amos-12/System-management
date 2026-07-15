@@ -538,23 +538,11 @@ export const AdminDashboardCharts = () => {
         />
       </div>
 
-      {/* Period Selector */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <TrendingUp className="w-5 h-5" />
           Analyse des Performances
         </h2>
-        <Select value={period} onValueChange={(value: any) => setPeriod(value)}>
-          <SelectTrigger className="w-40">
-            <Calendar className="w-4 h-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="daily">7 derniers jours</SelectItem>
-            <SelectItem value="weekly">4 dernières semaines</SelectItem>
-            <SelectItem value="monthly">12 derniers mois</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
