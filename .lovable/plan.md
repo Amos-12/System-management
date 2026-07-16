@@ -1,51 +1,33 @@
+## Diagnostic
 
-# Migration vers le projet Supabase `qxauhjxjqyesvqdzxbnh`
+Le vrai problème n'est PAS la base de données — le projet Supabase connecté (`xngppwphedaexwkgfjdv`) est multi-tenant complet : tables `expenses`, `categories`, `sales`, `products`, `profiles` existent, avec `company_id` partout et RLS qui exige `company_id = get_user_company_id(auth.uid())`. Les catégories legacy sont déjà seedées (alimentaires, boissons, blocs, céramique, fer, etc.).
 
-## Contexte
-Le code actuel est branché sur le projet Supabase `xngppwphedaexwkgfjdv`, entièrement multi-tenant (colonne `company_id` sur presque toutes les tables, table `expenses` existante). Vous voulez travailler sur un autre projet Supabase (`qxauhjxjqyesvqdzxbnh`) qui, selon vous :
-- n'utilise pas `company_id`
-- n'a pas (encore) de table `expenses`
+Le problème réel : `src/integrations/supabase/client.ts` a été édité manuellement pour pointer vers `https://qxauhjxjqyesvqdzxbnh.supabase.co` (un projet qui n'est pas connecté à Lovable), alors que `.env` et la connexion Lovable pointent sur `xngppwphedaexwkgfjdv`. Résultat : toutes les requêtes du frontend échouent avec "Failed to fetch" → dashboard vide, ventes vides, dépenses cassées, création de catégorie qui remonte une erreur trompeuse.
 
-Je n'ai pas accès à ce second projet tant que la connexion Supabase de Lovable n'a pas été basculée dessus.
+Il faut donc **rester sur `xngppwphedaexwkgfjdv`** (schéma déjà correct et données existantes) et remettre le client sur ce projet. Aucune modification de schéma nécessaire — on garde `company_id` partout.
 
-## Étape 1 — Action manuelle (vous)
-1. Icône Supabase (haut-droite de Lovable) → **Disconnect Supabase**.
-2. **Connect Supabase** → choisir le projet `qxauhjxjqyesvqdzxbnh`.
-3. Lovable régénère automatiquement `.env` et `src/integrations/supabase/types.ts`.
-4. Me répondre "c'est fait".
+## Plan
 
-## Étape 2 — Audit du nouveau schéma (moi)
-Une fois reconnecté, je vais :
-- Lister toutes les tables de `public` et leurs colonnes réelles.
-- Vérifier la présence / absence de `company_id` sur chaque table utilisée par le code (`categories`, `products`, `sales`, `sale_items`, `stock_movements`, `profiles`, `user_roles`, `expenses`, `proformas`, `payments`, `activity_logs`, `sous_categories`, `seller_authorized_categories`, `specifications_modeles`).
-- Vérifier les policies RLS et les GRANTs Data API sur chaque table.
-- Vérifier si `expenses` existe.
+1. **Réparer `src/integrations/supabase/client.ts`**
+   - Remplacer l'URL/clé codées en dur (`qxauhjxjqyesvqdzxbnh`) par celles du projet connecté (`xngppwphedaexwkgfjdv`) issues de `.env`.
+   - Cela restaure toutes les requêtes → dashboard admin (4 cartes), page ventes, page dépenses.
 
-Je vous fais un rapport court avant de coder.
+2. **Vérifier `CategoryManagement.tsx`**
+   - Le code injecte déjà `company_id` sur l'insert (ligne 85). Une fois le client réparé, la création fonctionnera. Aucune modif attendue sauf si un souci résiduel apparaît.
 
-## Étape 3 — Migration SQL éventuelle
-Selon l'audit, dans une seule migration :
-- Créer la table `expenses` si absente (colonnes : `libelle`, `description`, `amount`, `currency`, `expense_date`, `user_id`, `created_at`, `updated_at`) avec GRANTs + RLS + policies scopées sur `user_id` / rôle admin, plus trigger `updated_at`.
-- Créer la table `categories` (custom par entreprise) si absente, sinon la conserver telle quelle.
-- N'ajouter **aucune** colonne `company_id` sur les nouvelles tables (conformément à votre demande).
+3. **Catégories legacy + nouvelles catégories dans la création de produits**
+   - Les catégories legacy sont déjà en base (seedées via l'ancienne migration).
+   - Vérifier que `ProductManagement.tsx` / le formulaire produit consomme `useCompanyCategories` (liste dynamique depuis `categories`) plutôt que l'enum figé. Adapter si besoin pour que **toutes** les catégories actives (legacy + personnalisées) apparaissent dans le sélecteur produit et soient bien enregistrées via `categorie_id`.
 
-## Étape 4 — Adaptation du code
-Retirer toutes les références à `company_id` côté frontend/edge functions, en particulier :
-- `src/components/Categories/CategoryManagement.tsx` — supprimer la lecture de `profiles.company_id` et l'insertion de `company_id`.
-- `src/hooks/useCompanyCategories.ts` — plus de filtre implicite tenant (RLS ou role suffira).
-- `src/components/Expenses/ExpenseFormDialog.tsx` — supprimer la lecture de `profiles.company_id` et l'insertion de `company_id`.
-- `src/hooks/useExpenses.ts` — inchangé si RLS s'appuie sur `user_id`.
-- Toute edge function ou hook qui lit `get_user_company_id(...)` ou filtre par `company_id` (ex : `process-sale`, `delete-sale`, hooks de ventes, hooks de produits, `useCompany`) sera adapté au nouveau modèle **si** ces tables n'ont pas non plus `company_id` dans le nouveau projet. Je vous confirmerai le périmètre exact après l'audit.
+4. **Page dépenses**
+   - `ExpenseFormDialog.tsx` et `useExpenses.ts` sont corrects (utilisent `company_id`). Ils fonctionneront dès que le client tape le bon projet.
 
-## Étape 5 — Dashboard admin (rappel)
-Vérifier que le filtre de date en haut a bien été retiré et que le filtre du bas propose l'option "Personnalisé" avec plage de dates — sinon corriger.
-
-## Étape 6 — Vérification
-- Lancer un typecheck.
-- Ouvrir Admin → Catégories, créer une catégorie, vérifier qu'elle apparaît.
-- Ouvrir Admin → Dépenses, créer une dépense, vérifier qu'elle apparaît.
-- Vérifier console + network : plus aucune erreur `column "company_id" does not exist`.
+5. **Aucune migration SQL**
+   - Le schéma cible est déjà en place. Ne pas créer de tables ni de policies.
 
 ## Notes techniques
-- Sans `company_id`, l'app cesse d'être multi-tenant : tout utilisateur authentifié voit potentiellement toutes les catégories/produits/ventes selon les policies RLS du nouveau projet. À confirmer si c'est le comportement voulu, ou si les policies doivent scoper par `user_id` (mode mono-entreprise).
-- Les mémoires projet actuelles ("Strict multi-tenant architecture via `company_id`", "useCompany hook", etc.) devront être mises à jour après validation, car elles ne s'appliqueront plus.
+
+- Les erreurs console `Failed to fetch` et `_getUser` confirment le mauvais endpoint Supabase.
+- `types.ts` est déjà cohérent avec le projet connecté (contient `company_id`), donc pas à régénérer.
+- On ne touche pas aux edge functions.
+- On garde le modèle multi-tenant (`company_id`) — c'est celui de la base connectée et il est requis par les policies RLS.
