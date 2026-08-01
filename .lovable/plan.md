@@ -1,33 +1,55 @@
-## Diagnostic
+# Corriger produits, catégories et champs spécifiques
 
-Le vrai problème n'est PAS la base de données — le projet Supabase connecté (`xngppwphedaexwkgfjdv`) est multi-tenant complet : tables `expenses`, `categories`, `sales`, `products`, `profiles` existent, avec `company_id` partout et RLS qui exige `company_id = get_user_company_id(auth.uid())`. Les catégories legacy sont déjà seedées (alimentaires, boissons, blocs, céramique, fer, etc.).
+## Ce que j'ai vérifié dans la base réellement connectée (`qxauhjxjqyesvqdzxbnh`)
 
-Le problème réel : `src/integrations/supabase/client.ts` a été édité manuellement pour pointer vers `https://qxauhjxjqyesvqdzxbnh.supabase.co` (un projet qui n'est pas connecté à Lovable), alors que `.env` et la connexion Lovable pointent sur `xngppwphedaexwkgfjdv`. Résultat : toutes les requêtes du frontend échouent avec "Failed to fetch" → dashboard vide, ventes vides, dépenses cassées, création de catégorie qui remonte une erreur trompeuse.
+Interrogation directe de l'API REST du projet :
 
-Il faut donc **rester sur `xngppwphedaexwkgfjdv`** (schéma déjà correct et données existantes) et remettre le client sur ce projet. Aucune modification de schéma nécessaire — on garde `company_id` partout.
+- La base est **mono-tenant** : `categories.company_id` n'existe pas, `expenses.company_id` n'existe pas, et la table `products` n'a **aucune** colonne `company_id`.
+- La table `categories` existe (colonnes `id, nom, slug, ordre, is_active`) mais elle est **vide** (0 ligne).
+- La table `products` n'a **ni `categorie_id` ni `sous_categorie_id`** — uniquement l'ancienne colonne `category` (enum `product_category`).
+- La table `sous_categories` **n'existe pas** dans cette base.
+- `src/integrations/supabase/types.ts` provient de l'ancien projet (il contient `company_id` partout) : il ne correspond plus à la base actuelle, d'où les erreurs TS.
 
-## Plan
+## Pourquoi rien ne marche aujourd'hui
 
-1. **Réparer `src/integrations/supabase/client.ts`**
-   - Remplacer l'URL/clé codées en dur (`qxauhjxjqyesvqdzxbnh`) par celles du projet connecté (`xngppwphedaexwkgfjdv`) issues de `.env`.
-   - Cela restaure toutes les requêtes → dashboard admin (4 cartes), page ventes, page dépenses.
+1. **Création de catégorie impossible** : `CategoryManagement` lit `profiles.company_id` et envoie `company_id` dans l'insert → la colonne n'existe pas → erreur.
+2. **Aucune catégorie affichée** : la table `categories` est vide, donc le sélecteur de catégorie du formulaire produit est vide.
+3. **Création de produit impossible** : l'insert envoie `categorie_id`, colonne inexistante dans `products`.
+4. **Champs spécifiques** (céramique m², fer barres, blocs, vêtements, énergie) : ils sont pilotés par le *slug* de la catégorie (`ceramique`, `fer`, ...). Ils fonctionneront dès que les catégories legacy seront présentes avec les bons slugs.
 
-2. **Vérifier `CategoryManagement.tsx`**
-   - Le code injecte déjà `company_id` sur l'insert (ligne 85). Une fois le client réparé, la création fonctionnera. Aucune modif attendue sauf si un souci résiduel apparaît.
+## Étape 1 — SQL à exécuter (Supabase Dashboard → SQL Editor)
 
-3. **Catégories legacy + nouvelles catégories dans la création de produits**
-   - Les catégories legacy sont déjà en base (seedées via l'ancienne migration).
-   - Vérifier que `ProductManagement.tsx` / le formulaire produit consomme `useCompanyCategories` (liste dynamique depuis `categories`) plutôt que l'enum figé. Adapter si besoin pour que **toutes** les catégories actives (legacy + personnalisées) apparaissent dans le sélecteur produit et soient bien enregistrées via `categorie_id`.
+Ce projet utilise un Supabase externe : je n'ai pas d'outil de migration ici, je vous fournirai un script à coller. Il fera, sans notion de company :
 
-4. **Page dépenses**
-   - `ExpenseFormDialog.tsx` et `useExpenses.ts` sont corrects (utilisent `company_id`). Ils fonctionneront dès que le client tape le bon projet.
+1. Ajouter `products.categorie_id uuid references public.categories(id)` (nullable) + index.
+2. Rendre `products.category` (enum) nullable pour permettre les catégories personnalisées.
+3. Insérer les 12 catégories legacy dans `categories` avec leurs slugs exacts : `alimentaires, boissons, gazeuses, blocs, ceramique, fer, materiaux_de_construction, electromenager, electronique, energie, vetements, autres`.
+4. Vérifier RLS + `GRANT` sur `categories` et `products` pour `authenticated` (lecture/écriture sans filtre company).
+5. `NOTIFY pgrst, 'reload schema'`.
 
-5. **Aucune migration SQL**
-   - Le schéma cible est déjà en place. Ne pas créer de tables ni de policies.
+## Étape 2 — Nettoyage du code (mono-tenant)
+
+- `useCompanyCategories` : lecture simple de `categories` (aucun filtre company), tri `ordre` puis `nom`.
+- `CategoryManagement` : supprimer toute la lecture de `profiles.company_id` et le champ `company_id` de l'insert ; garder le verrouillage des catégories système (slug legacy) et les messages d'erreur détaillés.
+- `ProductManagement` : conserver `categorie_id` dans l'insert/update (créé à l'étape 1) et continuer à écrire `category` uniquement quand le slug fait partie de l'enum ; retirer tout `company_id`.
+- `ExpenseFormDialog` / `useExpenses` : retirer `company_id`, utiliser `user_id` (schéma réel : `user_id, libelle, amount, currency, expense_date, categorie_id`).
+- `UserManagementPanel` : retirer les références `company_id`.
+
+## Étape 3 — Champs supplémentaires par catégorie
+
+Vérification et correction dans `ProductManagement` :
+
+- `ceramique` : `surface_par_boite`, `prix_m2`, `stock_boite`, quantité m² calculée et champ quantité verrouillé.
+- `fer` : `diametre`, `longueur_barre`, `longueur_barre_ft`, `bars_per_ton`, `prix_par_barre`, `prix_par_metre`, `stock_barre`.
+- `blocs` : `bloc_type`, `bloc_poids`, `dimension`.
+- `vetements` : `vetement_taille`, `vetement_couleur`, `vetement_genre`.
+- `energie` : `puissance`, `voltage`, `capacite`, `type_energie`.
+- Catégorie personnalisée : uniquement les champs standards (nom, prix, quantité, unité, seuil d'alerte) + `specifications_techniques` libre.
+
+Test réel après correction : créer une catégorie personnalisée, créer un produit dans une catégorie legacy avec champs spécifiques, puis un produit dans la catégorie personnalisée.
 
 ## Notes techniques
 
-- Les erreurs console `Failed to fetch` et `_getUser` confirment le mauvais endpoint Supabase.
-- `types.ts` est déjà cohérent avec le projet connecté (contient `company_id`), donc pas à régénérer.
-- On ne touche pas aux edge functions.
-- On garde le modèle multi-tenant (`company_id`) — c'est celui de la base connectée et il est requis par les policies RLS.
+- `types.ts` restera désynchronisé tant que les types ne sont pas régénérés : j'utiliserai des casts ciblés (`as any`) sur les tables concernées pour garder le build vert, sans changer le comportement runtime.
+- Aucune colonne `company_id` ne sera réintroduite.
+- Aucun changement sur les edge functions.
