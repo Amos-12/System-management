@@ -2,37 +2,36 @@
 -- =========================================
 -- 1. expense_categories
 -- =========================================
-CREATE TABLE IF NOT EXISTS public.expense_categories (
+CREATE TABLE IF NOT EXISTS public.categories (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  slug text NOT NULL UNIQUE,
   nom text NOT NULL,
   is_active boolean NOT NULL DEFAULT true,
+  ordre integer NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.expense_categories TO authenticated;
-GRANT ALL ON public.expense_categories TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.categories TO authenticated;
+GRANT ALL ON public.categories TO service_role;
 
-ALTER TABLE public.expense_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view company expense categories"
-  ON public.expense_categories FOR SELECT
-  USING (company_id = public.get_user_company_id(auth.uid()) OR public.is_super_admin(auth.uid()));
+CREATE POLICY "Users can view categories"
+  ON public.categories FOR SELECT
+  USING (public.has_role(auth.uid(), 'admin'::app_role));
 
-CREATE POLICY "Admins manage expense categories"
-  ON public.expense_categories FOR ALL
+CREATE POLICY "Admins manage categories"
+  ON public.categories FOR ALL
   USING (
-    (company_id = public.get_user_company_id(auth.uid()) AND public.has_role(auth.uid(), 'admin'::app_role))
-    OR public.is_super_admin(auth.uid())
-  )
+    public.has_role(auth.uid(), 'admin'::app_role))
+  
   WITH CHECK (
-    (company_id = public.get_user_company_id(auth.uid()) AND public.has_role(auth.uid(), 'admin'::app_role))
-    OR public.is_super_admin(auth.uid())
+    public.has_role(auth.uid(), 'admin'::app_role)
   );
 
-CREATE TRIGGER update_expense_categories_updated_at
-  BEFORE UPDATE ON public.expense_categories
+CREATE TRIGGER update_categories_updated_at
+  BEFORE UPDATE ON public.categories
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- =========================================
@@ -40,57 +39,51 @@ CREATE TRIGGER update_expense_categories_updated_at
 -- =========================================
 CREATE TABLE IF NOT EXISTS public.expenses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  categorie_id uuid NOT NULL REFERENCES public.categories(id) ON DELETE CASCADE,
   user_id uuid NOT NULL,
   libelle text NOT NULL,
   description text,
   amount numeric(12,2) NOT NULL CHECK (amount >= 0),
   currency text NOT NULL DEFAULT 'HTG',
   expense_date date NOT NULL DEFAULT CURRENT_DATE,
-  category_id uuid REFERENCES public.expense_categories(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS expenses_company_date_idx ON public.expenses (company_id, expense_date DESC);
+CREATE INDEX IF NOT EXISTS expenses_date_idx ON public.expenses (expense_date DESC);
 CREATE INDEX IF NOT EXISTS expenses_user_idx ON public.expenses (user_id);
+CREATE INDEX IF NOT EXISTS expenses_categorie_idx ON public.expenses (categorie_id);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.expenses TO authenticated;
 GRANT ALL ON public.expenses TO service_role;
 
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admins view all company expenses"
+CREATE POLICY "Admins view all expenses"
   ON public.expenses FOR SELECT
   USING (
-    company_id = public.get_user_company_id(auth.uid())
-    AND (public.has_role(auth.uid(), 'admin'::app_role) OR user_id = auth.uid())
-    OR public.is_super_admin(auth.uid())
+    public.has_role(auth.uid(), 'admin'::app_role) OR user_id = auth.uid()
   );
 
 CREATE POLICY "Authenticated can create own expenses"
   ON public.expenses FOR INSERT
   WITH CHECK (
     user_id = auth.uid()
-    AND company_id = public.get_user_company_id(auth.uid())
   );
 
-CREATE POLICY "Admins update company expenses"
+CREATE POLICY "Admins update expenses"
   ON public.expenses FOR UPDATE
   USING (
-    company_id = public.get_user_company_id(auth.uid())
-    AND public.has_role(auth.uid(), 'admin'::app_role)
+    public.has_role(auth.uid(), 'admin'::app_role)
   )
   WITH CHECK (
-    company_id = public.get_user_company_id(auth.uid())
-    AND public.has_role(auth.uid(), 'admin'::app_role)
+  public.has_role(auth.uid(), 'admin'::app_role)
   );
 
-CREATE POLICY "Admins delete company expenses"
+CREATE POLICY "Admins delete expenses"
   ON public.expenses FOR DELETE
   USING (
-    company_id = public.get_user_company_id(auth.uid())
-    AND public.has_role(auth.uid(), 'admin'::app_role)
+    public.has_role(auth.uid(), 'admin'::app_role)
   );
 
 CREATE TRIGGER update_expenses_updated_at
@@ -108,7 +101,7 @@ SET search_path = public
 AS $$
   SELECT COUNT(*)::bigint, COALESCE(SUM(s.total_amount),0)::numeric
   FROM public.sales s
-  WHERE s.company_id = public.get_user_company_id(auth.uid())
+  WHERE public.has_role(auth.uid(), 'admin'::app_role)
     AND s.created_at >= _start
     AND s.created_at < _end;
 $$;
@@ -121,7 +114,7 @@ SET search_path = public
 AS $$
   SELECT COUNT(*)::bigint, COALESCE(SUM(e.amount),0)::numeric
   FROM public.expenses e
-  WHERE e.company_id = public.get_user_company_id(auth.uid())
+  WHERE public.has_role(auth.uid(), 'admin'::app_role)
     AND e.expense_date >= _start
     AND e.expense_date <= _end
     AND (
