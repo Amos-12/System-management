@@ -26,7 +26,8 @@ import { useCompanyCategories, ENUM_CATEGORY_SLUGS } from '@/hooks/useCompanyCat
 interface Product {
   id: string;
   name: string;
-  category: string;
+  category: string | null;
+  categorie_id?: string | null;
   unit: string;
   price: number;
   purchase_price?: number;
@@ -169,6 +170,17 @@ export const ProductManagement = () => {
 
   const categories = companyCategories.map(c => ({ value: c.slug, label: c.nom, id: c.id }));
 
+  const categoryLabel = (product: Product): string => {
+    const byId = product.categorie_id ? companyCategories.find(c => c.id === product.categorie_id) : undefined;
+    if (byId) return byId.nom;
+    return companyCategories.find(c => c.slug === product.category)?.nom || product.category || '—';
+  };
+
+  const categorySlug = (product: Product): string => {
+    const byId = product.categorie_id ? companyCategories.find(c => c.id === product.categorie_id) : undefined;
+    return byId?.slug || product.category || '';
+  };
+
 
   useEffect(() => {
     fetchProducts();
@@ -194,7 +206,7 @@ export const ProductManagement = () => {
   useEffect(() => {
     const filtered = products.filter(product =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+      categoryLabel(product).toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredProducts(filtered);
   }, [searchTerm, products]);
@@ -270,7 +282,7 @@ export const ProductManagement = () => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
-      category: product.category as ProductCategory,
+      category: (categorySlug(product) || 'alimentaires') as ProductCategory,
       unit: product.unit || 'unité',
       price: product.price.toString(),
       purchase_price: product.purchase_price?.toString() || '',
@@ -1251,7 +1263,7 @@ export const ProductManagement = () => {
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {categories.find(c => c.value === product.category)?.label}
+                        {categoryLabel(product)}
                       </Badge>
                     </TableCell>
                     <TableCell>

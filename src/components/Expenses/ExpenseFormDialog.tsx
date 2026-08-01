@@ -56,14 +56,6 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('user_id', user.id)
-        .single();
-      const company_id = (profile as any)?.company_id;
-      if (!company_id) throw new Error('Aucune entreprise associée');
-
       const payload: any = {
         libelle: form.libelle.trim(),
         description: form.description.trim() || null,
@@ -80,7 +72,6 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
         const { error } = await (supabase as any).from('expenses').insert({
           ...payload,
           user_id: user.id,
-          company_id,
         });
         if (error) throw error;
         toast({ title: 'Dépense créée' });
