@@ -45,16 +45,6 @@ export const CategoryManagement = () => {
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr || !userData.user) throw new Error('Non authentifié');
-      const userId = userData.user.id;
-
-      const { data: prof, error: profErr } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('user_id', userId)
-        .single();
-      if (profErr) throw profErr;
-      const company_id = (prof as any)?.company_id;
-      if (!company_id) throw new Error('Aucune entreprise associée à votre compte');
 
       if (editing && isLegacy(editing)) {
         // Legacy: only allow ordre + is_active changes
@@ -82,7 +72,6 @@ export const CategoryManagement = () => {
           slug: slugify(form.nom),
           is_active: form.is_active,
           ordre: form.ordre,
-          company_id,
         });
         if (error) throw error;
         toast({ title: 'Catégorie créée' });
