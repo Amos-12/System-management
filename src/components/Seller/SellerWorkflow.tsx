@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 import { generateReceipt, generateInvoice } from '@/lib/pdfGenerator';
 import jsPDF from 'jspdf';
 import logo from '@/assets/logo.png';
@@ -38,7 +39,8 @@ import logo from '@/assets/logo.png';
 interface Product {
   id: string;
   name: string;
-  category: string;
+  category: string | null;
+  categorie_id?: string | null;
   unit: string;
   price: number;
   quantity: number;
@@ -96,6 +98,7 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [saleTypeFilter, setSaleTypeFilter] = useState<'all' | 'retail' | 'wholesale'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const { categories: dbCategories } = useCompanyCategories(true);
   const [authorizedCategories, setAuthorizedCategories] = useState<string[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
@@ -245,16 +248,39 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
     }
   };
 
+  // Résolution dynamique de la catégorie d'un produit (slug legacy ou categorie_id)
+  const categoryById = useMemo(() => {
+    const m = new Map<string, { slug: string; nom: string }>();
+    dbCategories.forEach(c => m.set(c.id, { slug: c.slug, nom: c.nom }));
+    return m;
+  }, [dbCategories]);
+
+  const productCategoryKey = useCallback((product: Product): string => {
+    if (product.categorie_id && categoryById.has(product.categorie_id)) {
+      return categoryById.get(product.categorie_id)!.slug;
+    }
+    return product.category || '';
+  }, [categoryById]);
+
+  const categoryLabel = useCallback((product: Product): string => {
+    if (product.categorie_id && categoryById.has(product.categorie_id)) {
+      return categoryById.get(product.categorie_id)!.nom;
+    }
+    const found = dbCategories.find(c => c.slug === product.category);
+    return found?.nom || product.category || '';
+  }, [categoryById, dbCategories]);
+
   useEffect(() => {
     const filtered = products.filter(product => {
+      const key = productCategoryKey(product);
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchTerm.toLowerCase());
+        (key || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesSaleType = saleTypeFilter === 'all' || product.sale_type === saleTypeFilter;
-      const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+      const matchesCategory = categoryFilter === 'all' || key === categoryFilter;
       return matchesSearch && matchesSaleType && matchesCategory;
     });
     setFilteredProducts(filtered);
-  }, [searchTerm, saleTypeFilter, categoryFilter, products]);
+  }, [searchTerm, saleTypeFilter, categoryFilter, products, dbCategories]);
 
   const fetchProducts = async () => {
     try {
@@ -921,39 +947,23 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
     );
   };
 
-  const categories = [
-    { value: 'alimentaires', label: 'Alimentaires' },
-    { value: 'boissons', label: 'Boissons' },
-    { value: 'gazeuses', label: 'Gazeuses' },
-    { value: 'electronique', label: 'Électronique' },
-    { value: 'ceramique', label: 'Céramique' },
-    { value: 'fer', label: 'Fer / Acier' },
-    { value: 'materiaux_de_construction', label: 'Matériaux de construction' },
-    { value: 'energie', label: 'Énergie' },
-    { value: 'blocs', label: 'Blocs' },
-    { value: 'vetements', label: 'Vêtements' },
-    { value: 'autres', label: 'Autres' }
-  ];
 
-  // Liste dynamique des catégories disponibles avec produits
+  // Liste dynamique des catégories disponibles avec produits (issues de la base)
   const availableCategories = useMemo(() => {
-    let categoriesWithProducts = new Set(products.map(p => p.category));
-    
-    // Filter by authorized categories if restrictions exist (non-empty array)
+    const slugsWithProducts = new Set(products.map(p => productCategoryKey(p)).filter(Boolean));
+
     const hasRestrictions = authorizedCategories.length > 0;
-    if (hasRestrictions) {
-      categoriesWithProducts = new Set(
-        Array.from(categoriesWithProducts).filter(cat => 
-          authorizedCategories.includes(cat)
-        )
-      );
-    }
-    
+    const allowed = dbCategories.filter(c => {
+      if (!slugsWithProducts.has(c.slug)) return false;
+      if (!hasRestrictions) return true;
+      return authorizedCategories.includes(c.id) || authorizedCategories.includes(c.slug);
+    });
+
     return [
       { value: 'all', label: 'Toutes les catégories' },
-      ...categories.filter(cat => categoriesWithProducts.has(cat.value))
+      ...allowed.map(c => ({ value: c.slug, label: c.nom })),
     ];
-  }, [products, authorizedCategories]);
+  }, [products, authorizedCategories, dbCategories, productCategoryKey]);
 
   const steps = [
     { id: 'products', label: 'Sélection Produits', icon: Package },
@@ -1187,7 +1197,7 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
                           
                           <div className="flex items-center gap-2 text-sm flex-wrap mt-2">
                             <Badge variant="outline" className="text-xs">
-                              {categories.find(c => c.value === product.category)?.label}
+                              {categoryLabel(product)}
                             </Badge>
                             <Badge variant={product.sale_type === 'retail' ? 'default' : 'secondary'} className="text-xs">
                               {product.sale_type === 'retail' ? 'Détail' : 'Gros'}
