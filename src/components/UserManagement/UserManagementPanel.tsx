@@ -234,9 +234,7 @@ export const UserManagementPanel = () => {
     try {
       const { userId, categorieIds } = selectedUserCategories;
 
-      // Récupérer le company_id du vendeur
-      const { data: prof } = await supabase.from('profiles').select('company_id').eq('user_id', userId).single();
-      const company_id = (prof as any)?.company_id;
+      // Base mono-tenant : aucune référence company_id
 
       await supabase
         .from('seller_authorized_categories' as any)
