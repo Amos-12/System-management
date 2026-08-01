@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface Expense {
   id: string;
-  company_id: string;
+  categorie_id?: string | null;
   user_id: string;
   libelle: string;
   description: string | null;
