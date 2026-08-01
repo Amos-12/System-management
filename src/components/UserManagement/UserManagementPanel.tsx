@@ -248,7 +248,6 @@ export const UserManagementPanel = () => {
           const useEnum = slug && ENUM_CATEGORY_SLUGS.has(slug);
           return {
             user_id: userId,
-            company_id,
             categorie_id: id,
             category: useEnum ? slug : null,
           };
