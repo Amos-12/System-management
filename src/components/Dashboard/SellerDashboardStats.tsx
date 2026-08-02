@@ -143,6 +143,37 @@ export const SellerDashboardStats = () => {
 
       const averageSale = totalSalesCount ? totalRevenue / totalSalesCount : 0;
 
+      // Mes dépenses (converties en HTG)
+      const todayStr = today.toISOString().slice(0, 10);
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toISOString()
+        .slice(0, 10);
+
+      let todayExpenses = 0;
+      let monthExpenses = 0;
+      let expensesCount = 0;
+      let expFrom = 0;
+      while (true) {
+        const { data, error } = await (supabase as any)
+          .from('expenses')
+          .select('amount, currency, expense_date')
+          .eq('user_id', user.id)
+          .gte('expense_date', monthStart)
+          .range(expFrom, expFrom + PAGE - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as any[];
+        for (const r of rows) {
+          const htg = toHTG(r.amount, r.currency, rate);
+          monthExpenses += htg;
+          if (r.expense_date === todayStr) {
+            todayExpenses += htg;
+            expensesCount += 1;
+          }
+        }
+        if (rows.length < PAGE) break;
+        expFrom += PAGE;
+      }
+
       setStats({
         totalSales: totalSalesCount,
         todaySales: todaySalesCount,
@@ -153,6 +184,9 @@ export const SellerDashboardStats = () => {
         monthSales: monthSalesCount,
         monthRevenue,
         averageSale,
+        todayExpenses,
+        monthExpenses,
+        expensesCount,
         topProducts: topProducts as any,
       });
     } catch (error) {
