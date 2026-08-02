@@ -44,7 +44,7 @@ export const SellerDashboardStats = () => {
       fetchStats();
       fetchRecentSales();
     }
-  }, [user]);
+  }, [user, rate]);
 
   const fetchStats = async () => {
     if (!user) return;
@@ -295,6 +295,26 @@ export const SellerDashboardStats = () => {
           icon={ShoppingCart}
           variant="default"
         />
+
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/expenses')}
+          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/expenses'); }}
+          className="cursor-pointer"
+        >
+          <StatsCard
+            title="Mes Dépenses (aujourd'hui)"
+            value={formatHTG(stats.todayExpenses)}
+            icon={Wallet}
+            variant="destructive"
+            change={{
+              value: stats.expensesCount,
+              isPositive: false,
+              label: `${formatHTG(stats.monthExpenses)} ce mois`
+            }}
+          />
+        </div>
       </div>
 
       {/* Top Products & Recent Sales - Side by Side */}
