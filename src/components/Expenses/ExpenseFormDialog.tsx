@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Expense } from '@/hooks/useExpenses';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { toHTG, formatHTG } from '@/lib/currency';
 
 interface Props {
   open: boolean;
@@ -16,13 +18,16 @@ interface Props {
   onSaved: () => void;
 }
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) => {
+  const { rate } = useExchangeRate();
   const [form, setForm] = useState({
     libelle: '',
     description: '',
     amount: '',
     currency: 'HTG',
-    expense_date: new Date().toISOString().slice(0, 10),
+    expense_date: today(),
   });
   const [saving, setSaving] = useState(false);
 
@@ -36,50 +41,78 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
         expense_date: editing.expense_date,
       });
     } else {
-      setForm({
-        libelle: '',
-        description: '',
-        amount: '',
-        currency: 'HTG',
-        expense_date: new Date().toISOString().slice(0, 10),
-      });
+      setForm({ libelle: '', description: '', amount: '', currency: 'HTG', expense_date: today() });
     }
   }, [editing, open]);
 
+  const preview = useMemo(() => {
+    const value = parseFloat(form.amount);
+    if (!value || form.currency !== 'USD') return null;
+    return formatHTG(toHTG(value, 'USD', rate));
+  }, [form.amount, form.currency, rate]);
+
   const save = async () => {
-    if (!form.libelle.trim() || !form.amount) {
-      toast({ title: 'Erreur', description: 'Libellé et montant sont requis', variant: 'destructive' });
+    const libelle = form.libelle.trim();
+    const amount = parseFloat(form.amount);
+
+    if (!libelle) {
+      toast({ title: 'Erreur', description: 'Le libellé est requis', variant: 'destructive' });
       return;
     }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast({ title: 'Erreur', description: 'Le montant doit être supérieur à 0', variant: 'destructive' });
+      return;
+    }
+    if (!form.expense_date) {
+      toast({ title: 'Erreur', description: 'La date est requise', variant: 'destructive' });
+      return;
+    }
+    if (form.expense_date > today()) {
+      toast({ title: 'Erreur', description: 'La date ne peut pas être dans le futur', variant: 'destructive' });
+      return;
+    }
+
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Session expirée, veuillez vous reconnecter');
 
       const payload: any = {
-        libelle: form.libelle.trim(),
+        libelle,
         description: form.description.trim() || null,
-        amount: parseFloat(form.amount),
+        amount,
         currency: form.currency,
         expense_date: form.expense_date,
       };
 
       if (editing) {
-        const { error } = await (supabase as any).from('expenses').update(payload).eq('id', editing.id);
+        const { error } = await (supabase as any)
+          .from('expenses')
+          .update(payload)
+          .eq('id', editing.id)
+          .select('id');
         if (error) throw error;
         toast({ title: 'Dépense modifiée' });
       } else {
-        const { error } = await (supabase as any).from('expenses').insert({
-          ...payload,
-          user_id: user.id,
-        });
+        // L'auteur est toujours l'utilisateur connecté
+        const { error } = await (supabase as any)
+          .from('expenses')
+          .insert({ ...payload, user_id: user.id })
+          .select('id');
         if (error) throw error;
         toast({ title: 'Dépense créée' });
       }
       onSaved();
       onOpenChange(false);
     } catch (e: any) {
-      toast({ title: 'Erreur', description: e.message || 'Impossible de sauvegarder', variant: 'destructive' });
+      const msg: string = e?.message || 'Impossible de sauvegarder';
+      toast({
+        title: 'Erreur',
+        description: /row-level security|permission/i.test(msg)
+          ? "Vous n'avez pas l'autorisation d'effectuer cette action."
+          : msg,
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -99,7 +132,13 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Montant *</Label>
-              <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Devise</Label>
@@ -112,9 +151,17 @@ export const ExpenseFormDialog = ({ open, onOpenChange, editing, onSaved }: Prop
               </Select>
             </div>
           </div>
+          {preview && (
+            <p className="text-xs text-muted-foreground">Équivalent : {preview} (taux {rate})</p>
+          )}
           <div className="space-y-2">
             <Label>Date *</Label>
-            <Input type="date" value={form.expense_date} onChange={(e) => setForm({ ...form, expense_date: e.target.value })} />
+            <Input
+              type="date"
+              max={today()}
+              value={form.expense_date}
+              onChange={(e) => setForm({ ...form, expense_date: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
             <Label>Description</Label>

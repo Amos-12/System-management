@@ -7,14 +7,20 @@ import {
   Package,
   DollarSign,
   ShoppingCart,
-  Calendar
+  Calendar,
+  Wallet
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { toHTG, formatHTG } from '@/lib/currency';
 
 export const SellerDashboardStats = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { rate } = useExchangeRate();
   const [stats, setStats] = useState({
     totalSales: 0,
     todaySales: 0,
@@ -25,6 +31,9 @@ export const SellerDashboardStats = () => {
     monthSales: 0,
     monthRevenue: 0,
     averageSale: 0,
+    todayExpenses: 0,
+    monthExpenses: 0,
+    expensesCount: 0,
     topProducts: [] as { product_name: string; quantity: number; revenue: number }[]
   });
   const [recentSales, setRecentSales] = useState<any[]>([]);
@@ -35,7 +44,7 @@ export const SellerDashboardStats = () => {
       fetchStats();
       fetchRecentSales();
     }
-  }, [user]);
+  }, [user, rate]);
 
   const fetchStats = async () => {
     if (!user) return;
@@ -134,6 +143,37 @@ export const SellerDashboardStats = () => {
 
       const averageSale = totalSalesCount ? totalRevenue / totalSalesCount : 0;
 
+      // Mes dépenses (converties en HTG)
+      const todayStr = today.toISOString().slice(0, 10);
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toISOString()
+        .slice(0, 10);
+
+      let todayExpenses = 0;
+      let monthExpenses = 0;
+      let expensesCount = 0;
+      let expFrom = 0;
+      while (true) {
+        const { data, error } = await (supabase as any)
+          .from('expenses')
+          .select('amount, currency, expense_date')
+          .eq('user_id', user.id)
+          .gte('expense_date', monthStart)
+          .range(expFrom, expFrom + PAGE - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as any[];
+        for (const r of rows) {
+          const htg = toHTG(r.amount, r.currency, rate);
+          monthExpenses += htg;
+          if (r.expense_date === todayStr) {
+            todayExpenses += htg;
+            expensesCount += 1;
+          }
+        }
+        if (rows.length < PAGE) break;
+        expFrom += PAGE;
+      }
+
       setStats({
         totalSales: totalSalesCount,
         todaySales: todaySalesCount,
@@ -144,6 +184,9 @@ export const SellerDashboardStats = () => {
         monthSales: monthSalesCount,
         monthRevenue,
         averageSale,
+        todayExpenses,
+        monthExpenses,
+        expensesCount,
         topProducts: topProducts as any,
       });
     } catch (error) {
@@ -252,6 +295,36 @@ export const SellerDashboardStats = () => {
           icon={ShoppingCart}
           variant="default"
         />
+
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/expenses')}
+          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/expenses'); }}
+          className="cursor-pointer"
+        >
+          <StatsCard
+            title={`Mes Dépenses (aujourd'hui · ${stats.expensesCount})`}
+            value={formatHTG(stats.todayExpenses)}
+            icon={Wallet}
+            variant="destructive"
+          />
+        </div>
+
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/expenses')}
+          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/expenses'); }}
+          className="cursor-pointer"
+        >
+          <StatsCard
+            title="Mes Dépenses (ce mois)"
+            value={formatHTG(stats.monthExpenses)}
+            icon={Wallet}
+            variant="destructive"
+          />
+        </div>
       </div>
 
       {/* Top Products & Recent Sales - Side by Side */}
