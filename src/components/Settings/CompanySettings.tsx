@@ -146,6 +146,9 @@ export const CompanySettings = () => {
           phone: settings.phone,
           email: settings.email,
           tva_rate: settings.tva_rate,
+          ...(settings.usd_to_htg_rate !== undefined
+            ? { usd_to_htg_rate: settings.usd_to_htg_rate }
+            : {}),
           payment_terms: settings.payment_terms,
           logo_position_x: settings.logo_position_x,
           logo_position_y: settings.logo_position_y,
@@ -372,6 +375,22 @@ export const CompanySettings = () => {
             />
             <p className="text-xs text-muted-foreground">
               Taux de TVA appliqué sur les factures (ex: 10.0 pour 10%)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="usd_to_htg_rate">Taux USD → HTG</Label>
+            <Input
+              id="usd_to_htg_rate"
+              type="number"
+              step="0.01"
+              min="0"
+              value={settings.usd_to_htg_rate ?? ''}
+              onChange={(e) => setSettings({ ...settings, usd_to_htg_rate: parseFloat(e.target.value) || 0 })}
+              placeholder="132"
+            />
+            <p className="text-xs text-muted-foreground">
+              Utilisé pour convertir les dépenses saisies en USD vers HTG
             </p>
           </div>
         </div>
