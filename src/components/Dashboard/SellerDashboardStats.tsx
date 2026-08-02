@@ -7,14 +7,20 @@ import {
   Package,
   DollarSign,
   ShoppingCart,
-  Calendar
+  Calendar,
+  Wallet
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { toHTG, formatHTG } from '@/lib/currency';
 
 export const SellerDashboardStats = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { rate } = useExchangeRate();
   const [stats, setStats] = useState({
     totalSales: 0,
     todaySales: 0,
@@ -25,6 +31,9 @@ export const SellerDashboardStats = () => {
     monthSales: 0,
     monthRevenue: 0,
     averageSale: 0,
+    todayExpenses: 0,
+    monthExpenses: 0,
+    expensesCount: 0,
     topProducts: [] as { product_name: string; quantity: number; revenue: number }[]
   });
   const [recentSales, setRecentSales] = useState<any[]>([]);
