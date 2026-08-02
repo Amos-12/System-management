@@ -17,6 +17,7 @@ interface CompanySettings {
   phone: string;
   email: string;
   tva_rate: number;
+  usd_to_htg_rate?: number;
   payment_terms: string;
   logo_url?: string;
   logo_position_x?: number;

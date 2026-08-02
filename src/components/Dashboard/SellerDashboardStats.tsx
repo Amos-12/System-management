@@ -304,15 +304,25 @@ export const SellerDashboardStats = () => {
           className="cursor-pointer"
         >
           <StatsCard
-            title="Mes Dépenses (aujourd'hui)"
+            title={`Mes Dépenses (aujourd'hui · ${stats.expensesCount})`}
             value={formatHTG(stats.todayExpenses)}
             icon={Wallet}
             variant="destructive"
-            change={{
-              value: stats.expensesCount,
-              isPositive: false,
-              label: `${formatHTG(stats.monthExpenses)} ce mois`
-            }}
+          />
+        </div>
+
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/expenses')}
+          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/expenses'); }}
+          className="cursor-pointer"
+        >
+          <StatsCard
+            title="Mes Dépenses (ce mois)"
+            value={formatHTG(stats.monthExpenses)}
+            icon={Wallet}
+            variant="destructive"
           />
         </div>
       </div>
