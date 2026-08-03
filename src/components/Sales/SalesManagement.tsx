@@ -340,14 +340,17 @@ export const SalesManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Un utilisateur peut avoir plusieurs rôles : on récupère toutes les lignes
       const { data, error } = await supabase
         .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
+        .select('role, is_active')
+        .eq('user_id', user.id);
 
       if (error) throw error;
-      setIsAdmin(data?.role === 'admin');
+      const admin = (data || []).some((r: any) =>
+        (r.role === 'admin' || r.role === 'super_admin') && r.is_active !== false
+      );
+      setIsAdmin(admin);
     } catch (error) {
       console.error('Error checking admin role:', error);
       setIsAdmin(false);
