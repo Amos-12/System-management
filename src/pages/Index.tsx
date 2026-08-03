@@ -12,12 +12,28 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, profile, loading, isActive, signOut } = useAuth();
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [companyName, setCompanyName] = useState<string | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
     return () => {
       mountedRef.current = false;
     };
+  }, []);
+
+  // Fetch company name for display
+  useEffect(() => {
+    const fetchCompanyName = async () => {
+      const { data } = await supabase
+        .from('company_settings')
+        .select('company_name')
+        .limit(1)
+        .maybeSingle();
+      if (data?.company_name && mountedRef.current) {
+        setCompanyName(data.company_name);
+      }
+    };
+    fetchCompanyName();
   }, []);
 
   const handleCreateAdmin = async () => {
@@ -81,7 +97,12 @@ const Index = () => {
   }, [profile?.role, isActive, navigate]);
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background pt-[var(--safe-area-top,0px)] pb-[var(--safe-area-bottom,0px)]">
+        {/* Safe area background */}
+        <div 
+          className="fixed top-0 left-0 right-0 z-[60] bg-background"
+          style={{ height: 'var(--safe-area-top, 0px)' }}
+        />
         <div className="text-center">
           <img src={logo} alt="Logo" className="w-14 h-14 object-contain mx-auto mb-4 animate-pulse" />
           <p className="text-muted-foreground">Chargement de votre espace...</p>
@@ -92,12 +113,17 @@ const Index = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background p-4 pt-[calc(16px+var(--safe-area-top,0px))] pb-[calc(16px+var(--safe-area-bottom,0px))]">
+        {/* Safe area background */}
+        <div 
+          className="fixed top-0 left-0 right-0 z-[60] bg-background"
+          style={{ height: 'var(--safe-area-top, 0px)' }}
+        />
         <Card className="max-w-md w-full shadow-lg">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
               <img src={logo} alt="Logo" className="w-12 h-12 object-contain mr-3" />
-              <CardTitle className="text-2xl">Complexe Petit Pas</CardTitle>
+              <CardTitle className="text-2xl">{companyName || 'Bienvenue'}</CardTitle>
             </div>
             <p className="text-muted-foreground">
               Système de gestion de stock et de vente
@@ -122,7 +148,12 @@ const Index = () => {
   // Show inactive account message
   if (user && !isActive) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background p-4 pt-[calc(16px+var(--safe-area-top,0px))] pb-[calc(16px+var(--safe-area-bottom,0px))]">
+        {/* Safe area background */}
+        <div 
+          className="fixed top-0 left-0 right-0 z-[60] bg-background"
+          style={{ height: 'var(--safe-area-top, 0px)' }}
+        />
         <Card className="max-w-md w-full shadow-lg">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-2">
@@ -152,7 +183,12 @@ const Index = () => {
 
   // Fallback for users without a role (shouldn't happen with proper setup)
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background pt-[var(--safe-area-top,0px)] pb-[var(--safe-area-bottom,0px)]">
+      {/* Safe area background */}
+      <div 
+        className="fixed top-0 left-0 right-0 z-[60] bg-background"
+        style={{ height: 'var(--safe-area-top, 0px)' }}
+      />
       <Card className="max-w-md w-full shadow-lg">
         <CardHeader className="text-center">
           <CardTitle>Configuration en cours</CardTitle>

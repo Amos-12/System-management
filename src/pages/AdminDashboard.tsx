@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ResponsiveDashboardLayout } from '@/components/Layout/ResponsiveDashboardLayout';
 import { AdminDashboardCharts } from '@/components/Dashboard/AdminDashboardCharts';
+import { AnalyticsDashboard } from '@/components/Dashboard/AnalyticsDashboard';
 import { UserManagementPanel } from '@/components/UserManagement/UserManagementPanel';
 import { AdvancedReports } from '@/components/Reports/AdvancedReports';
+import { TvaReport } from '@/components/Reports/TvaReport';
 import { StockAlerts } from '@/components/Notifications/StockAlerts';
 import { ProductManagement } from '@/components/Products/ProductManagement';
 import { SalesManagement } from '@/components/Sales/SalesManagement';
@@ -21,10 +23,12 @@ const AdminDashboard = () => {
     switch (currentSection) {
       case 'dashboard':
         return <AdminDashboardCharts />;
-      case 'products':
-        return <ProductManagement />;
+      case 'analytics':
+        return <AnalyticsDashboard />;
       case 'categories':
         return <CategoryManagement />;
+      case 'products':
+        return <ProductManagement />;
       case 'sales':
         return <SalesManagement />;
       case 'users':
@@ -33,6 +37,8 @@ const AdminDashboard = () => {
         return <SellerPerformanceReport />;
       case 'reports':
         return <AdvancedReports />;
+      case 'tva-report':
+        return <TvaReport />;
       case 'activity':
         return <ActivityLogPanel />;
       case 'notifications':

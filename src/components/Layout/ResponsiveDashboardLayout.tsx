@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { 
   Package, 
   ShoppingCart, 
@@ -20,8 +21,10 @@ import {
   Database,
   Warehouse,
   UserCheck,
-  Tag,
-  Wallet
+  FolderTree,
+  BarChart3,
+  Receipt,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,17 +55,31 @@ export const ResponsiveDashboardLayout = ({
 
   useEffect(() => {
     const fetchCompanySettings = async () => {
-      const { data } = await supabase
-        .from('company_settings' as any)
+      const { data, error } = await supabase
+        .from('company_settings')
         .select('*')
-        .single();
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching company settings:', error);
+        return;
+      }
+
       if (data) {
         setCompanySettings(data);
       }
     };
-    
+
     fetchCompanySettings();
   }, []);
+
+  // Update document title dynamically
+  useEffect(() => {
+    if (companySettings?.company_name) {
+      document.title = companySettings.company_name;
+    }
+  }, [companySettings?.company_name]);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -99,25 +116,28 @@ export const ResponsiveDashboardLayout = ({
 
   const adminNavItems = [
     { icon: Home, label: 'Dashboard', value: 'dashboard' },
+    { icon: BarChart3, label: 'Analytics', value: 'analytics' },
+    { icon: FolderTree, label: 'Catégories', value: 'categories' },
     { icon: Package, label: 'Produits', value: 'products' },
-    { icon: Tag, label: 'Catégories', value: 'categories' },
     { icon: ShoppingCart, label: 'Ventes', value: 'sales' },
-    { icon: Wallet, label: 'Dépenses', value: 'expenses', route: '/expenses' },
     { icon: Warehouse, label: 'Inventaire', value: 'inventory', route: '/inventory' },
     { icon: Users, label: 'Utilisateurs', value: 'users' },
     { icon: UserCheck, label: 'Perf. Vendeurs', value: 'seller-reports' },
     { icon: TrendingUp, label: 'Rapports', value: 'reports' },
+    { icon: Receipt, label: 'Rapport TVA', value: 'tva-report' },
     { icon: ClipboardList, label: "Logs", value: 'activity' },
     { icon: Bell, label: 'Notifications', value: 'notifications' },
     { icon: Settings, label: 'Paramètres', value: 'settings' },
-    { icon: Database, label: 'Base de données', value: 'database' }
+    { icon: Database, label: 'Base de données', value: 'database' },
+    { icon: HelpCircle, label: 'Aide', value: 'help', route: '/help' }
   ];
 
   const sellerNavItems = [
     { icon: Home, label: 'Dashboard', value: 'dashboard' },
     { icon: ShoppingCart, label: 'Nouvelle vente', value: 'sale' },
+    { icon: Receipt, label: 'Pro-forma', value: 'proforma' },
     { icon: TrendingUp, label: 'Mes ventes', value: 'history' },
-    { icon: Wallet, label: 'Dépenses', value: 'expenses', route: '/expenses' }
+    { icon: HelpCircle, label: 'Aide', value: 'help', route: '/help' }
   ];
 
   const navItems = role === 'admin' ? adminNavItems : sellerNavItems;
@@ -179,26 +199,36 @@ export const ResponsiveDashboardLayout = ({
         )}
       </div>
       
-      <ScrollArea className="flex-1 px-6 py-4">
-        <nav className="space-y-2">
-          {navItems.map((item: any) => {
+      <ScrollArea className="flex-1 px-4 py-3">
+        <nav className="space-y-1">
+          {navItems.map((item: any, index: number) => {
             const Icon = item.icon;
             return (
               <Button
                 key={item.value}
                 variant={currentSection === item.value ? 'default' : 'ghost'}
                 className={cn(
-                  "w-full transition-smooth",
+                  "w-full transition-all duration-200 group",
                   isDesktop && sidebarCollapsed ? "justify-center px-2" : "justify-start",
                   currentSection === item.value 
-                    ? "bg-primary text-primary-foreground shadow-primary" 
-                    : "hover:bg-primary/10 hover:text-primary"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-[1.02]" 
+                    : "hover:bg-primary/10 hover:text-primary hover:translate-x-1"
                 )}
+                style={{ 
+                  animationDelay: `${index * 30}ms`,
+                  animation: !isDesktop ? 'fade-in 0.3s ease-out forwards' : undefined
+                }}
                 onClick={() => handleNavClick(item.value, item.route)}
                 title={isDesktop && sidebarCollapsed ? item.label : undefined}
               >
-                <Icon className={cn("w-4 h-4", !(isDesktop && sidebarCollapsed) && "mr-3")} />
-                {!(isDesktop && sidebarCollapsed) && item.label}
+                <Icon className={cn(
+                  "w-4 h-4 transition-transform duration-200",
+                  !(isDesktop && sidebarCollapsed) && "mr-3",
+                  currentSection === item.value ? "scale-110" : "group-hover:scale-110"
+                )} />
+                {!(isDesktop && sidebarCollapsed) && (
+                  <span className="transition-colors duration-200">{item.label}</span>
+                )}
               </Button>
             );
           })}
@@ -234,61 +264,100 @@ export const ResponsiveDashboardLayout = ({
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-light via-background to-secondary">
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-border shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+    <div className="min-h-screen bg-background overflow-x-hidden pt-[calc(64px+var(--safe-area-top,0px))] pb-[var(--safe-area-bottom,0px)]">
+      {/* Safe area background - prevents content from showing under status bar */}
+      <div 
+        className="fixed top-0 left-0 right-0 z-[60] bg-background"
+        style={{ height: 'var(--safe-area-top, 0px)' }}
+      />
+      {/* Safe area background - prevents content from showing under navigation bar */}
+      <div 
+        className="fixed bottom-0 left-0 right-0 z-[60] bg-background"
+        style={{ height: 'var(--safe-area-bottom, 0px)' }}
+      />
+      
+      {/* Header - Fixed at top, respecting safe area */}
+      <header className="bg-background border-b border-border shadow-md fixed top-[var(--safe-area-top,0px)] left-0 right-0 z-50 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between h-16 min-w-0">
             {/* Left side - Mobile menu button + Logo */}
-            <div className="flex items-center">
+            <div className="flex items-center min-w-0 flex-1">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden mr-2">
+                  <Button variant="ghost" size="icon" className="lg:hidden mr-1 sm:mr-2 flex-shrink-0">
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80 p-0">
-                  <SidebarContent />
+                <SheetContent side="left" className="w-80 p-0 flex flex-col" style={{ paddingBottom: 'var(--safe-area-bottom, 0px)' }}>
+                  <div className="flex-1 overflow-hidden">
+                    <SidebarContent />
+                  </div>
+                  
+                  {/* Compact Profile section in mobile menu - always visible at bottom */}
+                  <div className="border-t border-border bg-background p-3 flex-shrink-0">
+                    <div 
+                      className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs truncate">{profile?.full_name || 'Utilisateur'}</p>
+                      </div>
+                      <Badge variant={role === 'admin' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5">
+                        {role === 'admin' ? 'Admin' : 'Vendeur'}
+                      </Badge>
+                    </div>
+                  </div>
+                  {/* Background fill for navigation bar area */}
+                  <div 
+                    className="bg-background w-full flex-shrink-0"
+                    style={{ height: 'var(--safe-area-bottom, 0px)' }}
+                  />
                 </SheetContent>
               </Sheet>
               
-              <div className="flex items-center">
+              <div className="flex items-center min-w-0">
                 {companySettings?.logo_url ? (
                   <img 
                     src={companySettings.logo_url} 
                     alt="Logo" 
-                    className="w-10 h-10 object-contain mr-3" 
+                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain mr-2 sm:mr-3 flex-shrink-0" 
                   />
                 ) : (
                   <img 
                     src={logo} 
                     alt="Logo" 
-                    className="w-10 h-10 object-contain mr-3" 
+                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain mr-2 sm:mr-3 flex-shrink-0" 
                   />
                 )}
                 <h1 className={cn(
-                  "font-bold text-primary hidden sm:block",
-                  (companySettings?.company_name || 'GF Distribution & Multi-Services').length > 30 
-                    ? "text-lg" 
-                    : "text-xl"
+                  "font-bold text-primary hidden sm:block max-w-[150px] md:max-w-[250px] lg:max-w-none truncate",
+                  (companySettings?.company_name || 'Gestion de Stock').length > 30 
+                    ? "text-base lg:text-lg" 
+                    : "text-lg lg:text-xl"
                 )}>
-                  {companySettings?.company_name || 'GF Distribution & Multi-Services'}
+                  {companySettings?.company_name || 'Gestion de Stock'}
                 </h1>
               </div>
             </div>
 
             {/* Right side - User info and actions */}
-            <div className="flex items-center gap-2 sm:gap-4">
-              <div className="hidden sm:flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
+              <div className="hidden lg:flex items-center gap-2 text-sm">
                 <User className="w-4 h-4" />
-                <span className="font-medium">{profile?.full_name}</span>
+                <span className="font-medium max-w-[120px] truncate">{profile?.full_name}</span>
               </div>
 
               {role === 'admin' && (
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  className="hover:bg-primary/10 relative"
+                  className="hover:bg-primary/10 relative flex-shrink-0"
                   onClick={() => {
                     if (onSectionChange) {
                       onSectionChange('notifications');
@@ -312,21 +381,23 @@ export const ResponsiveDashboardLayout = ({
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="hover:bg-primary/10"
+                className="hover:bg-primary/10 flex-shrink-0 hidden sm:flex"
                 onClick={() => navigate('/profile')}
                 title="Profil"
               >
                 <User className="w-4 h-4" />
               </Button>
 
+              <ThemeToggle />
+
               <Button 
                 variant="outline"
                 size="sm"
                 onClick={signOut}
-                className="hover:bg-destructive hover:text-destructive-foreground transition-smooth"
+                className="hover:bg-destructive hover:text-destructive-foreground transition-smooth flex-shrink-0"
               >
                 <LogOut className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Déconnexion</span>
+                <span className="hidden md:inline">Déconnexion</span>
               </Button>
             </div>
           </div>
@@ -335,16 +406,22 @@ export const ResponsiveDashboardLayout = ({
 
       <div className="flex">
         <div className="flex w-full">
-          {/* Desktop Sidebar */}
+        {/* Desktop Sidebar - Fixed, respecting safe area */}
           <aside className={cn(
-            "flex-shrink-0 hidden lg:block bg-white border-r border-border h-[calc(100vh-64px)] sticky top-16 transition-all duration-300",
+            "flex-shrink-0 hidden lg:block bg-background border-r border-border fixed left-0 top-[calc(64px+var(--safe-area-top,0px))] h-[calc(100vh-64px-var(--safe-area-top,0px)-var(--safe-area-bottom,0px))] transition-all duration-300 z-40",
             sidebarCollapsed ? "w-20" : "w-64"
           )}>
             <SidebarContent isDesktop={true} />
           </aside>
 
+          {/* Spacer for fixed sidebar */}
+          <div className={cn(
+            "hidden lg:block flex-shrink-0 transition-all duration-300",
+            sidebarCollapsed ? "w-20" : "w-64"
+          )} />
+
           {/* Main Content */}
-          <main className="flex-1 min-w-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <main className="flex-1 min-w-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-[calc(16px+var(--safe-area-bottom,0px))]">
             {children}
           </main>
         </div>

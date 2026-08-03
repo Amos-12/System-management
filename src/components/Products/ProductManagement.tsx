@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   AlertDialog,
@@ -17,17 +18,23 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Plus, Edit, Trash2, AlertCircle, Search } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Package, Plus, Edit, Trash2, AlertCircle, Search, Filter, LayoutGrid, List, Download, FileText, DollarSign, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useCompanyCategories, ENUM_CATEGORY_SLUGS } from '@/hooks/useCompanyCategories';
+import { useCategories, useSousCategories, useSpecificationsModeles } from '@/hooks/useCategories';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/ui/table-pagination';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 
 interface Product {
   id: string;
   name: string;
-  category: string | null;
-  categorie_id?: string | null;
+  barcode?: string;
+  category: string;
   unit: string;
   price: number;
   purchase_price?: number;
@@ -35,6 +42,7 @@ interface Product {
   alert_threshold: number;
   is_active: boolean;
   sale_type: 'retail' | 'wholesale';
+  currency: 'USD' | 'HTG';
   description?: string;
   created_at: string;
   // Ceramic-specific fields
@@ -64,28 +72,81 @@ interface Product {
   vetement_taille?: string;
   vetement_genre?: string;
   vetement_couleur?: string;
+  // Électroménager-specific fields
+  electromenager_sous_categorie?: string;
+  electromenager_marque?: string;
+  electromenager_modele?: string;
+  electromenager_garantie_mois?: number;
+  electromenager_niveau_sonore_db?: number;
+  electromenager_classe_energie?: string;
+  electromenager_couleur?: string;
+  electromenager_materiau?: string;
+  electromenager_installation?: string;
 }
 
-type ProductCategory = string;
+type ProductCategory = 'alimentaires' | 'boissons' | 'gazeuses' | 'electronique' | 'autres' | 'ceramique' | 'fer' | 'materiaux_de_construction' | 'energie' | 'blocs' | 'vetements' | 'electromenager';
 
 export const ProductManagement = () => {
   const { user, role } = useAuth();
-  const { categories: companyCategories } = useCompanyCategories(true);
   const isAdmin = role === 'admin';
+  const isMobile = useIsMobile();
+  const { categories: dynamicCategories } = useCategories();
+  const { sousCategories: allSousCategories } = useSousCategories();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sousCategoryFilter, setSousCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currencyFilter, setCurrencyFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(isMobile ? 'cards' : 'table');
   const [deleteDialog, setDeleteDialog] = useState<{open: boolean, productId: string | null, productName: string}>({
     open: false, 
     productId: null,
     productName: ''
   });
   
+  // Auto-switch to cards on mobile
+  useEffect(() => {
+    if (isMobile) setViewMode('cards');
+  }, [isMobile]);
+  // Form state for dynamic category selection
+  const [selectedCategorieId, setSelectedCategorieId] = useState<string>('');
+  const [selectedSousCategorieId, setSelectedSousCategorieId] = useState<string>('');
+  const [dynamicSpecs, setDynamicSpecs] = useState<Record<string, any>>({});
+  
+  // Get specifications for the selected sous-categorie
+  const { specifications: specModeles } = useSpecificationsModeles(selectedSousCategorieId || undefined);
+  
+  // Filter sous-categories based on selected category
+  const filteredSousCategories = useMemo(() => {
+    if (!selectedCategorieId) return [];
+    return allSousCategories.filter(sc => sc.categorie_id === selectedCategorieId);
+  }, [selectedCategorieId, allSousCategories]);
+  
+  // Filter sous-categories for the filter dropdown
+  const filterSousCategories = useMemo(() => {
+    if (categoryFilter === 'all') return allSousCategories;
+    return allSousCategories.filter(sc => sc.categorie_id === categoryFilter);
+  }, [categoryFilter, allSousCategories]);
+  
+  // Reset sous-category filter when category changes
+  useEffect(() => {
+    setSousCategoryFilter('all');
+  }, [categoryFilter]);
+  
+  // Reset form sous-category when form category changes
+  useEffect(() => {
+    setSelectedSousCategorieId('');
+    setDynamicSpecs({});
+  }, [selectedCategorieId]);
+  
   const [formData, setFormData] = useState<{
     name: string;
+    barcode: string;
     category: ProductCategory;
     unit: string;
     price: string;
@@ -116,8 +177,19 @@ export const ProductManagement = () => {
     vetement_taille: string;
     vetement_genre: string;
     vetement_couleur: string;
+    electromenager_sous_categorie: string;
+    electromenager_marque: string;
+    electromenager_modele: string;
+    electromenager_garantie_mois: string;
+    electromenager_niveau_sonore_db: string;
+    electromenager_classe_energie: string;
+    electromenager_couleur: string;
+    electromenager_materiau: string;
+    electromenager_installation: string;
+    currency: 'USD' | 'HTG';
   }>({
     name: '',
+    barcode: '',
     category: 'alimentaires',
     unit: 'unité',
     price: '',
@@ -147,7 +219,18 @@ export const ProductManagement = () => {
     bloc_poids: '',
     vetement_taille: '',
     vetement_genre: '',
-    vetement_couleur: ''
+    vetement_couleur: '',
+    // Électroménager fields
+    electromenager_sous_categorie: '',
+    electromenager_marque: '',
+    electromenager_modele: '',
+    electromenager_garantie_mois: '',
+    electromenager_niveau_sonore_db: '',
+    electromenager_classe_energie: '',
+    electromenager_couleur: '',
+    electromenager_materiau: '',
+    electromenager_installation: '',
+    currency: 'HTG' as const
   });
 
   // Fonction pour afficher le stock selon la catégorie du produit
@@ -168,19 +251,20 @@ export const ProductManagement = () => {
     return { value: product.quantity.toString(), unit: product.unit || 'unités', raw: product.quantity };
   };
 
-  const categories = companyCategories.map(c => ({ value: c.slug, label: c.nom, id: c.id }));
-
-  const categoryLabel = (product: Product): string => {
-    const byId = product.categorie_id ? companyCategories.find(c => c.id === product.categorie_id) : undefined;
-    if (byId) return byId.nom;
-    return companyCategories.find(c => c.slug === product.category)?.nom || product.category || '—';
-  };
-
-  const categorySlug = (product: Product): string => {
-    const byId = product.categorie_id ? companyCategories.find(c => c.id === product.categorie_id) : undefined;
-    return byId?.slug || product.category || '';
-  };
-
+  const categories = [
+    { value: 'alimentaires', label: 'Alimentaires' },
+    { value: 'boissons', label: 'Boissons' },
+    { value: 'gazeuses', label: 'Gazeuses' },
+    { value: 'electronique', label: 'Électronique' },
+    { value: 'ceramique', label: 'Céramique' },
+    { value: 'fer', label: 'Fer / Acier' },
+    { value: 'materiaux_de_construction', label: 'Matériaux de construction' },
+    { value: 'energie', label: 'Énergie' },
+    { value: 'blocs', label: 'Blocs' },
+    { value: 'vetements', label: 'Vêtements' },
+    { value: 'electromenager', label: 'Électroménager' },
+    { value: 'autres', label: 'Autres' }
+  ];
 
   useEffect(() => {
     fetchProducts();
@@ -204,12 +288,45 @@ export const ProductManagement = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = products.filter(product =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      categoryLabel(product).toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Dynamic category filter
+      const matchesCategory = categoryFilter === 'all' || 
+        (product as any).categorie_id === categoryFilter ||
+        product.category === categoryFilter;
+      
+      // Dynamic sous-category filter  
+      const matchesSousCategory = sousCategoryFilter === 'all' || 
+        (product as any).sous_categorie_id === sousCategoryFilter;
+      
+      // Status filter
+      const matchesStatus = statusFilter === 'all' || 
+        (statusFilter === 'active' && product.is_active) ||
+        (statusFilter === 'inactive' && !product.is_active);
+      
+      // Currency filter
+      const matchesCurrency = currencyFilter === 'all' || product.currency === currencyFilter;
+      
+      return matchesSearch && matchesCategory && matchesSousCategory && matchesStatus && matchesCurrency;
+    });
     setFilteredProducts(filtered);
-  }, [searchTerm, products]);
+    resetPage();
+  }, [searchTerm, categoryFilter, sousCategoryFilter, statusFilter, currencyFilter, products]);
+
+  const { 
+    paginatedItems: paginatedProducts, 
+    currentPage, 
+    totalPages, 
+    totalItems, 
+    pageSize, 
+    nextPage, 
+    prevPage, 
+    hasNextPage, 
+    hasPrevPage,
+    resetPage
+  } = usePagination(filteredProducts, 20);
 
   const fetchProducts = async () => {
     try {
@@ -219,7 +336,11 @@ export const ProductManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      // Cast currency to expected type (database returns string)
+      setProducts((data || []).map(p => ({
+        ...p,
+        currency: (p.currency === 'USD' ? 'USD' : 'HTG') as 'USD' | 'HTG'
+      })));
     } catch (error) {
       console.error('Error fetching products:', error);
       toast({
@@ -232,9 +353,113 @@ export const ProductManagement = () => {
     }
   };
 
+  // Export to Excel
+  const exportToExcel = () => {
+    const exportData = filteredProducts.map(p => {
+      const stock = getStockDisplay(p);
+      return {
+        'Nom': p.name,
+        'Code-barres': p.barcode || '-',
+        'Catégorie': categories.find(c => c.value === p.category)?.label || p.category,
+        'Prix': p.price,
+        'Devise': p.currency,
+        'Stock': `${stock.value} ${stock.unit}`,
+        'Seuil alerte': p.alert_threshold,
+        'Statut': p.is_active ? 'Actif' : 'Inactif',
+        'Type vente': p.sale_type === 'retail' ? 'Détail' : 'Gros'
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Produits');
+    XLSX.writeFile(wb, `produits_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast({ title: "Export réussi", description: `${filteredProducts.length} produits exportés en Excel` });
+  };
+
+  // Export to PDF
+  const exportToPDF = async () => {
+    const pdf = new jsPDF('l', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    
+    // Header
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Liste des Produits', pageWidth / 2, 15, { align: 'center' });
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Exporté le ${new Date().toLocaleDateString('fr-FR')} - ${filteredProducts.length} produits`, pageWidth / 2, 22, { align: 'center' });
+    
+    // Table headers
+    const headers = ['Nom', 'Catégorie', 'Prix', 'Devise', 'Stock', 'Statut'];
+    const colWidths = [80, 50, 35, 25, 40, 25];
+    let y = 35;
+    let x = 15;
+    
+    pdf.setFillColor(240, 240, 240);
+    pdf.rect(x, y - 5, pageWidth - 30, 8, 'F');
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'bold');
+    headers.forEach((h, i) => {
+      pdf.text(h, x, y);
+      x += colWidths[i];
+    });
+    
+    // Table rows
+    y += 8;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    
+    filteredProducts.forEach((p, idx) => {
+      if (y > 190) {
+        pdf.addPage();
+        y = 20;
+      }
+      
+      const stock = getStockDisplay(p);
+      x = 15;
+      
+      if (idx % 2 === 0) {
+        pdf.setFillColor(250, 250, 250);
+        pdf.rect(x, y - 4, pageWidth - 30, 6, 'F');
+      }
+      
+      const row = [
+        p.name.substring(0, 35),
+        (categories.find(c => c.value === p.category)?.label || p.category).substring(0, 20),
+        p.price.toFixed(2),
+        p.currency,
+        `${stock.value} ${stock.unit}`,
+        p.is_active ? 'Actif' : 'Inactif'
+      ];
+      
+      row.forEach((cell, i) => {
+        pdf.text(cell.toString(), x, y);
+        x += colWidths[i];
+      });
+      y += 6;
+    });
+    
+    pdf.save(`produits_${new Date().toISOString().split('T')[0]}.pdf`);
+    toast({ title: "Export réussi", description: `${filteredProducts.length} produits exportés en PDF` });
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchTerm('');
+    setCategoryFilter('all');
+    setSousCategoryFilter('all');
+    setStatusFilter('all');
+    setCurrencyFilter('all');
+    toast({ title: "Filtres réinitialisés" });
+  };
+
+  // Check if any filter is active
+  const hasActiveFilters = searchTerm !== '' || categoryFilter !== 'all' || sousCategoryFilter !== 'all' || statusFilter !== 'all' || currencyFilter !== 'all';
+
   const resetForm = () => {
     setFormData({
       name: '',
+      barcode: '',
       category: 'alimentaires' as const,
       unit: 'unité',
       price: '',
@@ -264,9 +489,23 @@ export const ProductManagement = () => {
       bloc_poids: '',
       vetement_taille: '',
       vetement_genre: '',
-      vetement_couleur: ''
+      vetement_couleur: '',
+      electromenager_sous_categorie: '',
+      electromenager_marque: '',
+      electromenager_modele: '',
+      electromenager_garantie_mois: '',
+      electromenager_niveau_sonore_db: '',
+      electromenager_classe_energie: '',
+      electromenager_couleur: '',
+      electromenager_materiau: '',
+      electromenager_installation: '',
+      currency: 'HTG'
     });
     setEditingProduct(null);
+    // Reset dynamic fields
+    setSelectedCategorieId('');
+    setSelectedSousCategorieId('');
+    setDynamicSpecs({});
   };
 
   const handleEdit = (product: Product) => {
@@ -280,9 +519,15 @@ export const ProductManagement = () => {
     }
     
     setEditingProduct(product);
+    // Set dynamic category fields
+    setSelectedCategorieId((product as any).categorie_id || '');
+    setSelectedSousCategorieId((product as any).sous_categorie_id || '');
+    setDynamicSpecs(product.specifications_techniques || {});
+    
     setFormData({
       name: product.name,
-      category: (categorySlug(product) || 'alimentaires') as ProductCategory,
+      barcode: product.barcode || '',
+      category: product.category as ProductCategory,
       unit: product.unit || 'unité',
       price: product.price.toString(),
       purchase_price: product.purchase_price?.toString() || '',
@@ -311,7 +556,17 @@ export const ProductManagement = () => {
       bloc_poids: product.bloc_poids?.toString() || '',
       vetement_taille: product.vetement_taille || '',
       vetement_genre: product.vetement_genre || '',
-      vetement_couleur: product.vetement_couleur || ''
+      vetement_couleur: product.vetement_couleur || '',
+      electromenager_sous_categorie: product.electromenager_sous_categorie || '',
+      electromenager_marque: product.electromenager_marque || '',
+      electromenager_modele: product.electromenager_modele || '',
+      electromenager_garantie_mois: product.electromenager_garantie_mois?.toString() || '',
+      electromenager_niveau_sonore_db: product.electromenager_niveau_sonore_db?.toString() || '',
+      electromenager_classe_energie: product.electromenager_classe_energie || '',
+      electromenager_couleur: product.electromenager_couleur || '',
+      electromenager_materiau: product.electromenager_materiau || '',
+      electromenager_installation: product.electromenager_installation || '',
+      currency: product.currency || 'HTG'
     });
     setIsDialogOpen(true);
   };
@@ -403,13 +658,10 @@ export const ProductManagement = () => {
     }
 
     try {
-      const selectedCat = companyCategories.find(c => c.slug === formData.category);
-      const isEnumSlug = ENUM_CATEGORY_SLUGS.has(formData.category);
-
       const productData: any = {
         name: formData.name,
-        category: isEnumSlug ? formData.category : null,
-        categorie_id: selectedCat?.id ?? null,
+        barcode: formData.barcode || null,
+        category: formData.category,
         unit: formData.unit,
         alert_threshold: parseInt(formData.alert_threshold),
         description: formData.description || null,
@@ -425,7 +677,22 @@ export const ProductManagement = () => {
         bloc_poids: formData.bloc_poids ? parseFloat(formData.bloc_poids) : null,
         vetement_taille: formData.vetement_taille || null,
         vetement_genre: formData.vetement_genre || null,
-        vetement_couleur: formData.vetement_couleur || null
+        vetement_couleur: formData.vetement_couleur || null,
+        electromenager_sous_categorie: formData.electromenager_sous_categorie || null,
+        electromenager_marque: formData.electromenager_marque || null,
+        electromenager_modele: formData.electromenager_modele || null,
+        electromenager_garantie_mois: formData.electromenager_garantie_mois ? parseInt(formData.electromenager_garantie_mois) : null,
+        electromenager_niveau_sonore_db: formData.electromenager_niveau_sonore_db ? parseFloat(formData.electromenager_niveau_sonore_db) : null,
+        electromenager_classe_energie: formData.electromenager_classe_energie || null,
+        electromenager_couleur: formData.electromenager_couleur || null,
+        electromenager_materiau: formData.electromenager_materiau || null,
+        electromenager_installation: formData.electromenager_installation || null,
+        currency: formData.currency,
+        // New dynamic category fields
+        categorie_id: selectedCategorieId || null,
+        sous_categorie_id: selectedSousCategorieId || null,
+        // Dynamic specifications stored as JSONB
+        specifications_techniques: Object.keys(dynamicSpecs).length > 0 ? dynamicSpecs : null
       };
 
       // Map values based on category
@@ -654,10 +921,11 @@ export const ProductManagement = () => {
             </p>
           </div>
         )}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Gestion des Produits
+            <span className="hidden sm:inline">Gestion des Produits</span>
+            <span className="sm:hidden">Produits</span>
           </CardTitle>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
@@ -665,15 +933,16 @@ export const ProductManagement = () => {
           }}>
             <DialogTrigger asChild>
               <Button 
-                className="gap-2" 
+                className="gap-2 w-full sm:w-auto" 
                 disabled={!isAdmin}
                 title={!isAdmin ? "Réservé aux administrateurs" : "Ajouter un nouveau produit"}
               >
                 <Plus className="w-4 h-4" />
-                Nouveau produit
+                <span className="hidden sm:inline">Nouveau produit</span>
+                <span className="sm:hidden">Nouveau</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingProduct ? 'Modifier le produit' : 'Nouveau produit'}
@@ -693,11 +962,85 @@ export const ProductManagement = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="category">Catégorie *</Label>
+                    <Label htmlFor="barcode">Code-barres</Label>
+                    <Input
+                      id="barcode"
+                      value={formData.barcode}
+                      onChange={(e) => setFormData({...formData, barcode: e.target.value})}
+                      placeholder="Scanner ou saisir le code-barres"
+                    />
+                  </div>
+                  {/* Dynamic Category Selection */}
+                  <div className="space-y-2">
+                    <Label>Catégorie dynamique *</Label>
+                    <Select
+                      value={selectedCategorieId}
+                      onValueChange={(value) => {
+                        setSelectedCategorieId(value);
+                        // Find subcategory to set stock_type based unit
+                        const cat = dynamicCategories.find(c => c.id === value);
+                        if (cat) {
+                          // Also update old category field for compatibility
+                          setFormData(prev => ({...prev, category: cat.slug as ProductCategory}));
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="pointer-events-auto">
+                        <SelectValue placeholder="Sélectionner une catégorie" />
+                      </SelectTrigger>
+                      <SelectContent className="pointer-events-auto z-[150] bg-popover">
+                        {dynamicCategories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.nom}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Dynamic Sous-Category Selection */}
+                  <div className="space-y-2">
+                    <Label>Sous-catégorie *</Label>
+                    <Select
+                      value={selectedSousCategorieId}
+                      onValueChange={(value) => {
+                        setSelectedSousCategorieId(value);
+                        const sc = filteredSousCategories.find(s => s.id === value);
+                        if (sc) {
+                          // Auto-set unit based on stock_type
+                          let newUnit = formData.unit;
+                          if (sc.stock_type === 'boite_m2') newUnit = 'm²';
+                          else if (sc.stock_type === 'barre_metre') newUnit = 'barre';
+                          else newUnit = 'unité';
+                          setFormData(prev => ({...prev, unit: newUnit}));
+                        }
+                      }}
+                      disabled={!selectedCategorieId}
+                    >
+                      <SelectTrigger className="pointer-events-auto">
+                        <SelectValue placeholder={selectedCategorieId ? "Sélectionner une sous-catégorie" : "Choisir d'abord une catégorie"} />
+                      </SelectTrigger>
+                      <SelectContent className="pointer-events-auto z-[150] bg-popover">
+                        {filteredSousCategories.map(sc => (
+                          <SelectItem key={sc.id} value={sc.id}>{sc.nom}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedSousCategorieId && filteredSousCategories.find(sc => sc.id === selectedSousCategorieId)?.stock_type && (
+                      <p className="text-xs text-muted-foreground">
+                        Type de stock: {
+                          filteredSousCategories.find(sc => sc.id === selectedSousCategorieId)?.stock_type === 'boite_m2' ? 'Boîtes / m²' :
+                          filteredSousCategories.find(sc => sc.id === selectedSousCategorieId)?.stock_type === 'barre_metre' ? 'Barres / mètres' :
+                          'Quantité simple'
+                        }
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Legacy Category Selection (hidden but kept for compatibility) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Catégorie (legacy) *</Label>
                     <Select
                       value={formData.category}
                       onValueChange={(value: ProductCategory) => {
-                        // Auto-set unit based on category
                         let newUnit = formData.unit;
                         if (value === 'ceramique') newUnit = 'm²';
                         else if (value === 'fer') newUnit = 'barre';
@@ -709,7 +1052,7 @@ export const ProductManagement = () => {
                       <SelectTrigger className="pointer-events-auto">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="pointer-events-auto z-[150]">
+                      <SelectContent className="pointer-events-auto z-[150] bg-popover">
                         {categories.map(cat => (
                           <SelectItem key={cat.value} value={cat.value}>
                             {cat.label}
@@ -718,6 +1061,65 @@ export const ProductManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Dynamic Specifications from specifications_modeles */}
+                  {specModeles.length > 0 && (
+                    <div className="col-span-1 sm:col-span-2 p-4 border rounded-lg bg-muted/30">
+                      <h4 className="font-semibold text-sm mb-3">📋 Spécifications dynamiques</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {specModeles.map(spec => (
+                          <div key={spec.id} className="space-y-1">
+                            <Label className="text-sm">
+                              {spec.label} {spec.obligatoire && <span className="text-destructive">*</span>}
+                              {spec.unite && <span className="text-muted-foreground text-xs ml-1">({spec.unite})</span>}
+                            </Label>
+                            {spec.type_champ === 'text' && (
+                              <Input
+                                value={dynamicSpecs[spec.nom_champ] || ''}
+                                onChange={(e) => setDynamicSpecs(prev => ({...prev, [spec.nom_champ]: e.target.value}))}
+                                placeholder={spec.label}
+                                required={spec.obligatoire}
+                              />
+                            )}
+                            {spec.type_champ === 'number' && (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={dynamicSpecs[spec.nom_champ] || ''}
+                                onChange={(e) => setDynamicSpecs(prev => ({...prev, [spec.nom_champ]: e.target.value}))}
+                                placeholder={spec.label}
+                                required={spec.obligatoire}
+                              />
+                            )}
+                            {spec.type_champ === 'select' && spec.options && (
+                              <Select
+                                value={dynamicSpecs[spec.nom_champ] || ''}
+                                onValueChange={(value) => setDynamicSpecs(prev => ({...prev, [spec.nom_champ]: value}))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={`Sélectionner ${spec.label.toLowerCase()}`} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[200] bg-popover">
+                                  {spec.options.map(opt => (
+                                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {spec.type_champ === 'boolean' && (
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={dynamicSpecs[spec.nom_champ] || false}
+                                  onCheckedChange={(checked) => setDynamicSpecs(prev => ({...prev, [spec.nom_champ]: checked}))}
+                                />
+                                <span className="text-sm text-muted-foreground">{dynamicSpecs[spec.nom_champ] ? 'Oui' : 'Non'}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Info badge based on category */}
                   {formData.category === 'ceramique' && (
@@ -755,10 +1157,10 @@ export const ProductManagement = () => {
                       </Badge>
                     </div>
                   )}
-                  {formData.category !== 'ceramique' && formData.category !== 'fer' && formData.category !== 'energie' && formData.category !== 'blocs' && formData.category !== 'vetements' && (
+                  {formData.category === 'electromenager' && (
                     <div className="col-span-1 sm:col-span-2">
                       <Badge variant="outline" className="text-xs">
-                        📦 Produit standard : Remplissez le prix unitaire et la quantité en stock
+                        🔌 Électroménager : Ajoutez les spécifications techniques, la marque et la garantie
                       </Badge>
                     </div>
                   )}
@@ -780,7 +1182,7 @@ export const ProductManagement = () => {
                   {formData.category !== 'ceramique' && formData.category !== 'fer' && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="price">Prix de vente (HTG) *</Label>
+                        <Label htmlFor="price">Prix de vente ({formData.currency}) *</Label>
                         <Input
                           id="price"
                           type="number"
@@ -788,23 +1190,23 @@ export const ProductManagement = () => {
                           required
                           value={formData.price}
                           onChange={(e) => setFormData({...formData, price: e.target.value})}
-                          placeholder="0.00 HTG"
+                          placeholder={formData.currency === 'USD' ? '$0.00' : '0.00 HTG'}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="purchase_price">Prix d'achat (HTG)</Label>
+                        <Label htmlFor="purchase_price">Prix d'achat ({formData.currency})</Label>
                         <Input
                           id="purchase_price"
                           type="number"
                           step="0.01"
                           value={formData.purchase_price}
                           onChange={(e) => setFormData({...formData, purchase_price: e.target.value})}
-                          placeholder="0.00 HTG"
+                          placeholder={formData.currency === 'USD' ? '$0.00' : '0.00 HTG'}
                         />
                         <p className="text-xs text-muted-foreground">Coût payé par le magasin (optionnel)</p>
                         {formData.purchase_price && formData.price && (
                           <p className="text-xs font-medium text-success">
-                            Bénéfice: {(parseFloat(formData.price) - parseFloat(formData.purchase_price)).toFixed(2)} HTG
+                            Bénéfice: {formData.currency === 'USD' ? '$' : ''}{(parseFloat(formData.price) - parseFloat(formData.purchase_price)).toFixed(2)}{formData.currency === 'HTG' ? ' HTG' : ''}
                             ({(((parseFloat(formData.price) - parseFloat(formData.purchase_price)) / parseFloat(formData.price)) * 100).toFixed(1)}%)
                           </p>
                         )}
@@ -865,6 +1267,21 @@ export const ProductManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Devise *</Label>
+                    <Select
+                      value={formData.currency}
+                      onValueChange={(value: 'USD' | 'HTG') => setFormData({...formData, currency: value})}
+                    >
+                      <SelectTrigger className="pointer-events-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="pointer-events-auto z-[150]">
+                        <SelectItem value="HTG">HTG (Gourdes)</SelectItem>
+                        <SelectItem value="USD">USD (Dollars US)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Ceramic-specific fields */}
@@ -896,7 +1313,7 @@ export const ProductManagement = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="prix_m2">Prix de vente par m² (HTG) *</Label>
+                      <Label htmlFor="prix_m2">Prix de vente par m² ({formData.currency}) *</Label>
                       <Input
                         id="prix_m2"
                         type="number"
@@ -904,12 +1321,12 @@ export const ProductManagement = () => {
                         required
                         value={formData.prix_m2}
                         onChange={(e) => setFormData({...formData, prix_m2: e.target.value})}
-                        placeholder="1200.00"
+                        placeholder={formData.currency === 'USD' ? '$0.00' : '0.00 HTG'}
                       />
                       <p className="text-xs text-muted-foreground">Prix de revente au client</p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="prix_achat_m2">Prix d'achat par m² (HTG) *</Label>
+                      <Label htmlFor="prix_achat_m2">Prix d'achat par m² ({formData.currency}) *</Label>
                       <Input
                         id="prix_achat_m2"
                         type="number"
@@ -920,12 +1337,12 @@ export const ProductManagement = () => {
                           const prixAchat = e.target.value;
                           setFormData({...formData, prix_achat_m2: prixAchat});
                         }}
-                        placeholder="840.00"
+                        placeholder={formData.currency === 'USD' ? '$0.00' : '0.00 HTG'}
                       />
                       <p className="text-xs text-muted-foreground">Coût unitaire payé par le magasin</p>
                       {formData.prix_achat_m2 && formData.prix_m2 && (
                         <p className="text-xs font-medium text-success">
-                          Bénéfice: {(parseFloat(formData.prix_m2) - parseFloat(formData.prix_achat_m2)).toFixed(2)} HTG/m²
+                          Bénéfice: {formData.currency === 'USD' ? '$' : ''}{(parseFloat(formData.prix_m2) - parseFloat(formData.prix_achat_m2)).toFixed(2)}{formData.currency === 'HTG' ? ' HTG' : ''}/m²
                           ({(((parseFloat(formData.prix_m2) - parseFloat(formData.prix_achat_m2)) / parseFloat(formData.prix_m2)) * 100).toFixed(1)}%)
                         </p>
                       )}
@@ -1004,7 +1421,7 @@ export const ProductManagement = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="prix_par_barre">Prix par barre (HTG) *</Label>
+                      <Label htmlFor="prix_par_barre">Prix par barre ({formData.currency}) *</Label>
                       <Input
                         id="prix_par_barre"
                         type="number"
@@ -1012,7 +1429,7 @@ export const ProductManagement = () => {
                         required
                         value={formData.prix_par_barre}
                         onChange={(e) => setFormData({...formData, prix_par_barre: e.target.value})}
-                        placeholder="750.00"
+                        placeholder={formData.currency === 'USD' ? '$0.00' : '0.00 HTG'}
                       />
                       <p className="text-xs text-muted-foreground">Prix unitaire d'une barre</p>
                     </div>
@@ -1030,14 +1447,14 @@ export const ProductManagement = () => {
                       <p className="text-xs text-muted-foreground">Accepte les décimales pour les fractions de tonne</p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="purchase_price">Prix d'achat par barre (HTG)</Label>
+                      <Label htmlFor="purchase_price">Prix d'achat par barre ({formData.currency})</Label>
                       <Input
                         id="purchase_price"
                         type="number"
                         step="0.01"
                         value={formData.purchase_price}
                         onChange={(e) => setFormData({...formData, purchase_price: e.target.value})}
-                        placeholder="525.00"
+                        placeholder={formData.currency === 'USD' ? '$0.00' : '0.00 HTG'}
                       />
                       <p className="text-xs text-muted-foreground">Coût unitaire payé par le magasin</p>
                     </div>
@@ -1203,6 +1620,173 @@ export const ProductManagement = () => {
                   </div>
                 )}
 
+                {/* Électroménager-specific fields */}
+                {formData.category === 'electromenager' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/50">
+                    <div className="col-span-1 sm:col-span-2">
+                      <h3 className="font-semibold text-sm mb-2">🔌 Configuration Électroménager</h3>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_sous_categorie">Sous-catégorie *</Label>
+                      <Select
+                        value={formData.electromenager_sous_categorie}
+                        onValueChange={(value) => setFormData({...formData, electromenager_sous_categorie: value})}
+                      >
+                        <SelectTrigger className="pointer-events-auto">
+                          <SelectValue placeholder="Sélectionner la sous-catégorie" />
+                        </SelectTrigger>
+                        <SelectContent className="pointer-events-auto z-[150]">
+                          <SelectItem value="gros_electromenager">Gros électroménager</SelectItem>
+                          <SelectItem value="petit_electromenager">Petit électroménager</SelectItem>
+                          <SelectItem value="cuisine">Cuisine</SelectItem>
+                          <SelectItem value="blanchisserie">Blanchisserie</SelectItem>
+                          <SelectItem value="climatisation_ventilation">Climatisation / Ventilation</SelectItem>
+                          <SelectItem value="entretien">Entretien</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_marque">Marque</Label>
+                      <Input
+                        id="electromenager_marque"
+                        type="text"
+                        value={formData.electromenager_marque}
+                        onChange={(e) => setFormData({...formData, electromenager_marque: e.target.value})}
+                        placeholder="Ex: Samsung, LG, Haier"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_modele">Modèle / Référence</Label>
+                      <Input
+                        id="electromenager_modele"
+                        type="text"
+                        value={formData.electromenager_modele}
+                        onChange={(e) => setFormData({...formData, electromenager_modele: e.target.value})}
+                        placeholder="Ex: WW90T554DAW"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_couleur">Couleur</Label>
+                      <Input
+                        id="electromenager_couleur"
+                        type="text"
+                        value={formData.electromenager_couleur}
+                        onChange={(e) => setFormData({...formData, electromenager_couleur: e.target.value})}
+                        placeholder="Ex: Blanc, Inox, Noir"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="puissance">Puissance (W)</Label>
+                      <Input
+                        id="puissance"
+                        type="number"
+                        step="1"
+                        value={formData.puissance}
+                        onChange={(e) => setFormData({...formData, puissance: e.target.value})}
+                        placeholder="Ex: 2100"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="voltage">Voltage (V)</Label>
+                      <Input
+                        id="voltage"
+                        type="number"
+                        step="1"
+                        value={formData.voltage}
+                        onChange={(e) => setFormData({...formData, voltage: e.target.value})}
+                        placeholder="Ex: 110, 220"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="capacite">Capacité (kg/litres)</Label>
+                      <Input
+                        id="capacite"
+                        type="number"
+                        step="0.1"
+                        value={formData.capacite}
+                        onChange={(e) => setFormData({...formData, capacite: e.target.value})}
+                        placeholder="Ex: 9 (kg) ou 300 (litres)"
+                      />
+                      <p className="text-xs text-muted-foreground">kg pour lave-linge, litres pour frigo</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_niveau_sonore_db">Niveau sonore (dB)</Label>
+                      <Input
+                        id="electromenager_niveau_sonore_db"
+                        type="number"
+                        step="1"
+                        value={formData.electromenager_niveau_sonore_db}
+                        onChange={(e) => setFormData({...formData, electromenager_niveau_sonore_db: e.target.value})}
+                        placeholder="Ex: 54"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_classe_energie">Classe énergétique</Label>
+                      <Select
+                        value={formData.electromenager_classe_energie}
+                        onValueChange={(value) => setFormData({...formData, electromenager_classe_energie: value})}
+                      >
+                        <SelectTrigger className="pointer-events-auto">
+                          <SelectValue placeholder="Sélectionner la classe" />
+                        </SelectTrigger>
+                        <SelectContent className="pointer-events-auto z-[150]">
+                          <SelectItem value="A+++">A+++</SelectItem>
+                          <SelectItem value="A++">A++</SelectItem>
+                          <SelectItem value="A+">A+</SelectItem>
+                          <SelectItem value="A">A</SelectItem>
+                          <SelectItem value="B">B</SelectItem>
+                          <SelectItem value="C">C</SelectItem>
+                          <SelectItem value="D">D</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_garantie_mois">Garantie (mois)</Label>
+                      <Input
+                        id="electromenager_garantie_mois"
+                        type="number"
+                        step="1"
+                        value={formData.electromenager_garantie_mois}
+                        onChange={(e) => setFormData({...formData, electromenager_garantie_mois: e.target.value})}
+                        placeholder="Ex: 12, 24"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_materiau">Matériau principal</Label>
+                      <Select
+                        value={formData.electromenager_materiau}
+                        onValueChange={(value) => setFormData({...formData, electromenager_materiau: value})}
+                      >
+                        <SelectTrigger className="pointer-events-auto">
+                          <SelectValue placeholder="Sélectionner le matériau" />
+                        </SelectTrigger>
+                        <SelectContent className="pointer-events-auto z-[150]">
+                          <SelectItem value="inox">Inox</SelectItem>
+                          <SelectItem value="plastique">Plastique</SelectItem>
+                          <SelectItem value="aluminium">Aluminium</SelectItem>
+                          <SelectItem value="verre">Verre</SelectItem>
+                          <SelectItem value="mixte">Mixte</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="electromenager_installation">Type d'installation</Label>
+                      <Select
+                        value={formData.electromenager_installation}
+                        onValueChange={(value) => setFormData({...formData, electromenager_installation: value})}
+                      >
+                        <SelectTrigger className="pointer-events-auto">
+                          <SelectValue placeholder="Sélectionner le type" />
+                        </SelectTrigger>
+                        <SelectContent className="pointer-events-auto z-[150]">
+                          <SelectItem value="pose_libre">Pose libre</SelectItem>
+                          <SelectItem value="encastrable">Encastrable</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
                   <textarea
@@ -1225,57 +1809,299 @@ export const ProductManagement = () => {
             </DialogContent>
           </Dialog>
         </div>
-        <div className="relative mt-4">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un produit..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
+        {/* Filters Section - Compact and organized */}
+        <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
+          {/* Row 1: Search + Export + View Toggle */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 sm:pl-9 h-8 sm:h-10 text-xs sm:text-sm"
+              />
+            </div>
+            <Badge variant="secondary" className="hidden lg:flex text-xs whitespace-nowrap">
+              {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''}
+            </Badge>
+            {/* Export buttons */}
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={exportToExcel}
+                className="h-7 sm:h-8 px-2 text-[10px] sm:text-xs"
+                title="Exporter en Excel"
+              >
+                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline ml-1">Excel</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={exportToPDF}
+                className="h-7 sm:h-8 px-2 text-[10px] sm:text-xs"
+                title="Exporter en PDF"
+              >
+                <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline ml-1">PDF</span>
+              </Button>
+            </div>
+            {/* View mode toggle */}
+            <div className="hidden sm:flex items-center gap-1 border rounded-md p-0.5 bg-muted/50">
+              <Button
+                size="sm"
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('table')}
+                className="h-7 w-7 p-0"
+              >
+                <List className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                size="sm"
+                variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('cards')}
+                className="h-7 w-7 p-0"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Row 2: All filters */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Filter className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="text-[9px] sm:text-[10px] font-medium">Filtres:</span>
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-6 sm:h-7 w-[90px] sm:w-[130px] text-[9px] sm:text-[10px]">
+                <SelectValue placeholder="Catégorie" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover">
+                <SelectItem value="all" className="text-xs">Toutes catégories</SelectItem>
+                {dynamicCategories.map(cat => (
+                  <SelectItem key={cat.id} value={cat.id} className="text-xs">{cat.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sousCategoryFilter} onValueChange={setSousCategoryFilter}>
+              <SelectTrigger className="h-6 sm:h-7 w-[90px] sm:w-[130px] text-[9px] sm:text-[10px]">
+                <SelectValue placeholder="Sous-cat." />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover">
+                <SelectItem value="all" className="text-xs">Toutes sous-cat.</SelectItem>
+                {filterSousCategories.map(sc => (
+                  <SelectItem key={sc.id} value={sc.id} className="text-xs">{sc.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-6 sm:h-7 w-[75px] sm:w-[100px] text-[9px] sm:text-[10px]">
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover">
+                <SelectItem value="all" className="text-xs">Tous statuts</SelectItem>
+                <SelectItem value="active" className="text-xs">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3 text-success" />
+                    Actif
+                  </span>
+                </SelectItem>
+                <SelectItem value="inactive" className="text-xs">
+                  <span className="flex items-center gap-1">
+                    <XCircle className="w-3 h-3 text-muted-foreground" />
+                    Inactif
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
+              <SelectTrigger className="h-6 sm:h-7 w-[70px] sm:w-[90px] text-[9px] sm:text-[10px]">
+                <SelectValue placeholder="Devise" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover">
+                <SelectItem value="all" className="text-xs">Devises</SelectItem>
+                <SelectItem value="USD" className="text-xs">
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="w-3 h-3 text-emerald-600" />
+                    USD
+                  </span>
+                </SelectItem>
+                <SelectItem value="HTG" className="text-xs">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 text-sky-600 font-bold text-[10px]">G</span>
+                    HTG
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {/* Reset filters button */}
+            {hasActiveFilters && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={resetFilters}
+                className="h-6 sm:h-7 px-2 text-[9px] sm:text-[10px] text-muted-foreground hover:text-foreground"
+                title="Réinitialiser les filtres"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span className="hidden sm:inline ml-1">Réinitialiser</span>
+              </Button>
+            )}
+            <Badge variant="outline" className="lg:hidden text-[9px] sm:text-[10px] ml-auto">
+              {filteredProducts.length}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
+      <CardContent className="p-2 sm:p-6">
+        {viewMode === 'cards' ? (
+          /* Card View */
+          <ScrollArea className="h-[calc(100vh-350px)] min-h-[400px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 pr-2 sm:pr-4">
+              {paginatedProducts.length === 0 ? (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  Aucun produit trouvé
+                </div>
+              ) : (
+                paginatedProducts.map((product) => {
+                  const stock = getStockDisplay(product);
+                  return (
+                    <Card key={product.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start gap-2 mb-2">
+                        <h3 className="font-semibold text-sm sm:text-base line-clamp-2">{product.name}</h3>
+                        <Badge 
+                          variant="outline"
+                          className={`text-[10px] sm:text-xs shrink-0 ${product.currency === 'USD' 
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                            : 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-900/30 dark:text-sky-400'
+                          }`}
+                        >
+                          {product.currency === 'USD' ? '$ USD' : 'HTG'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-1.5 text-xs sm:text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Catégorie:</span>
+                          <Badge variant="outline" className="text-[10px] sm:text-xs">
+                            {categories.find(c => c.value === product.category)?.label}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Prix:</span>
+                          <span className="font-medium text-success">
+                            {product.currency === 'USD' ? '$' : ''}{product.price.toFixed(2)} {product.currency || 'HTG'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Stock:</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">{stock.value} {stock.unit}</span>
+                            {stock.raw <= product.alert_threshold && (
+                              <AlertCircle className="w-3 h-3 text-warning" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Statut:</span>
+                          <Badge variant={product.is_active ? "default" : "secondary"} className="text-[10px] sm:text-xs">
+                            {product.is_active ? "Actif" : "Inactif"}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {isAdmin && (
+                        <div className="flex gap-2 mt-3 pt-3 border-t">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(product)}
+                            className="flex-1 h-8 text-xs"
+                          >
+                            <Edit className="w-3 h-3 mr-1" />
+                            Modifier
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteClick(product.id, product.name)}
+                            className="h-8 hover:bg-destructive hover:text-destructive-foreground"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </ScrollArea>
+        ) : (
+          /* Table View */
+          <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nom</TableHead>
+                <TableHead className="hidden md:table-cell">Code-barres</TableHead>
                 <TableHead>Catégorie</TableHead>
-                <TableHead>Unité</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead className="hidden sm:table-cell">Unité</TableHead>
+                <TableHead className="hidden sm:table-cell">Type</TableHead>
+                <TableHead>Devise</TableHead>
                 <TableHead>Prix</TableHead>
                 <TableHead>Stock</TableHead>
-                <TableHead>Statut</TableHead>
+                <TableHead className="hidden sm:table-cell">Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.length === 0 ? (
+              {paginatedProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     Aucun produit trouvé
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProducts.map((product) => (
+                paginatedProducts.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {product.barcode ? (
+                        <code className="text-xs bg-muted px-1 py-0.5 rounded">{product.barcode}</code>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {categoryLabel(product)}
+                        {categories.find(c => c.value === product.category)?.label}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <span className="text-sm text-muted-foreground">{product.unit}</span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant={product.sale_type === 'retail' ? "default" : "secondary"}>
                         {product.sale_type === 'retail' ? 'Détail' : 'Gros'}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="outline"
+                        className={product.currency === 'USD' 
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700' 
+                          : 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-900/30 dark:text-sky-400 dark:border-sky-700'
+                        }
+                      >
+                        {product.currency === 'USD' ? '$ USD' : 'G HTG'}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-success font-medium">
-                      {product.price.toFixed(2)} HTG
+                      {product.currency === 'USD' ? '$' : ''}{product.price.toFixed(2)} {product.currency || 'HTG'}
                     </TableCell>
                     <TableCell>
                       {(() => {
@@ -1290,7 +2116,7 @@ export const ProductManagement = () => {
                         );
                       })()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant={product.is_active ? "default" : "secondary"}>
                         {product.is_active ? "Actif" : "Inactif"}
                       </Badge>
@@ -1326,6 +2152,17 @@ export const ProductManagement = () => {
             </TableBody>
           </Table>
         </div>
+        )}
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPrevPage={prevPage}
+          onNextPage={nextPage}
+          hasPrevPage={hasPrevPage}
+          hasNextPage={hasNextPage}
+        />
       </CardContent>
       
       <AlertDialog open={deleteDialog.open} onOpenChange={(open) => 

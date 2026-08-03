@@ -1,26 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { StatsCard } from '@/components/Dashboard/StatsCard';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { KPICard } from '@/components/Dashboard/KPICard';
+import { SellerGoalsCard } from '@/components/Dashboard/SellerGoalsCard';
+import { SellerPerformanceComparison } from '@/components/Dashboard/SellerPerformanceComparison';
+import { SellerTrendChart } from '@/components/Dashboard/SellerTrendChart';
 import { 
   TrendingUp,
   Receipt,
   Package,
   DollarSign,
   ShoppingCart,
-  Calendar,
-  Wallet
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
-import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { toHTG, formatHTG } from '@/lib/currency';
+import { formatNumber } from '@/lib/utils';
+import { useSaleCalculations, SaleForCalc } from '@/hooks/useSaleCalculations';
+import { SaleItemForCalc } from '@/hooks/useCurrencyCalculations';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+
+interface TrendDataPoint {
+  date: string;
+  revenue: number;
+  sales: number;
+}
 
 export const SellerDashboardStats = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const { rate } = useExchangeRate();
+  const saleCalc = useSaleCalculations();
+  
   const [stats, setStats] = useState({
     totalSales: 0,
     todaySales: 0,
@@ -31,190 +42,244 @@ export const SellerDashboardStats = () => {
     monthSales: 0,
     monthRevenue: 0,
     averageSale: 0,
-    todayExpenses: 0,
-    monthExpenses: 0,
-    expensesCount: 0,
+    yesterdaySales: 0,
+    yesterdayRevenue: 0,
+    lastWeekRevenue: 0,
+    lastMonthRevenue: 0,
     topProducts: [] as { product_name: string; quantity: number; revenue: number }[]
   });
+  const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
   const [recentSales, setRecentSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  useEffect(() => {
-    if (user) {
-      fetchStats();
-      fetchRecentSales();
-    }
-  }, [user, rate]);
+  // Use hook values with fallbacks
+  const displayCurrency = saleCalc?.displayCurrency || 'HTG';
+  const usdHtgRate = saleCalc?.usdHtgRate || 132;
 
-  const fetchStats = async () => {
-    if (!user) return;
+  const fetchStats = useCallback(async () => {
+    if (!user || !saleCalc) return;
 
     try {
-      const PAGE = 1000;
+      // Fetch all sales for this seller
+      const { data: allSales, error: allError } = await supabase
+        .from('sales')
+        .select('id, created_at, total_amount, subtotal, discount_amount, discount_type, discount_value, discount_currency')
+        .eq('seller_id', user.id);
 
-      // Helper: count exact without downloading rows
-      const countSales = async (fromISO?: string) => {
-        let q = supabase
-          .from('sales')
-          .select('id', { count: 'exact', head: true })
-          .eq('seller_id', user.id);
-        if (fromISO) q = q.gte('created_at', fromISO);
-        const { count, error } = await q;
-        if (error) throw error;
-        return count ?? 0;
-      };
+      if (allError) throw allError;
 
-      // Helper: paginated sum of total_amount
-      const sumRevenue = async (fromISO?: string) => {
-        let total = 0;
-        let from = 0;
-        while (true) {
-          let q = supabase
-            .from('sales')
-            .select('total_amount')
-            .eq('seller_id', user.id)
-            .range(from, from + PAGE - 1);
-          if (fromISO) q = q.gte('created_at', fromISO);
-          const { data, error } = await q;
-          if (error) throw error;
-          const rows = data ?? [];
-          total += rows.reduce((s, r: any) => s + Number(r.total_amount), 0);
-          if (rows.length < PAGE) break;
-          from += PAGE;
-        }
-        return total;
-      };
+      const saleIds = allSales?.map(s => s.id) || [];
+      let allSaleItems: (SaleItemForCalc & { sale_id: string; product_name: string })[] = [];
+      
+      if (saleIds.length > 0) {
+        const { data: items } = await supabase
+          .from('sale_items')
+          .select('sale_id, product_name, quantity, subtotal, currency, profit_amount, purchase_price_at_sale')
+          .in('sale_id', saleIds);
+        allSaleItems = (items || []) as (SaleItemForCalc & { sale_id: string; product_name: string })[];
+      }
 
+      // Date calculations
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const weekAgo = new Date();
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const weekAgo = new Date(today);
       weekAgo.setDate(weekAgo.getDate() - 7);
-      weekAgo.setHours(0, 0, 0, 0);
-      const monthAgo = new Date();
+
+      const twoWeeksAgo = new Date(today);
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+      const monthAgo = new Date(today);
       monthAgo.setDate(monthAgo.getDate() - 30);
-      monthAgo.setHours(0, 0, 0, 0);
 
-      const [
-        totalSalesCount,
-        todaySalesCount,
-        weekSalesCount,
-        monthSalesCount,
-        totalRevenue,
-        todayRevenue,
-        weekRevenue,
-        monthRevenue,
-      ] = await Promise.all([
-        countSales(),
-        countSales(today.toISOString()),
-        countSales(weekAgo.toISOString()),
-        countSales(monthAgo.toISOString()),
-        sumRevenue(),
-        sumRevenue(today.toISOString()),
-        sumRevenue(weekAgo.toISOString()),
-        sumRevenue(monthAgo.toISOString()),
-      ]);
+      const twoMonthsAgo = new Date(today);
+      twoMonthsAgo.setDate(twoMonthsAgo.getDate() - 60);
 
-      // Top products via join, paginated (avoids .in() with huge id list)
-      const productStats: Record<string, { product_name: string; quantity: number; revenue: number }> = {};
-      let from = 0;
-      while (true) {
-        const { data, error } = await supabase
-          .from('sale_items')
-          .select('product_name, quantity, subtotal, sales!inner(seller_id)')
-          .eq('sales.seller_id', user.id)
-          .range(from, from + PAGE - 1);
-        if (error) throw error;
-        const rows = (data ?? []) as any[];
-        for (const item of rows) {
-          const key = item.product_name;
-          if (!productStats[key]) {
-            productStats[key] = { product_name: key, quantity: 0, revenue: 0 };
-          }
-          productStats[key].quantity += Number(item.quantity);
-          productStats[key].revenue += Number(item.subtotal);
-        }
-        if (rows.length < PAGE) break;
-        from += PAGE;
+      // Filter sales by period
+      const todaySales = allSales?.filter(s => new Date(s.created_at) >= today) || [];
+      const yesterdaySales = allSales?.filter(s => {
+        const d = new Date(s.created_at);
+        return d >= yesterday && d < today;
+      }) || [];
+      const weekSales = allSales?.filter(s => new Date(s.created_at) >= weekAgo) || [];
+      const lastWeekSales = allSales?.filter(s => {
+        const d = new Date(s.created_at);
+        return d >= twoWeeksAgo && d < weekAgo;
+      }) || [];
+      const monthSales = allSales?.filter(s => new Date(s.created_at) >= monthAgo) || [];
+      const lastMonthSales = allSales?.filter(s => {
+        const d = new Date(s.created_at);
+        return d >= twoMonthsAgo && d < monthAgo;
+      }) || [];
+
+      // Use the centralized hook for all revenue calculations
+      const totalRevenue = saleCalc.calculateRevenueTTC(allSales as SaleForCalc[] || [], allSaleItems);
+      const todayRevenue = saleCalc.calculateRevenueTTC(todaySales as SaleForCalc[], allSaleItems);
+      const yesterdayRevenue = saleCalc.calculateRevenueTTC(yesterdaySales as SaleForCalc[], allSaleItems);
+      const weekRevenue = saleCalc.calculateRevenueTTC(weekSales as SaleForCalc[], allSaleItems);
+      const lastWeekRevenue = saleCalc.calculateRevenueTTC(lastWeekSales as SaleForCalc[], allSaleItems);
+      const monthRevenue = saleCalc.calculateRevenueTTC(monthSales as SaleForCalc[], allSaleItems);
+      const lastMonthRevenue = saleCalc.calculateRevenueTTC(lastMonthSales as SaleForCalc[], allSaleItems);
+
+      // Calculate trend data for last 7 days
+      const trendDataCalc: TrendDataPoint[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        
+        const daySales = allSales?.filter(s => {
+          const d = new Date(s.created_at);
+          return d >= date && d < nextDate;
+        }) || [];
+        
+        const dayRevenue = saleCalc.calculateRevenueTTC(daySales as SaleForCalc[], allSaleItems);
+        
+        trendDataCalc.push({
+          date: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+          revenue: dayRevenue,
+          sales: daySales.length
+        });
       }
+      setTrendData(trendDataCalc);
 
-      const topProducts = Object.values(productStats)
-        .sort((a, b) => b.revenue - a.revenue)
+      // Top products with unified currency conversion
+      const productStats = allSaleItems.reduce((acc: any, item) => {
+        if (!acc[item.product_name]) {
+          acc[item.product_name] = { product_name: item.product_name, quantity: 0, revenue: 0 };
+        }
+        acc[item.product_name].quantity += Number(item.quantity || 0);
+        
+        // Convert to display currency
+        const itemRevenue = displayCurrency === 'USD'
+          ? (item.currency === 'USD' ? item.subtotal : item.subtotal / usdHtgRate)
+          : (item.currency === 'USD' ? item.subtotal * usdHtgRate : item.subtotal);
+        acc[item.product_name].revenue += itemRevenue;
+        return acc;
+      }, {});
+
+      const topProducts = Object.values(productStats || {})
+        .sort((a: any, b: any) => b.revenue - a.revenue)
         .slice(0, 5);
 
-      const averageSale = totalSalesCount ? totalRevenue / totalSalesCount : 0;
-
-      // Mes dépenses (converties en HTG)
-      const todayStr = today.toISOString().slice(0, 10);
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-        .toISOString()
-        .slice(0, 10);
-
-      let todayExpenses = 0;
-      let monthExpenses = 0;
-      let expensesCount = 0;
-      let expFrom = 0;
-      while (true) {
-        const { data, error } = await (supabase as any)
-          .from('expenses')
-          .select('amount, currency, expense_date')
-          .eq('user_id', user.id)
-          .gte('expense_date', monthStart)
-          .range(expFrom, expFrom + PAGE - 1);
-        if (error) throw error;
-        const rows = (data ?? []) as any[];
-        for (const r of rows) {
-          const htg = toHTG(r.amount, r.currency, rate);
-          monthExpenses += htg;
-          if (r.expense_date === todayStr) {
-            todayExpenses += htg;
-            expensesCount += 1;
-          }
-        }
-        if (rows.length < PAGE) break;
-        expFrom += PAGE;
-      }
+      const averageSale = allSales?.length ? totalRevenue / allSales.length : 0;
 
       setStats({
-        totalSales: totalSalesCount,
-        todaySales: todaySalesCount,
+        totalSales: allSales?.length || 0,
+        todaySales: todaySales.length,
         totalRevenue,
         todayRevenue,
-        weekSales: weekSalesCount,
+        weekSales: weekSales.length,
         weekRevenue,
-        monthSales: monthSalesCount,
+        monthSales: monthSales.length,
         monthRevenue,
         averageSale,
-        todayExpenses,
-        monthExpenses,
-        expensesCount,
-        topProducts: topProducts as any,
+        yesterdaySales: yesterdaySales.length,
+        yesterdayRevenue,
+        lastWeekRevenue,
+        lastMonthRevenue,
+        topProducts: topProducts as any
       });
+
+      setLastUpdate(new Date());
+      
+      // Fetch recent sales with the same hook-based calculations
+      await fetchRecentSales();
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [user, saleCalc, displayCurrency, usdHtgRate]);
 
-  const fetchRecentSales = async () => {
-    if (!user) return;
+  const fetchRecentSales = useCallback(async () => {
+    if (!user || !saleCalc) return;
 
     try {
-      const { data, error } = await supabase
+      const { data: salesData, error } = await supabase
         .from('sales')
-        .select('*')
+        .select('id, created_at, total_amount, subtotal, discount_amount, discount_type, discount_value, discount_currency, customer_name')
         .eq('seller_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5);
 
       if (error) throw error;
-      setRecentSales(data || []);
+      
+      if (!salesData || salesData.length === 0) {
+        setRecentSales([]);
+        return;
+      }
+
+      // Fetch sale items for these sales
+      const saleIds = salesData.map(s => s.id);
+      const { data: saleItems } = await supabase
+        .from('sale_items')
+        .select('sale_id, subtotal, currency, profit_amount')
+        .in('sale_id', saleIds);
+
+      // Calculate proper TTC for each sale using the centralized hook
+      const enrichedSales = salesData.map(sale => {
+        const itemsForSale = (saleItems || []).filter(item => item.sale_id === sale.id);
+        const result = saleCalc.calculateSaleTotal(sale as SaleForCalc, itemsForSale);
+        
+        return {
+          ...sale,
+          displayAmount: result.totalTTC
+        };
+      });
+
+      setRecentSales(enrichedSales);
     } catch (error) {
       console.error('Error fetching recent sales:', error);
     }
+  }, [user, saleCalc]);
+
+  useEffect(() => {
+    if (user && saleCalc) {
+      fetchStats();
+    }
+  }, [user, saleCalc, fetchStats]);
+
+  // Auto-refresh every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (user && saleCalc) {
+        fetchStats();
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [user, saleCalc, fetchStats]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchStats();
   };
 
-  if (loading) {
+  // Sparkline data for KPIs
+  const revenueSparkline = trendData.map(d => ({ value: d.revenue }));
+  const salesSparkline = trendData.map(d => ({ value: d.sales }));
+
+  // Average calculations
+  const averageDailySales = stats.monthSales / 30;
+  const averageDailyRevenue = stats.monthRevenue / 30;
+
+  // Top products for bar chart
+  const topProductsChartData = stats.topProducts.map((p, i) => ({
+    name: p.product_name.length > 15 ? p.product_name.substring(0, 15) + '...' : p.product_name,
+    fullName: p.product_name,
+    revenue: p.revenue,
+    quantity: p.quantity,
+    rank: i + 1
+  }));
+
+  if (loading || !saleCalc) {
     return (
       <div className="flex items-center justify-center h-64">
         <Package className="w-8 h-8 text-primary animate-pulse" />
@@ -224,175 +289,229 @@ export const SellerDashboardStats = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Stats Grid - matching Admin style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
-          title="Ventes Aujourd'hui"
-          value={stats.todaySales.toString()}
-          icon={Receipt}
-          variant="success"
-          change={{
-            value: stats.weekSales > 0 ? Number(((stats.todaySales / stats.weekSales) * 100).toFixed(2)) : 0,
-            isPositive: stats.todaySales > 0,
-            label: "cette semaine"
-          }}
-        />
-        <StatsCard
+    <div className="space-y-3 sm:space-y-6">
+      {/* Header with refresh */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2">
+            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
+            <span className="hidden sm:inline">MàJ:</span> {lastUpdate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className={`text-[10px] sm:text-xs px-1.5 sm:px-2 ${
+              displayCurrency === 'USD' 
+                ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700' 
+                : 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700'
+            }`}
+          >
+            {displayCurrency === 'USD' ? '$ USD' : 'HTG'}
+          </Badge>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="h-7 sm:h-8 text-xs sm:text-sm"
+        >
+          <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Actualiser</span>
+        </Button>
+      </div>
+
+      {/* KPI Cards with Sparklines */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+        <KPICard
           title="Revenu Aujourd'hui"
-          value={`${stats.todayRevenue.toFixed(2)} HTG`}
+          value={stats.todayRevenue}
+          previousValue={stats.yesterdayRevenue}
           icon={DollarSign}
-          variant="default"
-          change={{
-            value: stats.weekRevenue > 0 ? Number(((stats.todayRevenue / stats.weekRevenue) * 100).toFixed(2)) : 0,
-            isPositive: stats.todayRevenue > 0,
-            label: "cette semaine"
-          }}
+          sparklineData={revenueSparkline}
+          colorScheme="seller-profit"
+          currency={displayCurrency}
         />
-        <StatsCard
-          title="Total Ventes"
-          value={stats.totalSales.toString()}
-          icon={TrendingUp}
-          variant="default"
+        <KPICard
+          title="Ventes"
+          value={stats.todaySales}
+          previousValue={stats.yesterdaySales}
+          icon={Receipt}
+          format="number"
+          sparklineData={salesSparkline}
+          colorScheme="seller-sales"
         />
-        <StatsCard
-          title="Revenu Total"
-          value={`${stats.totalRevenue.toFixed(2)} HTG`}
-          icon={DollarSign}
-          variant="success"
-        />
-      </div>
-
-      {/* Additional Stats - Enhanced with icons and variants */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatsCard
-          title="Ventes cette Semaine"
-          value={`${stats.weekRevenue.toFixed(2)} HTG`}
-          icon={Calendar}
-          variant="default"
-          change={{
-            value: stats.weekSales,
-            isPositive: stats.weekSales > 0,
-            label: `${stats.weekSales} vente${stats.weekSales > 1 ? 's' : ''}`
-          }}
-        />
-        
-        <StatsCard
-          title="Ventes ce Mois"
-          value={`${stats.monthRevenue.toFixed(2)} HTG`}
-          icon={Calendar}
-          variant="success"
-          change={{
-            value: stats.monthSales,
-            isPositive: stats.monthSales > 0,
-            label: `${stats.monthSales} vente${stats.monthSales > 1 ? 's' : ''}`
-          }}
-        />
-        
-        <StatsCard
-          title="Moyenne par Vente"
-          value={`${stats.averageSale.toFixed(2)} HTG`}
+        <KPICard
+          title="Panier Moyen"
+          value={stats.averageSale}
           icon={ShoppingCart}
-          variant="default"
+          colorScheme="seller-average"
+          size="sm"
+          currency={displayCurrency}
         />
-
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => navigate('/expenses')}
-          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/expenses'); }}
-          className="cursor-pointer"
-        >
-          <StatsCard
-            title={`Mes Dépenses (aujourd'hui · ${stats.expensesCount})`}
-            value={formatHTG(stats.todayExpenses)}
-            icon={Wallet}
-            variant="destructive"
-          />
-        </div>
-
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => navigate('/expenses')}
-          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/expenses'); }}
-          className="cursor-pointer"
-        >
-          <StatsCard
-            title="Mes Dépenses (ce mois)"
-            value={formatHTG(stats.monthExpenses)}
-            icon={Wallet}
-            variant="destructive"
-          />
-        </div>
+        <KPICard
+          title="Total Ventes"
+          value={stats.totalSales}
+          icon={TrendingUp}
+          format="number"
+          colorScheme="seller-revenue"
+          size="sm"
+        />
       </div>
 
-      {/* Top Products & Recent Sales - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Top Products */}
-        {stats.topProducts.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Top 5 Produits
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {stats.topProducts.map((product, index) => (
-                  <div key={product.product_name} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="w-8 h-8 flex items-center justify-center">
-                        {index + 1}
-                      </Badge>
-                      <div>
-                        <div className="font-medium">{product.product_name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {product.quantity} unités vendues
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-primary">{product.revenue.toFixed(2)} HTG</div>
-                    </div>
-                  </div>
-                ))}
+      {/* Trend Chart - hidden on mobile */}
+      <div className="hidden sm:block">
+        <SellerTrendChart data={trendData} currency={displayCurrency} />
+      </div>
+
+      {/* Goals & Comparison Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <SellerGoalsCard
+          todaySales={stats.todaySales}
+          todayRevenue={stats.todayRevenue}
+          averageDailySales={averageDailySales}
+          averageDailyRevenue={averageDailyRevenue}
+          currency={displayCurrency}
+        />
+        <SellerPerformanceComparison
+          comparisons={[
+            { 
+              label: "Aujourd'hui vs Hier", 
+              current: stats.todayRevenue, 
+              previous: stats.yesterdayRevenue 
+            },
+            { 
+              label: "Cette Semaine", 
+              current: stats.weekRevenue, 
+              previous: stats.lastWeekRevenue 
+            },
+            { 
+              label: "Ce Mois", 
+              current: stats.monthRevenue, 
+              previous: stats.lastMonthRevenue 
+            }
+          ]}
+          currency={displayCurrency}
+        />
+      </div>
+
+      {/* Top Products & Recent Sales */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        {/* Top Products with Bar Chart */}
+        <Card className="animate-fade-in-up dark:border-border/50 dark:bg-card/80" style={{ animationDelay: '300ms' }}>
+          <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              Top 5 Produits
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6">
+            {stats.topProducts.length === 0 ? (
+              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                <Package className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                <p className="text-xs sm:text-base">Aucune vente enregistrée</p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <>
+                <div className="h-[140px] sm:h-[180px] mb-3 sm:mb-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topProductsChartData} layout="vertical" margin={{ left: 0, right: 40 }}>
+                      <XAxis type="number" hide />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        width={75}
+                        tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-card border border-border rounded-lg shadow-lg p-2 sm:p-3 text-xs sm:text-sm">
+                              <p className="font-medium">{data.fullName}</p>
+                                <p className="text-muted-foreground">
+                                  {displayCurrency === 'USD' ? `$${formatNumber(data.revenue)}` : `${formatNumber(data.revenue)} HTG`} • {data.quantity} unités
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="revenue" 
+                        radius={[0, 4, 4, 0]}
+                        animationDuration={1000}
+                      >
+                        {topProductsChartData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={index === 0 ? 'hsl(var(--primary))' : `hsl(var(--primary) / ${1 - index * 0.15})`}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-1.5 sm:space-y-2">
+                  {stats.topProducts.map((product, index) => (
+                    <div key={product.product_name} className="flex items-center justify-between text-[10px] sm:text-sm">
+                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                        <Badge variant="outline" className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[8px] sm:text-xs shrink-0">
+                          {index + 1}
+                        </Badge>
+                        <span className="truncate">{product.product_name}</span>
+                      </div>
+                      <span className="font-medium text-primary shrink-0 ml-2">
+                        {displayCurrency === 'USD' ? `$${formatNumber(product.revenue)}` : `${formatNumber(product.revenue)} HTG`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Recent Sales */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Receipt className="w-5 h-5" />
+        <Card className="animate-fade-in-up dark:border-border/50 dark:bg-card/80" style={{ animationDelay: '400ms' }}>
+          <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               Ventes Récentes
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             {recentSales.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Receipt className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Aucune vente récente</p>
+              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                <Receipt className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                <p className="text-xs sm:text-base">Aucune vente récente</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {recentSales.map((sale) => (
-                  <div key={sale.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-smooth">
-                    <div>
-                      <div className="font-medium">
-                        {sale.customer_name || 'Client non renseigné'}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(sale.created_at).toLocaleString('fr-FR')}
-                      </div>
+                  <div key={sale.id} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50 dark:bg-muted/20">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate text-xs sm:text-sm">
+                        {sale.customer_name || 'Client anonyme'}
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        {new Date(sale.created_at).toLocaleDateString('fr-FR', { 
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-success">{Number(sale.total_amount).toFixed(2)} HTG</div>
-                      <div className="text-xs text-muted-foreground">{sale.payment_method}</div>
-                    </div>
+                    <Badge variant="secondary" className="text-[10px] sm:text-sm shrink-0 ml-2">
+                      {displayCurrency === 'USD' 
+                        ? `$${formatNumber(sale.displayAmount)}`
+                        : `${formatNumber(sale.displayAmount)} HTG`
+                      }
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -400,41 +519,6 @@ export const SellerDashboardStats = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Analytics Zone */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Analyse des Performances
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Croissance Hebdomadaire</p>
-              <p className="text-2xl font-bold text-primary">
-                {stats.weekSales > 0 ? '+' : ''}{stats.weekSales}
-              </p>
-              <p className="text-xs text-muted-foreground">ventes cette semaine</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Revenu Mensuel</p>
-              <p className="text-2xl font-bold text-primary">
-                {stats.monthRevenue.toFixed(2)} HTG
-              </p>
-              <p className="text-xs text-muted-foreground">{stats.monthSales} ventes ce mois</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Performance Journalière</p>
-              <p className="text-2xl font-bold text-primary">
-                {((stats.todayRevenue / (stats.averageSale || 1)) * 100).toFixed(0)}%
-              </p>
-              <p className="text-xs text-muted-foreground">par rapport à la moyenne</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

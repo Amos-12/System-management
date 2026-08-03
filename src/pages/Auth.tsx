@@ -53,7 +53,7 @@ const Auth = () => {
   useEffect(() => {
     const fetchCompanySettings = async () => {
       const { data } = await supabase
-        .from('company_settings' as any)
+        .from('company_settings')
         .select('*')
         .single();
       if (data) {
@@ -174,7 +174,7 @@ const Auth = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <img src={logo} alt="Logo" className="w-14 h-14 object-contain mx-auto mb-4 animate-pulse" />
           <p className="text-muted-foreground">Chargement...</p>
@@ -184,7 +184,12 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-[calc(16px+var(--safe-area-top,0px))] pb-[calc(16px+var(--safe-area-bottom,0px))]">
+      {/* Safe area background - prevents content from showing under status bar */}
+      <div 
+        className="fixed top-0 left-0 right-0 z-[60] bg-background"
+        style={{ height: 'var(--safe-area-top, 0px)' }}
+      />
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <div className="flex flex-col items-center justify-center mb-4">

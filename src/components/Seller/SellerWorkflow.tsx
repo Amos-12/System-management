@@ -26,27 +26,41 @@ import {
   FileText,
   Printer,
   Trash2,
-  ChevronDown
+  ChevronDown,
+  Barcode,
+  Grid3X3,
+  List,
+  Keyboard,
+  X,
+  Calculator
 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 import { generateReceipt, generateInvoice } from '@/lib/pdfGenerator';
 import jsPDF from 'jspdf';
 import logo from '@/assets/logo.png';
+import { useCategories, useSousCategories } from '@/hooks/useCategories';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { useInventorySounds } from '@/hooks/useInventorySounds';
+import { CartSection } from './CartSection';
+import { useConfetti } from '@/hooks/useConfetti';
+import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 
 interface Product {
   id: string;
   name: string;
-  category: string | null;
-  categorie_id?: string | null;
+  barcode?: string;
+  category: string;
   unit: string;
   price: number;
   quantity: number;
   alert_threshold: number;
   is_active: boolean;
   sale_type: 'retail' | 'wholesale';
+  currency: 'USD' | 'HTG';
   // Ceramic-specific fields
   dimension?: string;
   surface_par_boite?: number;
@@ -73,6 +87,18 @@ interface Product {
   vetement_taille?: string;
   vetement_genre?: string;
   vetement_couleur?: string;
+  // Électroménager-specific fields
+  electromenager_sous_categorie?: string;
+  electromenager_marque?: string;
+  electromenager_modele?: string;
+  electromenager_garantie_mois?: number;
+  electromenager_niveau_sonore_db?: number;
+  electromenager_classe_energie?: string;
+  electromenager_couleur?: string;
+  electromenager_materiau?: string;
+  electromenager_installation?: string;
+  // Dynamic specifications (JSONB)
+  specifications_techniques?: Record<string, any>;
 }
 
 interface CartItem extends Product {
@@ -87,20 +113,30 @@ type WorkflowStep = 'products' | 'cart' | 'checkout' | 'success';
 
 interface SellerWorkflowProps {
   onSaleComplete?: () => void;
+  initialCart?: CartItem[];
+  initialCustomerName?: string;
 }
 
-export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
+export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerName }: SellerWorkflowProps) => {
   const { user } = useAuth();
-  const [currentStep, setCurrentStep] = useState<WorkflowStep>('products');
+  const { categories: dynamicCategories } = useCategories();
+  const { sousCategories: dynamicSousCategories } = useSousCategories();
+  
+  // Centralized hooks
+  const { settings: companySettingsHook } = useCompanySettings();
+  const currencyCalc = useCurrencyCalculations();
+  
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>(initialCart && initialCart.length > 0 ? 'cart' : 'products');
+  const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(initialCart || []);
   const [searchTerm, setSearchTerm] = useState('');
   const [saleTypeFilter, setSaleTypeFilter] = useState<'all' | 'retail' | 'wholesale'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const { categories: dbCategories } = useCompanyCategories(true);
+  const [sousCategoryFilter, setSousCategoryFilter] = useState<string>('all');
   const [authorizedCategories, setAuthorizedCategories] = useState<string[]>([]);
-  const [customerName, setCustomerName] = useState('');
+  const [customerName, setCustomerName] = useState(initialCustomerName || '');
   const [customerAddress, setCustomerAddress] = useState('');
   const [discountType, setDiscountType] = useState<'none' | 'percentage' | 'amount'>('none');
   const [discountValue, setDiscountValue] = useState('0');
@@ -109,18 +145,62 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
   const [completedSale, setCompletedSale] = useState<any>(null);
   const [customQuantityDialog, setCustomQuantityDialog] = useState<{open: boolean, product: Product | null}>({open: false, product: null});
   const [customQuantityValue, setCustomQuantityValue] = useState('');
-  const [quantityUnit, setQuantityUnit] = useState<'barre' | 'tonne'>('barre'); // Track selected unit for iron
+  const [quantityUnit, setQuantityUnit] = useState<'barre' | 'tonne'>('barre');
   const [paymentMethod, setPaymentMethod] = useState<'espece' | 'cheque' | 'virement'>('espece');
   const [companySettings, setCompanySettings] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [cartPulse, setCartPulse] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [discountError, setDiscountError] = useState<string | null>(null);
 
-  // Utility function to format amounts with space as thousands separator
-  const formatAmount = (amount: number, currency = true): string => {
+  // Step transition helpers
+  const getStepOrder = (step: WorkflowStep): number => {
+    const order: Record<WorkflowStep, number> = { products: 0, cart: 1, checkout: 2, success: 3 };
+    return order[step];
+  };
+
+  const handleStepChange = useCallback((newStep: WorkflowStep) => {
+    const currentOrder = getStepOrder(currentStep);
+    const newOrder = getStepOrder(newStep);
+    setTransitionDirection(newOrder > currentOrder ? 'forward' : 'backward');
+    setCurrentStep(newStep);
+  }, [currentStep]);
+
+  const getStepAnimationClass = () => {
+    return transitionDirection === 'forward' 
+      ? 'animate-slide-in-right' 
+      : 'animate-slide-in-left';
+  };
+
+  // Dynamic categories for filtering
+  const availableDynamicCategories = useMemo(() => {
+    return [{ id: 'all', nom: 'Toutes les catégories' }, ...dynamicCategories];
+  }, [dynamicCategories]);
+
+  const availableSousCategories = useMemo(() => {
+    if (categoryFilter === 'all') {
+      return [{ id: 'all', nom: 'Toutes les sous-catégories' }, ...dynamicSousCategories];
+    }
+    const filtered = dynamicSousCategories.filter(sc => sc.categorie_id === categoryFilter);
+    return [{ id: 'all', nom: 'Toutes les sous-catégories' }, ...filtered];
+  }, [categoryFilter, dynamicSousCategories]);
+
+  // Reset sous-category when category changes
+  useEffect(() => {
+    setSousCategoryFilter('all');
+  }, [categoryFilter]);
+
+  // Utility function to format amounts with space as thousands separator and currency
+  const formatAmount = (amount: number, currency: 'USD' | 'HTG' | boolean = true): string => {
     const formatted = amount.toLocaleString('fr-FR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
       useGrouping: true
     }).replace(/\s/g, ' '); // Ensure space separator
-    return currency ? `${formatted} HTG` : formatted;
+    
+    if (currency === false) return formatted;
+    if (currency === 'USD') return `$${formatted}`;
+    return `${formatted} HTG`;
   };
 
   // Utility function to convert decimal tonnage to fractional display
@@ -210,26 +290,28 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
   const loadAuthorizedCategories = async () => {
     if (!user?.id) {
       console.log('⚠️ No user ID available yet');
-      return;
+      return; // Don't set anything, wait for user
     }
-
+    
     try {
+      console.log('🔍 Loading categories for user:', user.id);
       const { data, error } = await supabase
-        .from('seller_authorized_categories' as any)
-        .select('category, categorie_id')
+        .from('seller_authorized_categories')
+        .select('category')
         .eq('user_id', user.id);
 
       if (error) throw error;
-
-      const rows = (data as any[]) || [];
-      if (rows.length > 0) {
-        // On collecte les categorie_id ; si absent (ligne héritée), on fallback via slug -> resolve dans fetchProducts
-        setAuthorizedCategories(rows.map(r => r.categorie_id || r.category).filter(Boolean));
+      
+      if (data && data.length > 0) {
+        // Seller has specific category restrictions
+        setAuthorizedCategories(data.map(d => d.category));
       } else {
+        // Seller has no restrictions = empty array (all categories)
         setAuthorizedCategories([]);
       }
     } catch (error) {
       console.error('Error loading authorized categories:', error);
+      // Default to all categories on error
       setAuthorizedCategories([]);
     }
   };
@@ -237,7 +319,7 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
   const fetchCompanySettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('company_settings' as any)
+        .from('company_settings')
         .select('*')
         .limit(1)
         .single();
@@ -248,39 +330,140 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
     }
   };
 
-  // Résolution dynamique de la catégorie d'un produit (slug legacy ou categorie_id)
-  const categoryById = useMemo(() => {
-    const m = new Map<string, { slug: string; nom: string }>();
-    dbCategories.forEach(c => m.set(c.id, { slug: c.slug, nom: c.nom }));
-    return m;
-  }, [dbCategories]);
+  // Sound effects for barcode scanning
+  const { playScan, playError, playSuccess } = useInventorySounds();
+  
+  // Confetti animation for successful sales
+  const { triggerConfetti } = useConfetti();
 
-  const productCategoryKey = useCallback((product: Product): string => {
-    if (product.categorie_id && categoryById.has(product.categorie_id)) {
-      return categoryById.get(product.categorie_id)!.slug;
+  // Barcode scan handler
+  const handleBarcodeScan = useCallback((barcode: string) => {
+    if (currentStep !== 'products') return;
+    
+    const product = products.find(p => p.barcode === barcode);
+    if (product) {
+      // Play success sound
+      playScan();
+      
+      // Haptic vibration on mobile (short vibration for success)
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+      
+      // Clear search field after successful scan
+      setSearchTerm('');
+      
+      // For ceramics and iron, open quantity dialog
+      if (product.category === 'ceramique' || product.category === 'fer') {
+        setCustomQuantityDialog({ open: true, product });
+        setQuantityUnit('barre');
+      } else {
+        // For other products, add directly to cart
+        addToCart(product, 1);
+      }
+      toast({
+        title: "Produit scanné",
+        description: product.name,
+      });
+    } else {
+      // Play error sound
+      playError();
+      
+      // Haptic vibration on mobile (longer vibration for error)
+      if ('vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100]);
+      }
+      
+      toast({
+        title: "Code-barres non reconnu",
+        description: `Aucun produit trouvé avec le code: ${barcode}`,
+        variant: "destructive"
+      });
     }
-    return product.category || '';
-  }, [categoryById]);
+  }, [products, currentStep]);
 
-  const categoryLabel = useCallback((product: Product): string => {
-    if (product.categorie_id && categoryById.has(product.categorie_id)) {
-      return categoryById.get(product.categorie_id)!.nom;
-    }
-    const found = dbCategories.find(c => c.slug === product.category);
-    return found?.nom || product.category || '';
-  }, [categoryById, dbCategories]);
+  // Enable barcode scanner when on products step
+  useBarcodeScanner({
+    onScan: handleBarcodeScan,
+    enabled: currentStep === 'products' && !customQuantityDialog.open,
+    minLength: 5,
+    maxTimeBetweenKeys: 50
+  });
+
+  // Keyboard shortcuts: Ctrl+L toggle view, Ctrl+P go to cart, Escape go back, Ctrl+? help, Ctrl+N new sale
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if in input/textarea (except for shortcuts modal)
+      const target = e.target as HTMLElement;
+      const isInput = ['INPUT', 'TEXTAREA'].includes(target.tagName);
+      
+      // Ctrl+? or Ctrl+/ to show shortcuts help
+      if (e.ctrlKey && (e.key === '?' || e.key === '/')) {
+        e.preventDefault();
+        setShowShortcutsHelp(prev => !prev);
+        return;
+      }
+      
+      // Ctrl+N for new sale (only on success step)
+      if (e.ctrlKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        if (currentStep === 'success') {
+          resetWorkflow();
+        }
+        return;
+      }
+      
+      if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        if (currentStep === 'products') {
+          setViewMode(prev => prev === 'cards' ? 'list' : 'cards');
+        }
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        if (currentStep === 'products' && cart.length > 0) {
+          handleStepChange('cart');
+        }
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (showShortcutsHelp) {
+          setShowShortcutsHelp(false);
+        } else if (!isInput) {
+          if (currentStep === 'cart') {
+            handleStepChange('products');
+          } else if (currentStep === 'checkout') {
+            handleStepChange('cart');
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentStep, cart.length, showShortcutsHelp]);
 
   useEffect(() => {
     const filtered = products.filter(product => {
-      const key = productCategoryKey(product);
+      // Match by name, category, OR barcode
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (key || '').toLowerCase().includes(searchTerm.toLowerCase());
+        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesSaleType = saleTypeFilter === 'all' || product.sale_type === saleTypeFilter;
-      const matchesCategory = categoryFilter === 'all' || key === categoryFilter;
-      return matchesSearch && matchesSaleType && matchesCategory;
+      
+      // Dynamic category filter using categorie_id
+      const matchesCategory = categoryFilter === 'all' || 
+        (product as any).categorie_id === categoryFilter ||
+        product.category === categoryFilter; // Fallback for old enum-based products
+      
+      // Dynamic sous-category filter
+      const matchesSousCategory = sousCategoryFilter === 'all' || 
+        (product as any).sous_categorie_id === sousCategoryFilter;
+      
+      return matchesSearch && matchesSaleType && matchesCategory && matchesSousCategory;
     });
     setFilteredProducts(filtered);
-  }, [searchTerm, saleTypeFilter, categoryFilter, products, dbCategories]);
+  }, [searchTerm, saleTypeFilter, categoryFilter, sousCategoryFilter, products]);
 
   const fetchProducts = async () => {
     try {
@@ -288,24 +471,18 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
         .from('products')
         .select('*')
         .eq('is_active', true);
-
-      // Filtrage par catégories autorisées : les valeurs sont soit des uuid (categorie_id), soit des slugs (héritage)
+      
+      // Filter by authorized categories if restrictions exist (non-empty array)
       if (authorizedCategories.length > 0) {
-        const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const ids = authorizedCategories.filter(v => uuidRe.test(v));
-        const slugs = authorizedCategories.filter(v => !uuidRe.test(v));
-        const orParts: string[] = [];
-        if (ids.length) orParts.push(`categorie_id.in.(${ids.join(',')})`);
-        if (slugs.length) orParts.push(`category.in.(${slugs.join(',')})`);
-        if (orParts.length) query = query.or(orParts.join(','));
+        query = query.in('category', authorizedCategories as any);
       }
-
+      
       const { data, error } = await query.order('name');
 
       if (error) throw error;
       
-      // Filter products with available stock
-      const availableProducts = (data || []).filter((product: Product) => {
+      // Filter products with available stock and cast currency
+      const availableProducts = (data || []).filter((product) => {
         let hasStock = false;
         
         if (product.category === 'ceramique') {
@@ -320,9 +497,12 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
         }
         
         return hasStock;
-      });
+      }).map(p => ({
+        ...p,
+        currency: (p.currency === 'USD' ? 'USD' : 'HTG') as 'USD' | 'HTG'
+      }));
     
-      const byCat = availableProducts.reduce((acc: any, p: Product) => {
+      const byCat = availableProducts.reduce((acc: any, p) => {
         acc[p.category] = (acc[p.category] || 0) + 1;
         return acc;
       }, {});
@@ -480,6 +660,10 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
         }];
       }
     });
+
+    // Trigger pulse animation on cart button
+    setCartPulse(true);
+    setTimeout(() => setCartPulse(false), 600);
 
     setCustomQuantityDialog({open: false, product: null});
     setCustomQuantityValue('');
@@ -646,16 +830,152 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
     return getTotalAmount();
   };
 
+  // Get totals by currency
+  const getTotalsByCurrency = () => {
+    let totalUSD = 0;
+    let totalHTG = 0;
+    
+    cart.forEach(item => {
+      const price = item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity);
+      if (item.currency === 'USD') {
+        totalUSD += price;
+      } else {
+        totalHTG += price;
+      }
+    });
+    
+    return { totalUSD, totalHTG };
+  };
+
+  // Calculate unified total in preferred currency (before discount) using centralized hook
+  const getUnifiedTotal = () => {
+    if (!currencyCalc) {
+      // Fallback if hook not ready
+      const { totalUSD, totalHTG } = getTotalsByCurrency();
+      const rate = companySettings?.usd_htg_rate || 132;
+      const displayCurrency = companySettings?.default_display_currency || 'HTG';
+      
+      if (displayCurrency === 'HTG') {
+        return { amount: totalHTG + (totalUSD * rate), currency: 'HTG' as const };
+      } else {
+        return { amount: totalUSD + (totalHTG / rate), currency: 'USD' as const };
+      }
+    }
+    
+    // Convert cart items to SaleItemForCalc format
+    const saleItems = cart.map(item => ({
+      subtotal: item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity),
+      currency: (item.currency || 'HTG') as 'USD' | 'HTG',
+      profit_amount: 0
+    }));
+    
+    const result = currencyCalc.calculateUnifiedSubtotal(saleItems);
+    return { amount: result.unified, currency: result.displayCurrency };
+  };
+
+  // Calculate unified total WITH discount AND TVA applied (final TTC amount to pay)
+  const getUnifiedFinalTotal = () => {
+    if (!currencyCalc) {
+      // Fallback calculation
+      const { totalUSD, totalHTG } = getTotalsByCurrency();
+      const rate = companySettings?.usd_htg_rate || 132;
+      const displayCurrency = companySettings?.default_display_currency || 'HTG';
+      const discountAmount = getDiscountAmount();
+      const tvaRate = companySettings?.tva_rate || 0;
+      
+      if (displayCurrency === 'HTG') {
+        const unifiedHTG = totalHTG + (totalUSD * rate);
+        const afterDiscount = Math.max(0, unifiedHTG - discountAmount);
+        const tva = afterDiscount * (tvaRate / 100);
+        return { amount: afterDiscount + tva, currency: 'HTG' as const };
+      } else {
+        const unifiedUSD = totalUSD + (totalHTG / rate);
+        const rate2 = companySettings?.usd_htg_rate || 132;
+        const discountInUSD = discountAmount / rate2;
+        const afterDiscount = Math.max(0, unifiedUSD - discountInUSD);
+        const tva = afterDiscount * (tvaRate / 100);
+        return { amount: afterDiscount + tva, currency: 'USD' as const };
+      }
+    }
+    
+    // Use centralized hook for calculation
+    const saleItems = cart.map(item => ({
+      subtotal: item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity),
+      currency: (item.currency || 'HTG') as 'USD' | 'HTG',
+      profit_amount: 0
+    }));
+    
+    // Calculate actual discount amount based on type
+    const discVal = parseFloat(discountValue) || 0;
+    const unifiedSubtotal = currencyCalc.calculateUnifiedSubtotal(saleItems).unified;
+    const actualDiscountAmount = discountType === 'percentage'
+      ? Math.min(unifiedSubtotal * (discVal / 100), unifiedSubtotal)
+      : Math.min(discVal, unifiedSubtotal);
+    
+    const result = currencyCalc.calculateTotalTTC({
+      items: saleItems,
+      discountAmount: actualDiscountAmount
+    });
+    
+    return { amount: result.totalTTC, currency: result.currency };
+  };
+
+  // Calculate discount amount based on UNIFIED total (properly converted)
   const getDiscountAmount = () => {
-    const subtotal = getSubtotal();
+    const { amount: unifiedSubtotal } = getUnifiedTotal();
     const discVal = parseFloat(discountValue) || 0;
     
     if (discountType === 'percentage') {
-      return Math.min(subtotal * (discVal / 100), subtotal);
+      // Percentage of the unified total
+      return Math.min(unifiedSubtotal * (discVal / 100), unifiedSubtotal);
     } else if (discountType === 'amount') {
-      return Math.min(discVal, subtotal);
+      // Fixed amount - user enters in display currency
+      return Math.min(discVal, unifiedSubtotal);
     }
     return 0;
+  };
+
+  // Validate discount value and return error message if invalid
+  const validateDiscount = (value: string, type: 'percentage' | 'amount' | 'none'): string | null => {
+    if (type === 'none') return null;
+    
+    const { amount: unifiedSubtotal } = getUnifiedTotal();
+    const discVal = parseFloat(value) || 0;
+    const displayCurrency = companySettings?.default_display_currency || 'HTG';
+    
+    if (discVal < 0) {
+      return 'La valeur doit être positive';
+    }
+    
+    if (type === 'percentage') {
+      if (discVal > 100) {
+        return 'Le pourcentage ne peut pas dépasser 100%';
+      }
+    } else if (type === 'amount') {
+      if (discVal > unifiedSubtotal) {
+        return `La remise ne peut pas dépasser ${formatAmount(unifiedSubtotal, displayCurrency)}`;
+      }
+    }
+    return null;
+  };
+
+  // Handler for discount value change with validation
+  const handleDiscountValueChange = (value: string) => {
+    setDiscountValue(value);
+    const error = validateDiscount(value, discountType);
+    setDiscountError(error);
+  };
+
+  // Handler for discount type change with validation
+  const handleDiscountTypeChange = (type: 'none' | 'percentage' | 'amount') => {
+    setDiscountType(type);
+    if (type === 'none') {
+      setDiscountValue('0');
+      setDiscountError(null);
+    } else {
+      const error = validateDiscount(discountValue, type);
+      setDiscountError(error);
+    }
   };
 
   const getFinalTotal = () => {
@@ -668,9 +988,13 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
     setIsProcessing(true);
 
     try {
-      const subtotal = getSubtotal();
+      // Use unified total (properly converted to display currency) for all calculations
+      const { amount: unifiedSubtotal, currency: displayCurrency } = getUnifiedTotal();
       const discountAmount = getDiscountAmount();
-      const totalAmount = getFinalTotal();
+      const afterDiscount = Math.max(0, unifiedSubtotal - discountAmount);
+      const tvaRate = companySettings?.tva_rate || 0;
+      const tvaAmount = afterDiscount * (tvaRate / 100);
+      const totalAmount = afterDiscount + tvaAmount;  // Total TTC in display currency
 
       // === VALIDATION EN TEMPS RÉEL DU STOCK ===
       // Récupérer les données fraîches de la base pour tous les produits du panier
@@ -738,10 +1062,11 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
         customer_name: customerName.trim() || null,
         customer_address: customerAddress.trim() ? customerAddress.trim() : null,
         payment_method: paymentMethod,
-        subtotal: subtotal,
+        subtotal: unifiedSubtotal,
         discount_type: discountType,
         discount_value: parseFloat(discountValue) || 0,
         discount_amount: discountAmount,
+        discount_currency: displayCurrency,
         total_amount: totalAmount,
         items: cart.map(item => {
           // Pour les céramiques : envoyer directement les m² (pas de conversion en boîtes)
@@ -756,7 +1081,8 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
             quantity: quantityToSend, // En m² pour céramique, sinon quantité normale
             unit: item.category === 'fer' ? 'barre' : (item.category === 'ceramique' ? 'm²' : (item.displayUnit || item.unit)),
             unit_price: item.actualPrice !== undefined ? item.actualPrice / item.cartQuantity : item.price,
-            subtotal: item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity)
+            subtotal: item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity),
+            currency: item.currency || 'HTG'
           };
         })
       };
@@ -764,10 +1090,28 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
       console.log('📦 Sale payload:', JSON.stringify(saleRequest, null, 2));
 
       // Get the current session to pass auth token
-      const { data: { session } } = await supabase.auth.getSession();
+      let { data: { session } } = await supabase.auth.getSession();
       
+      // If session is missing or expired, try to refresh
       if (!session) {
-        throw new Error('Session non valide. Veuillez vous reconnecter.');
+        console.log('🔄 Session manquante, tentative de rafraîchissement...');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshData.session) {
+          console.error('❌ Impossible de rafraîchir la session:', refreshError);
+          toast({
+            title: "Session expirée",
+            description: "Redirection vers la page de connexion...",
+            variant: "destructive"
+          });
+          // Redirect to auth page after a short delay
+          setTimeout(() => {
+            window.location.href = '/auth';
+          }, 1500);
+          return;
+        }
+        session = refreshData.session;
+        console.log('✅ Session rafraîchie avec succès');
       }
 
       // Call Edge Function to process sale with auth header
@@ -797,11 +1141,20 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
         description: `Vente de ${formatAmount(totalAmount)} enregistrée avec succès`,
       });
 
-      setCurrentStep('success');
+      handleStepChange('success');
+      triggerConfetti();
+      playSuccess();
+      
+      // Store calculated values for consistent display on success page
       setCompletedSale({
         ...data.sale,
         payment_method: paymentMethod,
         customer_address: customerAddress.trim() || null,
+        // Store calculated values to avoid recalculation issues
+        calculated_total: totalAmount,
+        calculated_discount: discountAmount,
+        calculated_subtotal: unifiedSubtotal,
+        calculated_currency: displayCurrency,
         items: cart.map(item => {
           const itemTotal = item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity);
           const unitPrice = item.actualPrice !== undefined ? (item.actualPrice / item.cartQuantity) : item.price;
@@ -812,7 +1165,8 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
             dimension: item.dimension,
             diametre: item.diametre,
             unit_price: unitPrice,
-            total: itemTotal
+            total: itemTotal,
+            currency: item.currency
           };
         })
       });
@@ -880,7 +1234,7 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
   };
 
   const resetWorkflow = () => {
-    setCurrentStep('products');
+    handleStepChange('products');
     setCart([]);
     setCustomerName('');
     setCustomerAddress('');
@@ -947,23 +1301,40 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
     );
   };
 
+  const categories = [
+    { value: 'alimentaires', label: 'Alimentaires' },
+    { value: 'boissons', label: 'Boissons' },
+    { value: 'gazeuses', label: 'Gazeuses' },
+    { value: 'electronique', label: 'Électronique' },
+    { value: 'ceramique', label: 'Céramique' },
+    { value: 'fer', label: 'Fer / Acier' },
+    { value: 'materiaux_de_construction', label: 'Matériaux de construction' },
+    { value: 'energie', label: 'Énergie' },
+    { value: 'blocs', label: 'Blocs' },
+    { value: 'vetements', label: 'Vêtements' },
+    { value: 'electromenager', label: 'Électroménager' },
+    { value: 'autres', label: 'Autres' }
+  ];
 
-  // Liste dynamique des catégories disponibles avec produits (issues de la base)
+  // Liste dynamique des catégories disponibles avec produits
   const availableCategories = useMemo(() => {
-    const slugsWithProducts = new Set(products.map(p => productCategoryKey(p)).filter(Boolean));
-
+    let categoriesWithProducts = new Set(products.map(p => p.category));
+    
+    // Filter by authorized categories if restrictions exist (non-empty array)
     const hasRestrictions = authorizedCategories.length > 0;
-    const allowed = dbCategories.filter(c => {
-      if (!slugsWithProducts.has(c.slug)) return false;
-      if (!hasRestrictions) return true;
-      return authorizedCategories.includes(c.id) || authorizedCategories.includes(c.slug);
-    });
-
+    if (hasRestrictions) {
+      categoriesWithProducts = new Set(
+        Array.from(categoriesWithProducts).filter(cat => 
+          authorizedCategories.includes(cat)
+        )
+      );
+    }
+    
     return [
       { value: 'all', label: 'Toutes les catégories' },
-      ...allowed.map(c => ({ value: c.slug, label: c.nom })),
+      ...categories.filter(cat => categoriesWithProducts.has(cat.value))
     ];
-  }, [products, authorizedCategories, dbCategories, productCategoryKey]);
+  }, [products, authorizedCategories]);
 
   const steps = [
     { id: 'products', label: 'Sélection Produits', icon: Package },
@@ -984,38 +1355,44 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Workflow Progress */}
+    <div className="space-y-3">
+      {/* Workflow Progress - Compact */}
       <Card className="shadow-lg">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <CardContent className="p-2 sm:p-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Help button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowShortcutsHelp(true)}
+              className="h-8 w-8 p-0 shrink-0"
+              title="Raccourcis clavier (Ctrl+?)"
+            >
+              <Keyboard className="w-4 h-4" />
+            </Button>
             {steps.map((step, index) => {
               const StepIcon = step.icon;
               const isActive = step.id === currentStep;
               const isCompleted = index < getCurrentStepIndex();
               
               return (
-                <div key={step.id} className="flex items-center w-full sm:w-auto">
-                  <div className="flex items-center flex-1 sm:flex-initial">
-                    <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-smooth ${
-                        isActive
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : isCompleted
-                          ? 'border-success bg-success text-success-foreground'
-                          : 'border-muted-foreground text-muted-foreground'
-                      }`}
-                    >
-                      <StepIcon className="w-5 h-5" />
-                    </div>
-                    <div className="ml-3">
-                      <div className={`text-sm font-medium ${isActive ? 'text-primary' : isCompleted ? 'text-success' : 'text-muted-foreground'}`}>
-                        {step.label}
-                      </div>
-                    </div>
+                <div key={step.id} className="flex items-center">
+                  <div
+                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-500 ease-out ${
+                      isActive
+                        ? 'border-primary bg-primary text-primary-foreground scale-110'
+                        : isCompleted
+                        ? 'border-success bg-success text-success-foreground'
+                        : 'border-muted-foreground text-muted-foreground'
+                    }`}
+                  >
+                    <StepIcon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
                   </div>
+                  <span className={`hidden sm:block ml-2 text-xs font-medium transition-all duration-300 ${isActive ? 'text-primary scale-105' : isCompleted ? 'text-success' : 'text-muted-foreground'}`}>
+                    {step.label}
+                  </span>
                   {index < steps.length - 1 && (
-                    <ArrowRight className="hidden sm:block w-5 h-5 mx-4 text-muted-foreground" />
+                    <ArrowRight className="hidden sm:block w-4 h-4 mx-2 text-muted-foreground" />
                   )}
                 </div>
               );
@@ -1026,73 +1403,128 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
 
       {/* Step Content */}
       {currentStep === 'products' && (
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Étape 1: Sélection des Produits
+        <Card className={`shadow-lg flex flex-col h-[calc(100vh-120px)] min-h-[600px] ${getStepAnimationClass()}`}>
+          <CardHeader className="pb-2 space-y-2 shrink-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Package className="w-4 h-4" />
+              Sélection des Produits
             </CardTitle>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher un produit..."
+                  placeholder="Rechercher ou scanner un code-barres..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 pr-24 h-9"
+                  data-barcode-input="true"
                 />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant={saleTypeFilter === 'all' ? 'default' : 'outline'}
-                  onClick={() => setSaleTypeFilter('all')}
+                <Badge 
+                  variant="outline" 
+                  className="absolute right-2 top-1.5 text-xs bg-primary/10 text-primary border-primary/30"
                 >
-                  Tous
-                </Button>
-                <Button
-                  size="sm"
-                  variant={saleTypeFilter === 'retail' ? 'default' : 'outline'}
-                  onClick={() => setSaleTypeFilter('retail')}
-                >
-                  Détail
-                </Button>
-                <Button
-                  size="sm"
-                  variant={saleTypeFilter === 'wholesale' ? 'default' : 'outline'}
-                  onClick={() => setSaleTypeFilter('wholesale')}
-                >
-                  Gros
-                </Button>
+                  <Barcode className="w-3 h-3 mr-1" />
+                  Scanner prêt
+                </Badge>
               </div>
               
-              <div className="flex gap-2 items-center mt-2">
-                <Label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">
-                  Catégorie:
-                </Label>
+              {/* Tous les filtres sur une seule ligne */}
+              <div className="flex flex-wrap items-center gap-2 py-1">
+                {/* Boutons type de vente */}
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={saleTypeFilter === 'all' ? 'default' : 'outline'}
+                    onClick={() => setSaleTypeFilter('all')}
+                    className="h-8"
+                  >
+                    Tous
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={saleTypeFilter === 'retail' ? 'default' : 'outline'}
+                    onClick={() => setSaleTypeFilter('retail')}
+                    className="h-8"
+                  >
+                    Détail
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={saleTypeFilter === 'wholesale' ? 'default' : 'outline'}
+                    onClick={() => setSaleTypeFilter('wholesale')}
+                    className="h-8"
+                  >
+                    Gros
+                  </Button>
+                </div>
+                
+                {/* Séparateur vertical */}
+                <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
+                
+                {/* Dropdown Catégorie */}
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger id="category-filter" className="w-[200px]">
-                    <SelectValue />
+                  <SelectTrigger className="w-[140px] h-8">
+                    <SelectValue placeholder="Catégorie" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {availableCategories.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
+                  <SelectContent className="z-50 bg-popover">
+                    {availableDynamicCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Dropdown Sous-catégorie */}
+                <Select value={sousCategoryFilter} onValueChange={setSousCategoryFilter}>
+                  <SelectTrigger className="w-[150px] h-8">
+                    <SelectValue placeholder="Sous-catégorie" />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover">
+                    {availableSousCategories.map((sc) => (
+                      <SelectItem key={sc.id} value={sc.id}>
+                        {sc.nom}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               
-              <div className="flex justify-between items-center mt-3 px-1">
-                <Badge variant="secondary" className="text-base">
-                  {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''} disponible{filteredProducts.length > 1 ? 's' : ''}
+              <div className="flex justify-between items-center px-1">
+                <Badge variant="secondary" className="text-sm">
+                  {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''}
                 </Badge>
+                
+                {/* View mode toggle with shortcut hint */}
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1 bg-muted p-0.5 rounded-lg">
+                    <Button
+                      size="sm"
+                      variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                      onClick={() => setViewMode('cards')}
+                      className="h-7 px-2"
+                    >
+                      <Grid3X3 className="w-3.5 h-3.5 mr-1" />
+                      <span className="hidden sm:inline text-xs">Cartes</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={viewMode === 'list' ? 'default' : 'ghost'}
+                      onClick={() => setViewMode('list')}
+                      className="h-7 px-2"
+                    >
+                      <List className="w-3.5 h-3.5 mr-1" />
+                      <span className="hidden sm:inline text-xs">Liste</span>
+                    </Button>
+                  </div>
+                  <span className="hidden lg:inline text-xs text-muted-foreground">Ctrl+L</span>
+                </div>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pb-32">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] md:max-h-[65vh] lg:max-h-[70vh] overflow-y-auto">
+          <CardContent className="flex-1 pb-4 flex flex-col min-h-0">
+            {viewMode === 'cards' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 overflow-y-auto min-h-0">
               {filteredProducts.map((product) => {
                 const cartItem = cart.find(item => item.id === product.id);
                 let availableStock = product.quantity;
@@ -1120,84 +1552,180 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
                   : availableStock - cartQuantity;
                 
                 return (
-                  <Card key={product.id} className="border hover:shadow-md transition-smooth">
+                  <Card 
+                    key={product.id} 
+                    className="border hover:shadow-xl hover:scale-[1.02] hover:border-primary/50 transition-all duration-300 cursor-pointer group"
+                  >
                     <CardContent className="p-4">
                       <div className="space-y-3">
                         <div>
                           <h4 className="font-semibold text-base">{product.name}</h4>
                           
-                          {/* Ceramic product details */}
-                          {product.category === 'ceramique' && (
-                            <div className="space-y-1 mt-1">
-                              {product.dimension && (
-                                <p className="text-xs text-muted-foreground">📐 Dimension: {product.dimension}</p>
-                              )}
-                              {product.surface_par_boite && (
-                                <p className="text-xs text-muted-foreground">📦 Surface/boîte: {product.surface_par_boite} m²</p>
-                              )}
-                            </div>
-                          )}
-                          
-                          {/* Iron bar details */}
-                          {product.category === 'fer' && (
-                            <div className="space-y-1 mt-1">
-                              {product.diametre && (
-                                <p className="text-xs text-muted-foreground">⭕ Diamètre: {product.diametre}</p>
-                              )}
-                              {product.longueur_barre_ft && (
-                                <p className="text-xs text-muted-foreground">📏 Longueur: {product.longueur_barre_ft} ft</p>
-                              )}
-                            </div>
-                          )}
-                          
-                          {/* Energy product details */}
-                          {product.category === 'energie' && (
-                            <div className="space-y-1 mt-1">
-                              {product.type_energie && (
-                                <p className="text-xs text-muted-foreground">⚡ Type: {product.type_energie}</p>
-                              )}
-                              {product.puissance && (
-                                <p className="text-xs text-muted-foreground">💪 Puissance: {product.puissance}W</p>
-                              )}
-                              {product.voltage && (
-                                <p className="text-xs text-muted-foreground">🔌 Voltage: {product.voltage}V</p>
-                              )}
-                              {product.capacite && (
-                                <p className="text-xs text-muted-foreground">🔋 Capacité: {product.capacite}Ah</p>
-                              )}
-                            </div>
-                          )}
+                          {/* Product specifications as horizontal colored badges */}
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {/* Ceramic specs */}
+                            {product.category === 'ceramique' && (
+                              <>
+                                {product.dimension && (
+                                  <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/30">
+                                    📐 {product.dimension}
+                                  </Badge>
+                                )}
+                                {product.surface_par_boite && (
+                                  <Badge variant="outline" className="text-[10px] bg-cyan-500/10 text-cyan-600 border-cyan-500/30">
+                                    📦 {product.surface_par_boite} m²/boîte
+                                  </Badge>
+                                )}
+                              </>
+                            )}
+                            
+                            {/* Iron bar specs */}
+                            {product.category === 'fer' && (
+                              <>
+                                {product.diametre && (
+                                  <Badge variant="outline" className="text-[10px] bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                    ⭕ {product.diametre}
+                                  </Badge>
+                                )}
+                                {product.longueur_barre_ft && (
+                                  <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/30">
+                                    📏 {product.longueur_barre_ft} ft
+                                  </Badge>
+                                )}
+                              </>
+                            )}
+                            
+                            {/* Energy specs */}
+                            {product.category === 'energie' && (
+                              <>
+                                {product.type_energie && (
+                                  <Badge variant="outline" className="text-[10px] bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                                    ⚡ {product.type_energie}
+                                  </Badge>
+                                )}
+                                {product.puissance && (
+                                  <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/30">
+                                    💪 {product.puissance}W
+                                  </Badge>
+                                )}
+                                {product.voltage && (
+                                  <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-600 border-purple-500/30">
+                                    🔌 {product.voltage}V
+                                  </Badge>
+                                )}
+                                {product.capacite && (
+                                  <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-600 border-green-500/30">
+                                    🔋 {product.capacite}Ah
+                                  </Badge>
+                                )}
+                              </>
+                            )}
 
-                          {/* Blocs product details */}
-                          {product.category === 'blocs' && (
-                            <div className="space-y-1 mt-1">
-                              {product.bloc_type && (
-                                <p className="text-xs text-muted-foreground">🧱 Type: {product.bloc_type}</p>
-                              )}
-                              {product.bloc_poids && (
-                                <p className="text-xs text-muted-foreground">⚖️ Poids: {product.bloc_poids} kg</p>
-                              )}
-                            </div>
-                          )}
+                            {/* Blocs specs */}
+                            {product.category === 'blocs' && (
+                              <>
+                                {product.bloc_type && (
+                                  <Badge variant="outline" className="text-[10px] bg-stone-500/10 text-stone-600 border-stone-500/30">
+                                    🧱 {product.bloc_type}
+                                  </Badge>
+                                )}
+                                {product.bloc_poids && (
+                                  <Badge variant="outline" className="text-[10px] bg-gray-500/10 text-gray-600 border-gray-500/30">
+                                    ⚖️ {product.bloc_poids} kg
+                                  </Badge>
+                                )}
+                              </>
+                            )}
 
-                          {/* Vêtements product details */}
-                          {product.category === 'vetements' && (
-                            <div className="space-y-1 mt-1">
-                              {product.vetement_taille && (
-                                <p className="text-xs text-muted-foreground">📏 Taille: {product.vetement_taille}</p>
-                              )}
-                              {product.vetement_genre && (
-                                <p className="text-xs text-muted-foreground">👤 Genre: {product.vetement_genre}</p>
-                              )}
-                              {product.vetement_couleur && (
-                                <p className="text-xs text-muted-foreground">🎨 Couleur: {product.vetement_couleur}</p>
-                              )}
-                            </div>
-                          )}
+                            {/* Vêtements specs */}
+                            {product.category === 'vetements' && (
+                              <>
+                                {product.vetement_taille && (
+                                  <Badge variant="outline" className="text-[10px] bg-pink-500/10 text-pink-600 border-pink-500/30">
+                                    📏 {product.vetement_taille}
+                                  </Badge>
+                                )}
+                                {product.vetement_genre && (
+                                  <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-600 border-violet-500/30">
+                                    👤 {product.vetement_genre}
+                                  </Badge>
+                                )}
+                                {product.vetement_couleur && (
+                                  <Badge variant="outline" className="text-[10px] bg-rose-500/10 text-rose-600 border-rose-500/30">
+                                    🎨 {product.vetement_couleur}
+                                  </Badge>
+                                )}
+                              </>
+                            )}
+
+                            {/* Électroménager specs */}
+                            {product.category === 'electromenager' && (
+                              <>
+                                {product.electromenager_marque && (
+                                  <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-600 border-indigo-500/30">
+                                    🏭 {product.electromenager_marque}
+                                  </Badge>
+                                )}
+                                {product.electromenager_modele && (
+                                  <Badge variant="outline" className="text-[10px] bg-slate-500/10 text-slate-600 border-slate-500/30">
+                                    📋 {product.electromenager_modele}
+                                  </Badge>
+                                )}
+                                {product.puissance && (
+                                  <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/30">
+                                    💪 {product.puissance}W
+                                  </Badge>
+                                )}
+                                {product.electromenager_classe_energie && (
+                                  <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                                    ⚡ {product.electromenager_classe_energie}
+                                  </Badge>
+                                )}
+                              </>
+                            )}
+
+                            {/* Électronique specs */}
+                            {product.category === 'electronique' && (
+                              <>
+                                {product.electromenager_marque && (
+                                  <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-600 border-indigo-500/30">
+                                    🏭 {product.electromenager_marque}
+                                  </Badge>
+                                )}
+                                {product.electromenager_modele && (
+                                  <Badge variant="outline" className="text-[10px] bg-slate-500/10 text-slate-600 border-slate-500/30">
+                                    📋 {product.electromenager_modele}
+                                  </Badge>
+                                )}
+                                {product.capacite && (
+                                  <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-600 border-green-500/30">
+                                    💾 {product.capacite}
+                                  </Badge>
+                                )}
+                                {product.electromenager_couleur && (
+                                  <Badge variant="outline" className="text-[10px] bg-rose-500/10 text-rose-600 border-rose-500/30">
+                                    🎨 {product.electromenager_couleur}
+                                  </Badge>
+                                )}
+                              </>
+                            )}
+
+                            {/* Dynamic specifications from specifications_techniques - minimum 4 specs */}
+                            {product.specifications_techniques && 
+                             Object.entries(product.specifications_techniques)
+                               .filter(([_, value]) => value !== null && value !== '' && value !== undefined)
+                               .slice(0, 4)
+                               .map(([key, value]) => (
+                                 <Badge key={key} variant="outline" className="text-[10px] bg-teal-500/10 text-teal-600 border-teal-500/30">
+                                   ℹ️ {String(value)}
+                                 </Badge>
+                               ))
+                            }
+                          </div>
                           
                           <div className="flex items-center gap-2 text-sm flex-wrap mt-2">
                             <Badge variant="outline" className="text-xs">
-                              {categoryLabel(product)}
+                              {categories.find(c => c.value === product.category)?.label}
                             </Badge>
                             <Badge variant={product.sale_type === 'retail' ? 'default' : 'secondary'} className="text-xs">
                               {product.sale_type === 'retail' ? 'Détail' : 'Gros'}
@@ -1207,13 +1735,13 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
                           {/* Pricing */}
                           <div className="mt-2">
                             {product.category === 'ceramique' && product.prix_m2 ? (
-                              <div className="text-success font-bold text-lg">{formatAmount(product.prix_m2)}/m²</div>
+                              <div className="text-success font-bold text-lg">{formatAmount(product.prix_m2, product.currency)}/m²</div>
                            ) : product.category === 'fer' && product.prix_par_barre ? (
-                              <div className="text-success font-bold text-lg">{formatAmount(product.prix_par_barre)}/barre</div>
+                              <div className="text-success font-bold text-lg">{formatAmount(product.prix_par_barre, product.currency)}/barre</div>
                             ) : product.category === 'vetements' ? (
-                              <div className="text-success font-bold text-lg">{formatAmount(product.price)}/{product.unit}</div>
+                              <div className="text-success font-bold text-lg">{formatAmount(product.price, product.currency)}/{product.unit}</div>
                             ) : (
-                              <div className="text-success font-bold text-lg">{formatAmount(product.price)}</div>
+                              <div className="text-success font-bold text-lg">{formatAmount(product.price, product.currency)}</div>
                             )}
                           </div>
                           
@@ -1265,334 +1793,636 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
                 );
               })}
             </div>
+            ) : (
+            /* List view */
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produit</TableHead>
+                    <TableHead className="hidden md:table-cell">Catégorie</TableHead>
+                    <TableHead>Prix</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead className="text-right w-20">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.map((product) => {
+                    const cartItem = cart.find(item => item.id === product.id);
+                    let availableStock = product.quantity;
+                    let stockLabel = product.unit;
+                    
+                    if (product.category === 'ceramique' && product.stock_boite !== undefined) {
+                      const totalM2 = roundTo2Decimals((product.stock_boite || 0) * (product.surface_par_boite || 1));
+                      const cartQuantityM2 = cartItem?.cartQuantity || 0;
+                      availableStock = roundTo2Decimals(Math.max(0, totalM2 - cartQuantityM2));
+                      stockLabel = 'm²';
+                    }
+                    
+                    if (product.category === 'fer' && product.stock_barre !== undefined) {
+                      availableStock = product.stock_barre;
+                      stockLabel = 'barres';
+                    }
+                    
+                    const cartQuantity = cartItem?.cartQuantity || 0;
+                    const remainingStock = product.category === 'ceramique'
+                      ? roundTo2Decimals((product.stock_boite || 0) * (product.surface_par_boite || 1) - cartQuantity)
+                      : availableStock - cartQuantity;
+                    
+                    // Specs badges for list view
+                    const getListSpecs = () => {
+                      const specs: { emoji: string; value: string; color: string }[] = [];
+                      
+                      // Ceramic
+                      if (product.category === 'ceramique') {
+                        if (product.dimension) specs.push({ emoji: '📐', value: product.dimension, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30' });
+                        if (product.surface_par_boite) specs.push({ emoji: '📦', value: `${product.surface_par_boite} m²/boîte`, color: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/30' });
+                      }
+                      
+                      // Iron
+                      if (product.category === 'fer') {
+                        if (product.diametre) specs.push({ emoji: '⭕', value: product.diametre, color: 'bg-orange-500/10 text-orange-600 border-orange-500/30' });
+                        if (product.longueur_barre_ft) specs.push({ emoji: '📏', value: `${product.longueur_barre_ft} ft`, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30' });
+                      }
+                      
+                      // Energy
+                      if (product.category === 'energie') {
+                        if (product.type_energie) specs.push({ emoji: '⚡', value: product.type_energie, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30' });
+                        if (product.puissance) specs.push({ emoji: '💪', value: `${product.puissance}W`, color: 'bg-red-500/10 text-red-600 border-red-500/30' });
+                        if (product.voltage) specs.push({ emoji: '🔌', value: `${product.voltage}V`, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30' });
+                        if (product.capacite) specs.push({ emoji: '🔋', value: `${product.capacite}Ah`, color: 'bg-green-500/10 text-green-600 border-green-500/30' });
+                      }
+                      
+                      // Blocs
+                      if (product.category === 'blocs') {
+                        if (product.bloc_type) specs.push({ emoji: '🧱', value: product.bloc_type, color: 'bg-stone-500/10 text-stone-600 border-stone-500/30' });
+                        if (product.bloc_poids) specs.push({ emoji: '⚖️', value: `${product.bloc_poids} kg`, color: 'bg-gray-500/10 text-gray-600 border-gray-500/30' });
+                      }
+                      
+                      // Vêtements
+                      if (product.category === 'vetements') {
+                        if (product.vetement_taille) specs.push({ emoji: '📏', value: product.vetement_taille, color: 'bg-pink-500/10 text-pink-600 border-pink-500/30' });
+                        if (product.vetement_genre) specs.push({ emoji: '👤', value: product.vetement_genre, color: 'bg-violet-500/10 text-violet-600 border-violet-500/30' });
+                        if (product.vetement_couleur) specs.push({ emoji: '🎨', value: product.vetement_couleur, color: 'bg-rose-500/10 text-rose-600 border-rose-500/30' });
+                      }
+                      
+                      // Électroménager
+                      if (product.category === 'electromenager') {
+                        if (product.electromenager_marque) specs.push({ emoji: '🏭', value: product.electromenager_marque, color: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30' });
+                        if (product.electromenager_modele) specs.push({ emoji: '📋', value: product.electromenager_modele, color: 'bg-slate-500/10 text-slate-600 border-slate-500/30' });
+                        if (product.puissance) specs.push({ emoji: '💪', value: `${product.puissance}W`, color: 'bg-red-500/10 text-red-600 border-red-500/30' });
+                        if (product.electromenager_classe_energie) specs.push({ emoji: '⚡', value: product.electromenager_classe_energie, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' });
+                      }
+                      
+                      // Électronique
+                      if (product.category === 'electronique') {
+                        if (product.electromenager_marque) specs.push({ emoji: '🏭', value: product.electromenager_marque, color: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30' });
+                        if (product.electromenager_modele) specs.push({ emoji: '📋', value: product.electromenager_modele, color: 'bg-slate-500/10 text-slate-600 border-slate-500/30' });
+                        if (product.capacite) specs.push({ emoji: '💾', value: `${product.capacite}`, color: 'bg-green-500/10 text-green-600 border-green-500/30' });
+                        if (product.electromenager_couleur) specs.push({ emoji: '🎨', value: product.electromenager_couleur, color: 'bg-rose-500/10 text-rose-600 border-rose-500/30' });
+                      }
+                      
+                      // Dynamic specs from specifications_techniques
+                      if (product.specifications_techniques) {
+                        Object.entries(product.specifications_techniques)
+                          .filter(([_, value]) => value !== null && value !== '' && value !== undefined)
+                          .slice(0, 4)
+                          .forEach(([key, value]) => {
+                            specs.push({ emoji: 'ℹ️', value: String(value), color: 'bg-teal-500/10 text-teal-600 border-teal-500/30' });
+                          });
+                      }
+                      
+                      return specs.slice(0, 4);
+                    };
+                    
+                    const listSpecs = getListSpecs();
+                    
+                    return (
+                      <TableRow key={product.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <div>
+                            <span className="font-medium">{product.name}</span>
+                            {listSpecs.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {listSpecs.map((spec, idx) => (
+                                  <Badge key={idx} variant="outline" className={`text-[10px] ${spec.color}`}>
+                                    {spec.emoji} {spec.value}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Badge variant="outline" className="text-xs">
+                            {categories.find(c => c.value === product.category)?.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-bold text-success text-sm">
+                            {product.category === 'ceramique' && product.prix_m2 
+                              ? formatAmount(product.prix_m2, product.currency) + '/m²'
+                              : product.category === 'fer' && product.prix_par_barre
+                                ? formatAmount(product.prix_par_barre, product.currency) + '/b'
+                                : formatAmount(product.price, product.currency)
+                            }
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span className={`text-sm ${remainingStock <= product.alert_threshold ? 'text-warning font-medium' : ''}`}>
+                              {product.category === 'ceramique' ? remainingStock.toFixed(2) : remainingStock} {stockLabel}
+                            </span>
+                            {cartQuantity > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                {product.category === 'ceramique' ? cartQuantity.toFixed(2) : cartQuantity} panier
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            onClick={() => addToCart(product)}
+                            disabled={remainingStock === 0}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            )}
             
           </CardContent>
         </Card>
       )}
 
       {currentStep === 'cart' && (
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5" />
-              Étape 2: Révision du Panier
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {cart.length === 0 ? (
-              <div className="text-center py-8">
-                <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <p className="text-muted-foreground">Votre panier est vide</p>
-                <Button 
-                  onClick={() => setCurrentStep('products')} 
-                  className="mt-4"
-                  variant="outline"
-                >
-                  Retour aux produits
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col h-[55vh] md:h-[60vh] lg:h-[65vh]">
-                {/* Scrollable products list */}
-                <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                  {cart.map((item) => {
-                    const itemTotal = item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity);
-                    const displayQuantity = item.category === 'ceramique' ? item.cartQuantity.toFixed(2) : item.cartQuantity;
-                    return (
-                      <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 border rounded-lg">
-                         <div className="flex-1 min-w-0">
-                          <h5 className="font-medium break-words">{item.name}</h5>
-                          <p className="text-sm text-muted-foreground break-words">
-                            {item.category === 'fer' && item.bars_per_ton 
-                              ? item.sourceUnit === 'tonne' 
-                                ? `${item.cartQuantity} barres (≈ ${getTonnageLabel(barresToTonnage(item.cartQuantity, item.bars_per_ton))})`
-                                : item.cartQuantity % item.bars_per_ton === 0
-                                  ? `${item.cartQuantity} barres (= ${item.cartQuantity / item.bars_per_ton} tonne${item.cartQuantity / item.bars_per_ton > 1 ? 's' : ''})`
-                                  : `${item.cartQuantity} barres`
-                              : item.category === 'ceramique' && item.surface_par_boite
-                                ? `${displayQuantity} m² (${(item.cartQuantity / item.surface_par_boite).toFixed(2)} boîtes)`
-                                : `${displayQuantity} ${item.unit}`
-                            }
-                          </p>
-                          <p className="text-sm font-medium text-success mt-1">
-                            {formatAmount(itemTotal)}
-                          </p>
-                        </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {item.category === 'ceramique' ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => removeFromCart(item.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      ) : (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateQuantity(item.id, -1)}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <Input
-                            type="number"
-                            min="1"
-                            max={item.category === 'fer' ? item.stock_barre : item.quantity}
-                            value={item.cartQuantity}
-                            onChange={(e) => handleDirectQuantityChange(item.id, e.target.value)}
-                            className="w-16 text-center text-sm font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateQuantity(item.id, 1)}
-                            disabled={item.cartQuantity >= item.quantity}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                        </>
-                      )}
-                      {item.category !== 'ceramique' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => removeFromCart(item.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Fixed footer with total and buttons */}
-                <div className="border-t pt-4 mt-4 bg-background sticky bottom-0">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg font-semibold">Total:</span>
-                    <span className="text-xl font-bold text-success">
-                      {formatAmount(getTotalAmount())}
-                    </span>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button 
-                      onClick={() => setCurrentStep('products')} 
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Continuer les achats
-                    </Button>
-                    <Button 
-                      onClick={() => setCurrentStep('checkout')} 
-                      className="flex-1 gap-2"
-                    >
-                      Finaliser
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className={getStepAnimationClass()}>
+          <CartSection
+            cart={cart}
+            onContinueShopping={() => handleStepChange('products')}
+            onCheckout={() => handleStepChange('checkout')}
+          onRemoveItem={removeFromCart}
+          onUpdateQuantity={updateQuantity}
+          onDirectQuantityChange={handleDirectQuantityChange}
+          onClearCart={() => setCart([])}
+          formatAmount={formatAmount}
+          getTotalAmount={getTotalAmount}
+          getTotalsByCurrency={getTotalsByCurrency}
+          getTonnageLabel={getTonnageLabel}
+          barresToTonnage={barresToTonnage}
+          companySettings={companySettings}
+        />
+        </div>
       )}
 
       {currentStep === 'checkout' && (
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Receipt className="w-5 h-5" />
-              Étape 3: Finalisation de la Vente
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="customer-name">Nom du client (optionnel)</Label>
-              <Input
-                id="customer-name"
-                placeholder="Nom du client"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="customer-address">Adresse du client (optionnel)</Label>
-              <Input
-                id="customer-address"
-                placeholder="Adresse du client"
-                value={customerAddress}
-                onChange={(e) => setCustomerAddress(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="payment-method">Méthode de paiement</Label>
-              <Select
-                value={paymentMethod}
-                onValueChange={(value: 'espece' | 'cheque' | 'virement') => setPaymentMethod(value)}
-              >
-                <SelectTrigger id="payment-method">
-                  <SelectValue placeholder="Sélectionner" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="espece">Espèce</SelectItem>
-                  <SelectItem value="cheque">Chèque</SelectItem>
-                  <SelectItem value="virement">Virement</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="border rounded-lg p-4 bg-muted/50">
-              <h4 className="font-medium mb-3">Résumé de la commande</h4>
-              {cart.map((item) => {
-                const itemTotal = item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity);
-                const displayQuantity = item.category === 'ceramique' ? `${item.cartQuantity.toFixed(2)} m²` : `${item.cartQuantity} ${item.unit}`;
-                return (
-                  <div key={item.id} className="flex justify-between text-sm mb-2 gap-2">
-                    <span className="break-words">{item.name} × {displayQuantity}</span>
-                    <span className="font-medium shrink-0">{formatAmount(itemTotal)}</span>
+        <div className={`grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)] min-h-[500px] ${getStepAnimationClass()}`}>
+          {/* Left Column - Client Info & Payment */}
+          <div className="space-y-4">
+            {/* Client Info Card */}
+            <Card className="border-2 animate-fade-in-up" style={{ animationDelay: '0ms' }}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Package className="w-4 h-4 text-primary" />
                   </div>
-                );
-              })}
-              <div className="border-t mt-3 pt-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span><strong>Sous-total</strong></span>
-                  <span><strong>{formatAmount(getSubtotal())}</strong></span>
+                  Informations client
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="customer-name" className="text-xs text-muted-foreground">Nom (optionnel)</Label>
+                  <Input
+                    id="customer-name"
+                    placeholder="Nom du client"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="h-9"
+                  />
                 </div>
-                
-                {/* Discount Section */}
-                <div className="space-y-2 border-t pt-2">
-                  <Label htmlFor="discount-type" className="text-sm">Type de remise</Label>
-                  <Select
-                    value={discountType}
-                    onValueChange={(value: 'none' | 'percentage' | 'amount') => setDiscountType(value)}
-                  >
-                    <SelectTrigger id="discount-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Aucune remise</SelectItem>
-                      <SelectItem value="percentage">Pourcentage (%)</SelectItem>
-                      <SelectItem value="amount">Montant fixe (HTG)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-1.5">
+                  <Label htmlFor="customer-address" className="text-xs text-muted-foreground">Adresse (optionnel)</Label>
+                  <Input
+                    id="customer-address"
+                    placeholder="Adresse du client"
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Method Card */}
+            <Card className="border-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Receipt className="w-4 h-4 text-primary" />
+                  </div>
+                  Paiement
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Payment method as styled radio buttons */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'espece', label: 'Espèce', icon: '💵' },
+                    { value: 'cheque', label: 'Chèque', icon: '📝' },
+                    { value: 'virement', label: 'Virement', icon: '🏦' },
+                  ].map((method) => (
+                    <button
+                      key={method.value}
+                      onClick={() => setPaymentMethod(method.value as 'espece' | 'cheque' | 'virement')}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${
+                        paymentMethod === method.value
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                      }`}
+                    >
+                      <span className="text-xl">{method.icon}</span>
+                      <span className="text-xs font-medium">{method.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Discount Section - Compact */}
+                <div className="space-y-2 pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Remise</Label>
+                    <div className="flex gap-1">
+                      {['none', 'percentage', 'amount'].map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => handleDiscountTypeChange(type as 'none' | 'percentage' | 'amount')}
+                          className={`px-2 py-1 text-xs rounded transition-all ${
+                            discountType === type
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted hover:bg-muted/80'
+                          }`}
+                        >
+                          {type === 'none' ? 'Aucune' : type === 'percentage' ? '%' : (companySettings?.default_display_currency || 'HTG')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   
                   {discountType !== 'none' && (
                     <div className="space-y-2">
-                      <Label htmlFor="discount-value" className="text-sm">
-                        Valeur de la remise {discountType === 'percentage' ? '(%)' : '(HTG)'}
-                      </Label>
-                      <Input
-                        id="discount-value"
-                        type="number"
-                        min="0"
-                        max={discountType === 'percentage' ? '100' : getSubtotal().toString()}
-                        step={discountType === 'percentage' ? '1' : '0.01'}
-                        value={discountValue}
-                        onChange={(e) => setDiscountValue(e.target.value)}
-                        placeholder="0"
-                      />
-                    </div>
-                  )}
-                  
-                  {discountType !== 'none' && getDiscountAmount() > 0 && (
-                    <div className="flex justify-between text-sm text-warning">
-                      <span>Remise appliquée</span>
-                      <span>-{formatAmount(getDiscountAmount())}</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="border-t pt-2 flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span className="text-success">{formatAmount(getFinalTotal())}</span>
-                </div>
-              </div>
-            </div>
+                      <div className="flex gap-2">
+                        {/* Quick discount buttons */}
+                        {discountType === 'percentage' && (
+                          <div className="flex gap-1 flex-wrap">
+                            {[5, 10, 15, 20].map((pct) => (
+                              <button
+                                key={pct}
+                                onClick={() => handleDiscountValueChange(pct.toString())}
+                                className={`px-2 py-1 text-xs rounded border transition-all ${
+                                  discountValue === pct.toString()
+                                    ? 'border-primary bg-primary/10 text-primary'
+                                    : 'border-border hover:border-primary/50'
+                                }`}
+                              >
+                                {pct}%
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <Input
+                          type="number"
+                          min="0"
+                          max={discountType === 'percentage' ? '100' : undefined}
+                          step={discountType === 'percentage' ? '1' : '0.01'}
+                          value={discountValue}
+                          onChange={(e) => handleDiscountValueChange(e.target.value)}
+                          placeholder="0"
+                          className={`h-8 w-20 text-sm ${discountError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                        />
+                      </div>
+                      
+                      {/* Real-time discount display */}
+                      {parseFloat(discountValue) > 0 && (
+                        <div className={`p-2 rounded-lg border ${discountError ? 'bg-destructive/10 border-destructive/30' : 'bg-muted/50 border-muted'}`}>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Calculator className="w-3 h-3" />
+                              Remise calculée :
+                            </span>
+                            <span className={`font-semibold ${discountError ? 'text-destructive' : 'text-success'}`}>
+                              -{formatAmount(getDiscountAmount(), companySettings?.default_display_currency || 'HTG')}
+                            </span>
+                          </div>
+                          {discountType === 'percentage' && !discountError && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {discountValue}% du sous-total unifié
+                            </p>
+                          )}
+                        </div>
+                      )}
 
-            <div className="flex flex-col sm:flex-row gap-2">
+                      {/* Error message */}
+                      {discountError && (
+                        <div className="flex items-center gap-1.5 text-destructive text-xs animate-in fade-in duration-200">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>{discountError}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Center Column - Order Summary */}
+          <Card className="border-2 flex flex-col lg:col-span-1 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
+            <CardHeader className="pb-2 border-b shrink-0">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4" />
+                  Résumé
+                </span>
+                <Badge variant="secondary" className="text-xs">
+                  {cart.length} article{cart.length > 1 ? 's' : ''}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-auto p-3">
+              <div className="space-y-2">
+                {cart.map((item) => {
+                  const itemTotal = item.actualPrice !== undefined ? item.actualPrice : (item.price * item.cartQuantity);
+                  const displayQuantity = item.category === 'ceramique' ? `${item.cartQuantity.toFixed(2)} m²` : `${item.cartQuantity} ${item.unit}`;
+                  return (
+                    <div key={item.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border">
+                      <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                        <Package className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{displayQuantity}</p>
+                      </div>
+                      <span className="text-sm font-semibold shrink-0">{formatAmount(itemTotal, item.currency)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Right Column - Totals & Actions */}
+          <div className="flex flex-col gap-4">
+            {/* Totals Card */}
+            <Card className="border-2 flex-1 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Total</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {(() => {
+                  const { totalUSD, totalHTG } = getTotalsByCurrency();
+                  const hasMultipleCurrencies = totalUSD > 0 && totalHTG > 0;
+                  const rate = companySettings?.usd_htg_rate || 132;
+                  const displayCurrency = companySettings?.default_display_currency || 'HTG';
+                  
+                  const unifiedSubtotal = displayCurrency === 'HTG'
+                    ? totalHTG + (totalUSD * rate)
+                    : totalUSD + (totalHTG / rate);
+                  
+                  const discountAmount = getDiscountAmount();
+                  const afterDiscount = unifiedSubtotal - discountAmount;
+                  const tvaRate = companySettings?.tva_rate || 0;
+                  const tvaAmount = afterDiscount * (tvaRate / 100);
+                  const finalTTC = afterDiscount + tvaAmount;
+                  
+                  return (
+                    <>
+                      {/* Currency subtotals */}
+                      {totalUSD > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Sous-total USD</span>
+                          <Badge variant="outline" className="font-mono">{formatAmount(totalUSD, 'USD')}</Badge>
+                        </div>
+                      )}
+                      {totalHTG > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Sous-total HTG</span>
+                          <Badge variant="outline" className="font-mono">{formatAmount(totalHTG, 'HTG')}</Badge>
+                        </div>
+                      )}
+                      
+                      {hasMultipleCurrencies && (
+                        <p className="text-xs text-muted-foreground italic text-center">
+                          1 USD = {rate.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} HTG
+                        </p>
+                      )}
+                      
+                      <Separator />
+                      
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between">
+                          <span>Sous-total HT</span>
+                          <span className="font-medium">{formatAmount(unifiedSubtotal, displayCurrency)}</span>
+                        </div>
+                        
+                        {discountAmount > 0 && (
+                          <div className="flex justify-between text-destructive">
+                            <span>{discountType === 'percentage' ? `Remise (${discountValue}%)` : 'Remise'}</span>
+                            <span>-{formatAmount(discountAmount, displayCurrency)}</span>
+                          </div>
+                        )}
+                        
+                        {tvaRate > 0 && (
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>TCA ({tvaRate}%)</span>
+                            <span>{formatAmount(tvaAmount, displayCurrency)}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Final Total - Prominent */}
+                      <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center mt-4">
+                        <p className="text-xs opacity-80 mb-1">TOTAL TTC</p>
+                        <p className="text-2xl font-bold">{formatAmount(finalTTC, displayCurrency)}</p>
+                      </div>
+                    </>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons - Sticky */}
+            <div className="flex gap-2">
               <Button
-                onClick={() => setCurrentStep('cart')}
+                onClick={() => handleStepChange('cart')}
                 variant="outline"
                 className="flex-1"
               >
-                Retour au panier
+                ← Panier
               </Button>
               <Button
                 onClick={processSale}
-                disabled={isProcessing}
+                disabled={isProcessing || !!discountError}
                 className="flex-1 gap-2"
                 variant="default"
               >
                 {isProcessing ? 'Traitement...' : (
                   <>
-                    Confirmer la vente
+                    Confirmer
                     <CheckCircle className="w-4 h-4" />
                   </>
                 )}
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {currentStep === 'success' && (
-        <Card className="shadow-lg">
-          <CardContent className="p-8 text-center">
-            <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Vente confirmée !</h3>
-            <p className="text-muted-foreground mb-6">
-              La vente de {getFinalTotal().toFixed(2)} HTG a été enregistrée avec succès.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              {completedSale && (
-                <>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className="gap-2 w-full sm:w-auto"
-                      >
-                        <Printer className="w-4 h-4" />
-                        Imprimer Reçu Thermique
-                        <ChevronDown className="w-4 h-4 ml-1" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={printReceipt58mm}>
-                        <Printer className="w-4 h-4 mr-2" />
-                        Format 58 mm
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={printReceipt80mm}>
-                        <Printer className="w-4 h-4 mr-2" />
-                        Format 80 mm
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button 
-                    onClick={printInvoice}
-                    variant="outline" 
-                    className="gap-2 w-full sm:w-auto"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Imprimer Facture A4
-                  </Button>
-                </>
-              )}
-              <Button onClick={resetWorkflow} className="gap-2 w-full sm:w-auto">
-                <Plus className="w-4 h-4" />
-                Nouvelle vente
-              </Button>
+        <div className={`max-w-2xl mx-auto ${getStepAnimationClass()}`}>
+          <Card className="shadow-2xl border-2 border-success/20 overflow-hidden">
+            {/* Header avec animation */}
+            <div className="bg-gradient-to-br from-success/10 via-success/5 to-transparent p-8 text-center relative">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--success)/0.15),transparent_70%)]" />
+              <div className="relative">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center animate-in zoom-in duration-700">
+                  <CheckCircle className="w-12 h-12 text-success animate-in spin-in-180 duration-700" />
+                </div>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Vente confirmée avec succès !</h2>
+                <p className="text-muted-foreground">
+                  Transaction enregistrée le {new Date().toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <CardContent className="p-6 space-y-6">
+              {/* Récapitulatif de la vente */}
+              <div className="bg-muted/50 rounded-xl p-5 space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-primary" />
+                  Récapitulatif
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {customerName && (
+                    <div className="col-span-2 sm:col-span-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Client</p>
+                      <p className="font-medium">{customerName}</p>
+                    </div>
+                  )}
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Mode de paiement</p>
+                    <p className="font-medium capitalize flex items-center gap-2">
+                      {paymentMethod === 'espece' ? 'Espèces' : paymentMethod === 'cheque' ? 'Chèque' : 'Virement'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Articles</p>
+                    <p className="font-medium">{completedSale?.items?.length || 0} produit(s)</p>
+                  </div>
+                  {(completedSale?.calculated_discount || 0) > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Remise</p>
+                      <p className="font-medium text-destructive">
+                        -{formatAmount(completedSale?.calculated_discount || 0, completedSale?.calculated_currency || 'HTG')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Total en vedette - use stored calculated values */}
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-semibold">Total payé</span>
+                    <span className="text-2xl font-bold text-success">
+                      {formatAmount(completedSale?.calculated_total || 0, completedSale?.calculated_currency || 'HTG')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions d'impression */}
+              {completedSale && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Printer className="w-4 h-4" />
+                    Options d'impression
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="w-full gap-2 h-12 hover:bg-muted/80 transition-colors"
+                        >
+                          <div className="flex flex-col items-start">
+                            <span className="flex items-center gap-2">
+                              <Receipt className="w-4 h-4" />
+                              Reçu Thermique
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">58mm / 80mm</span>
+                          </div>
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="center" className="w-48">
+                        <DropdownMenuItem onClick={printReceipt58mm} className="gap-2">
+                          <Printer className="w-4 h-4" />
+                          Format 58 mm
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={printReceipt80mm} className="gap-2">
+                          <Printer className="w-4 h-4" />
+                          Format 80 mm
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    
+                    <Button 
+                      onClick={printInvoice}
+                      variant="outline" 
+                      className="w-full gap-2 h-12 hover:bg-muted/80 transition-colors"
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Facture A4
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">Format standard</span>
+                      </div>
+                    </Button>
+
+                    <Button 
+                      onClick={resetWorkflow} 
+                      className="w-full gap-2 h-12 bg-primary hover:bg-primary/90 transition-all hover:scale-[1.02]"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Nouvelle vente</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Raccourci clavier */}
+              <div className="text-center pt-2">
+                <p className="text-xs text-muted-foreground">
+                  Appuyez sur <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono border">Ctrl+N</kbd> pour démarrer une nouvelle vente
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Custom Quantity Dialog */}
@@ -1812,9 +2642,9 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
             
             {/* Bouton circulaire principal */}
             <Button
-              onClick={() => setCurrentStep('cart')}
+              onClick={() => handleStepChange('cart')}
               size="lg"
-              className="h-16 w-16 rounded-full shadow-2xl hover:scale-110 transition-transform duration-200 bg-primary hover:bg-primary/90 relative group p-0"
+              className={`h-16 w-16 rounded-full shadow-2xl hover:scale-110 transition-transform duration-200 bg-primary hover:bg-primary/90 relative group p-0 ${cartPulse ? 'animate-[pulse_0.6s_ease-in-out]' : ''}`}
             >
               <div className="flex flex-col items-center gap-0.5">
                 <ShoppingCart className="w-6 h-6" />
@@ -1840,9 +2670,65 @@ export const SellerWorkflow = ({ onSaleComplete }: SellerWorkflowProps) => {
                       return total + itemPrice;
                     }, 0))}
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1 border-t pt-1">
+                    Raccourci : <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">Ctrl+P</kbd>
+                  </div>
                 </div>
               </div>
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'aide des raccourcis clavier */}
+      {showShortcutsHelp && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md mx-4 animate-scale-in">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <Keyboard className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg">Raccourcis clavier</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowShortcutsHelp(false)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-dashed">
+                <span className="text-sm">Basculer vue Cartes/Liste</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Ctrl+L</kbd>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-dashed">
+                <span className="text-sm">Aller au panier</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Ctrl+P</kbd>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-dashed">
+                <span className="text-sm">Étape précédente</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Escape</kbd>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-dashed">
+                <span className="text-sm">Scanner code-barres</span>
+                <span className="text-xs text-muted-foreground">Taper + Enter</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-dashed">
+                <span className="text-sm">Nouvelle vente (après confirmation)</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Ctrl+N</kbd>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm">Afficher cette aide</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Ctrl+?</kbd>
+              </div>
+            </div>
+            <div className="p-4 border-t bg-muted/30 rounded-b-xl">
+              <p className="text-xs text-muted-foreground text-center">
+                Appuyez sur <kbd className="px-1 py-0.5 bg-muted rounded text-[10px] font-mono">Escape</kbd> pour fermer
+              </p>
+            </div>
           </div>
         </div>
       )}
