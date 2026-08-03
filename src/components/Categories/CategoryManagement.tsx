@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 import { useCategories, useSousCategories, Category, SousCategorie } from '@/hooks/useCategories';
 import { SubcategoryManagement } from './SubcategoryManagement';
 import { SpecificationFieldsManager } from './SpecificationFieldsManager';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
