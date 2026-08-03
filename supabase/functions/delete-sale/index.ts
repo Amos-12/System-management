@@ -47,14 +47,22 @@ Deno.serve(async (req) => {
       throw new Error('Non authentifié');
     }
 
-    // Verify admin role
-    const { data: roleData, error: roleError } = await supabase
+    // Verify admin role (a user may have multiple role rows)
+    const { data: roleRows, error: roleError } = await supabase
       .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+      .select('role, is_active')
+      .eq('user_id', user.id);
 
-    if (roleError || roleData?.role !== 'admin') {
+    if (roleError) {
+      console.error('Error fetching user roles:', roleError);
+      throw new Error(`Impossible de vérifier le rôle: ${roleError.message}`);
+    }
+
+    const isAdmin = (roleRows || []).some((r: { role: string; is_active?: boolean | null }) =>
+      (r.role === 'admin' || r.role === 'super_admin') && r.is_active !== false
+    );
+
+    if (!isAdmin) {
       throw new Error('Seuls les administrateurs peuvent supprimer des ventes');
     }
 
