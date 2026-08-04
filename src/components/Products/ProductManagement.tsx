@@ -660,6 +660,42 @@ export const ProductManagement = () => {
       }
     }
 
+    // Garde-fou : le prix d'achat ne doit jamais dépasser le prix de vente
+    // (même unité et même devise), sinon les bénéfices deviennent négatifs.
+    {
+      const salePrice =
+        formData.category === 'ceramique'
+          ? parseFloat(formData.prix_m2)
+          : formData.category === 'fer'
+            ? parseFloat(formData.prix_par_barre)
+            : parseFloat(formData.price);
+      const buyPrice =
+        formData.category === 'ceramique'
+          ? parseFloat(formData.prix_achat_m2)
+          : parseFloat(formData.purchase_price);
+
+      if (Number.isFinite(salePrice) && Number.isFinite(buyPrice)) {
+        if (buyPrice < 0) {
+          toast({
+            title: "Erreur de validation",
+            description: "Le prix d'achat ne peut pas être négatif",
+            variant: "destructive"
+          });
+          return;
+        }
+        if (buyPrice > salePrice) {
+          const unitLabel =
+            formData.category === 'ceramique' ? 'par m²' : formData.category === 'fer' ? 'par barre' : "par unité";
+          toast({
+            title: "Prix d'achat supérieur au prix de vente",
+            description: `Le prix d'achat (${unitLabel}, en ${formData.currency}) doit être inférieur ou égal au prix de vente, sinon les bénéfices seront négatifs.`,
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+    }
+
     try {
       const productData: any = {
         name: formData.name,
