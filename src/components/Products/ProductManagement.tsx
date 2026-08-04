@@ -2019,6 +2019,7 @@ export const ProductManagement = () => {
                     <Card key={product.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start gap-2 mb-2">
                         <h3 className="font-semibold text-sm sm:text-base line-clamp-2">{product.name}</h3>
+
                         <Badge 
                           variant="outline"
                           className={`text-[10px] sm:text-xs shrink-0 ${product.currency === 'USD' 
@@ -2034,7 +2035,7 @@ export const ProductManagement = () => {
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Catégorie:</span>
                           <Badge variant="outline" className="text-[10px] sm:text-xs">
-                            {categories.find(c => c.value === product.category)?.label}
+                            {getCategoryDisplay(product)}
                           </Badge>
                         </div>
                         <div className="flex justify-between">
@@ -2125,7 +2126,7 @@ export const ProductManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {categories.find(c => c.value === product.category)?.label}
+                        {getCategoryDisplay(product)}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
