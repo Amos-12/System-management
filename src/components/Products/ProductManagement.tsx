@@ -2032,6 +2032,12 @@ export const ProductManagement = () => {
                       </div>
                       
                       <div className="space-y-1.5 text-xs sm:text-sm">
+                        {product.barcode && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Code-barres:</span>
+                            <code className="text-[10px] sm:text-xs bg-muted px-1 py-0.5 rounded">{product.barcode}</code>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Catégorie:</span>
                           <Badge variant="outline" className="text-[10px] sm:text-xs">
