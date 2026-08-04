@@ -251,6 +251,14 @@ export const ProductManagement = () => {
     return { value: product.quantity.toString(), unit: product.unit || 'unités', raw: product.quantity };
   };
 
+  // Pour la catégorie "Autres", afficher la sous-catégorie du produit si disponible
+  const getCategoryDisplay = (product: Product) => {
+    const sousCatId = (product as any).sous_categorie_id;
+    const sousCat = sousCatId ? allSousCategories.find(sc => sc.id === sousCatId) : undefined;
+    if (product.category === 'autres' && sousCat) return sousCat.nom;
+    return categories.find(c => c.value === product.category)?.label || product.category;
+  };
+
   const categories = [
     { value: 'alimentaires', label: 'Alimentaires' },
     { value: 'boissons', label: 'Boissons' },
@@ -2011,6 +2019,7 @@ export const ProductManagement = () => {
                     <Card key={product.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start gap-2 mb-2">
                         <h3 className="font-semibold text-sm sm:text-base line-clamp-2">{product.name}</h3>
+
                         <Badge 
                           variant="outline"
                           className={`text-[10px] sm:text-xs shrink-0 ${product.currency === 'USD' 
@@ -2023,10 +2032,16 @@ export const ProductManagement = () => {
                       </div>
                       
                       <div className="space-y-1.5 text-xs sm:text-sm">
+                        {product.barcode && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Code-barres:</span>
+                            <code className="text-[10px] sm:text-xs bg-muted px-1 py-0.5 rounded">{product.barcode}</code>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Catégorie:</span>
                           <Badge variant="outline" className="text-[10px] sm:text-xs">
-                            {categories.find(c => c.value === product.category)?.label}
+                            {getCategoryDisplay(product)}
                           </Badge>
                         </div>
                         <div className="flex justify-between">
@@ -2117,7 +2132,7 @@ export const ProductManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {categories.find(c => c.value === product.category)?.label}
+                        {getCategoryDisplay(product)}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
