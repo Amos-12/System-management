@@ -251,6 +251,14 @@ export const ProductManagement = () => {
     return { value: product.quantity.toString(), unit: product.unit || 'unités', raw: product.quantity };
   };
 
+  // Pour la catégorie "Autres", afficher la sous-catégorie du produit si disponible
+  const getCategoryDisplay = (product: Product) => {
+    const sousCatId = (product as any).sous_categorie_id;
+    const sousCat = sousCatId ? allSousCategories.find(sc => sc.id === sousCatId) : undefined;
+    if (product.category === 'autres' && sousCat) return sousCat.nom;
+    return categories.find(c => c.value === product.category)?.label || product.category;
+  };
+
   const categories = [
     { value: 'alimentaires', label: 'Alimentaires' },
     { value: 'boissons', label: 'Boissons' },
