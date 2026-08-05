@@ -58,12 +58,12 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/seller" element={<SellerDashboard />} />
-            <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/seller" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
+            <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
             <Route path="/help" element={<HelpPage />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/" element={<Index />} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
