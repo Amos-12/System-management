@@ -13,6 +13,7 @@ import { z } from 'zod';
 import logo from '@/assets/logo.png';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { SESSION_EXPIRED_MESSAGE, SESSION_TIMEOUT_MESSAGE } from '@/lib/sessionErrors';
 
 const signInSchema = z.object({
   email: z.string().email('Email invalide').max(255, 'Email trop long'),
