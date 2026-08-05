@@ -29,6 +29,13 @@ const signUpSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const { user, loading, signIn, signUp } = useAuth();
+  const sessionNotice = (() => {
+    const reason = new URLSearchParams(window.location.search).get('reason');
+    if (reason === 'timeout') return SESSION_TIMEOUT_MESSAGE;
+    if (reason === 'expired') return SESSION_EXPIRED_MESSAGE;
+    if (reason === 'signin') return 'Veuillez vous connecter pour accéder à votre espace.';
+    return null;
+  })();
   const [activeTab, setActiveTab] = useState('signin');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
