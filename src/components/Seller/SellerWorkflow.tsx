@@ -1950,7 +1950,7 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <Badge variant="outline" className="text-xs">
-                            {categories.find(c => c.value === product.category)?.label}
+                            {getCategoryDisplay(product)}
                           </Badge>
                         </TableCell>
                         <TableCell>
