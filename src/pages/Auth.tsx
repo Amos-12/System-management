@@ -220,6 +220,13 @@ const Auth = () => {
           </p>
         </div>
 
+        {sessionNotice && (
+          <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+            {sessionNotice}
+          </div>
+        )}
+
+
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-center">Accéder à votre compte</CardTitle>
