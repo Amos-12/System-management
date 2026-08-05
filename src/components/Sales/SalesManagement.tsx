@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import { useCurrencyCalculations, currencyUtils } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { isSessionError, getFriendlyErrorMessage, redirectToLogin } from '@/lib/sessionErrors';
 
 import { 
   AlertDialog, 
