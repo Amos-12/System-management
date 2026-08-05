@@ -1316,6 +1316,18 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
     { value: 'autres', label: 'Autres' }
   ];
 
+  // Pour la catégorie "Autres", afficher la sous-catégorie du produit si disponible
+  const getCategoryDisplay = (product: Product) => {
+    const sousCatId = (product as any).sous_categorie_id;
+    const sousCat = sousCatId
+      ? dynamicSousCategories.find(sc => sc.id === sousCatId)
+      : undefined;
+    if (product.category === 'autres' && sousCat) return sousCat.nom;
+    const dyn = dynamicCategories.find(c => c.id === (product as any).categorie_id);
+    if (product.category === 'autres' && dyn) return dyn.nom;
+    return categories.find(c => c.value === product.category)?.label || dyn?.nom || product.category;
+  };
+
   // Liste dynamique des catégories disponibles avec produits
   const availableCategories = useMemo(() => {
     let categoriesWithProducts = new Set(products.map(p => p.category));
