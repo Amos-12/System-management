@@ -1101,12 +1101,12 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
           console.error('❌ Impossible de rafraîchir la session:', refreshError);
           toast({
             title: "Session expirée",
-            description: "Redirection vers la page de connexion...",
+            description: SESSION_EXPIRED_MESSAGE,
             variant: "destructive"
           });
           // Redirect to auth page after a short delay
           setTimeout(() => {
-            window.location.href = '/auth';
+            redirectToLogin('expired');
           }, 1500);
           return;
         }
