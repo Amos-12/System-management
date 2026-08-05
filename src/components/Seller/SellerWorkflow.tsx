@@ -42,6 +42,7 @@ import { generateReceipt, generateInvoice } from '@/lib/pdfGenerator';
 import jsPDF from 'jspdf';
 import logo from '@/assets/logo.png';
 import { useCategories, useSousCategories } from '@/hooks/useCategories';
+import { SESSION_EXPIRED_MESSAGE, isSessionError, redirectToLogin } from '@/lib/sessionErrors';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useInventorySounds } from '@/hooks/useInventorySounds';
 import { CartSection } from './CartSection';
@@ -1101,12 +1102,12 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
           console.error('❌ Impossible de rafraîchir la session:', refreshError);
           toast({
             title: "Session expirée",
-            description: "Redirection vers la page de connexion...",
+            description: SESSION_EXPIRED_MESSAGE,
             variant: "destructive"
           });
           // Redirect to auth page after a short delay
           setTimeout(() => {
-            window.location.href = '/auth';
+            redirectToLogin('expired');
           }, 1500);
           return;
         }
@@ -1199,9 +1200,10 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
           errorDescription = `Un ou plusieurs produits n'ont pas assez de stock disponible.\n\nDétails: ${error.message}`;
         } 
         // Problème de session/authentification
-        else if (errorMsg.includes('session') || errorMsg.includes('auth') || errorMsg.includes('token')) {
-          errorTitle = "🔐 Erreur d'authentification";
-          errorDescription = `Votre session a expiré. Veuillez vous reconnecter et réessayer.\n\nDétails: ${error.message}`;
+        else if (isSessionError(error) || errorMsg.includes('session') || errorMsg.includes('auth') || errorMsg.includes('token')) {
+          errorTitle = "🔐 Session expirée";
+          errorDescription = SESSION_EXPIRED_MESSAGE;
+          setTimeout(() => redirectToLogin('expired'), 2500);
         } 
         // Problème réseau
         else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('connection')) {
@@ -1315,6 +1317,18 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
     { value: 'electromenager', label: 'Électroménager' },
     { value: 'autres', label: 'Autres' }
   ];
+
+  // Pour la catégorie "Autres", afficher la sous-catégorie du produit si disponible
+  const getCategoryDisplay = (product: Product) => {
+    const sousCatId = (product as any).sous_categorie_id;
+    const sousCat = sousCatId
+      ? dynamicSousCategories.find(sc => sc.id === sousCatId)
+      : undefined;
+    if (product.category === 'autres' && sousCat) return sousCat.nom;
+    const dyn = dynamicCategories.find(c => c.id === (product as any).categorie_id);
+    if (product.category === 'autres' && dyn) return dyn.nom;
+    return categories.find(c => c.value === product.category)?.label || dyn?.nom || product.category;
+  };
 
   // Liste dynamique des catégories disponibles avec produits
   const availableCategories = useMemo(() => {
@@ -1748,7 +1762,7 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
                           
                           <div className="flex items-center gap-2 text-sm flex-wrap mt-2">
                             <Badge variant="outline" className="text-xs">
-                              {categories.find(c => c.value === product.category)?.label}
+                              {getCategoryDisplay(product)}
                             </Badge>
                             <Badge variant={product.sale_type === 'retail' ? 'default' : 'secondary'} className="text-xs">
                               {product.sale_type === 'retail' ? 'Détail' : 'Gros'}
@@ -1938,7 +1952,7 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <Badge variant="outline" className="text-xs">
-                            {categories.find(c => c.value === product.category)?.label}
+                            {getCategoryDisplay(product)}
                           </Badge>
                         </TableCell>
                         <TableCell>

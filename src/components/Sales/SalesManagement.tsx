@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import { useCurrencyCalculations, currencyUtils } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { isSessionError, getFriendlyErrorMessage, redirectToLogin } from '@/lib/sessionErrors';
 
 import { 
   AlertDialog, 
@@ -423,11 +424,13 @@ export const SalesManagement = () => {
       fetchSales();
     } catch (error) {
       console.error('Error deleting sale:', error);
+      const sessionIssue = isSessionError(error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de supprimer la vente",
+        title: sessionIssue ? "Session expirée" : "Suppression impossible",
+        description: getFriendlyErrorMessage(error, "Impossible de supprimer la vente. Veuillez réessayer."),
         variant: "destructive"
       });
+      if (sessionIssue) setTimeout(() => redirectToLogin('expired'), 2500);
     }
   };
 

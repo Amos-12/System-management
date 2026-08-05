@@ -13,6 +13,7 @@ import { z } from 'zod';
 import logo from '@/assets/logo.png';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { SESSION_EXPIRED_MESSAGE, SESSION_TIMEOUT_MESSAGE } from '@/lib/sessionErrors';
 
 const signInSchema = z.object({
   email: z.string().email('Email invalide').max(255, 'Email trop long'),
@@ -29,6 +30,13 @@ const signUpSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const { user, loading, signIn, signUp } = useAuth();
+  const sessionNotice = (() => {
+    const reason = new URLSearchParams(window.location.search).get('reason');
+    if (reason === 'timeout') return SESSION_TIMEOUT_MESSAGE;
+    if (reason === 'expired') return SESSION_EXPIRED_MESSAGE;
+    if (reason === 'signin') return 'Veuillez vous connecter pour accéder à votre espace.';
+    return null;
+  })();
   const [activeTab, setActiveTab] = useState('signin');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -219,6 +227,13 @@ const Auth = () => {
             {companySettings?.company_description || 'Gestion de stock et ventes professionnelles'}
           </p>
         </div>
+
+        {sessionNotice && (
+          <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+            {sessionNotice}
+          </div>
+        )}
+
 
         <Card className="shadow-lg">
           <CardHeader>
