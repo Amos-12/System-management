@@ -42,6 +42,7 @@ import { generateReceipt, generateInvoice } from '@/lib/pdfGenerator';
 import jsPDF from 'jspdf';
 import logo from '@/assets/logo.png';
 import { useCategories, useSousCategories } from '@/hooks/useCategories';
+import { SESSION_EXPIRED_MESSAGE, isSessionError, redirectToLogin } from '@/lib/sessionErrors';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useInventorySounds } from '@/hooks/useInventorySounds';
 import { CartSection } from './CartSection';
