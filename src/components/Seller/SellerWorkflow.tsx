@@ -1200,9 +1200,10 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
           errorDescription = `Un ou plusieurs produits n'ont pas assez de stock disponible.\n\nDétails: ${error.message}`;
         } 
         // Problème de session/authentification
-        else if (errorMsg.includes('session') || errorMsg.includes('auth') || errorMsg.includes('token')) {
-          errorTitle = "🔐 Erreur d'authentification";
-          errorDescription = `Votre session a expiré. Veuillez vous reconnecter et réessayer.\n\nDétails: ${error.message}`;
+        else if (isSessionError(error) || errorMsg.includes('session') || errorMsg.includes('auth') || errorMsg.includes('token')) {
+          errorTitle = "🔐 Session expirée";
+          errorDescription = SESSION_EXPIRED_MESSAGE;
+          setTimeout(() => redirectToLogin('expired'), 2500);
         } 
         // Problème réseau
         else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('connection')) {
