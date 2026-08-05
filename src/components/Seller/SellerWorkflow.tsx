@@ -1748,7 +1748,7 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
                           
                           <div className="flex items-center gap-2 text-sm flex-wrap mt-2">
                             <Badge variant="outline" className="text-xs">
-                              {categories.find(c => c.value === product.category)?.label}
+                              {getCategoryDisplay(product)}
                             </Badge>
                             <Badge variant={product.sale_type === 'retail' ? 'default' : 'secondary'} className="text-xs">
                               {product.sale_type === 'retail' ? 'Détail' : 'Gros'}
