@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar } from "@capacitor/status-bar";
 import { ThemeAwareStatusBar } from "@/components/Layout/ThemeAwareStatusBar";
+import { ProtectedRoute } from "@/components/Auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
