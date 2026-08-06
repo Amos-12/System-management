@@ -7,7 +7,6 @@ import { ThemeProvider } from "next-themes";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar } from "@capacitor/status-bar";
 import { ThemeAwareStatusBar } from "@/components/Layout/ThemeAwareStatusBar";
-import { ProtectedRoute } from "@/components/Auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -15,6 +14,8 @@ import SellerDashboard from "./pages/SellerDashboard";
 import InventoryPage from "./pages/InventoryPage";
 import HelpPage from "./pages/HelpPage";
 import Profile from "./pages/Profile";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,12 +60,14 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/seller" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
-            <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/seller" element={<SellerDashboard />} />
+            <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/help" element={<HelpPage />} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/super-admin" element={<SuperAdminDashboard />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/" element={<Index />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
