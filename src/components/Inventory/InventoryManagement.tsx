@@ -45,6 +45,7 @@ import * as XLSX from 'xlsx';
 import { QuickInventoryMode } from './QuickInventoryMode';
 import { InventoryHistory } from './InventoryHistory';
 import { generateInventoryStockPDF, CompanySettings } from '@/lib/pdfGenerator';
+import { fetchAllRows } from '@/lib/fetchAllRows';
 
 type Product = {
   id: string;
@@ -101,12 +102,9 @@ export const InventoryManagement = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
+      const data = await fetchAllRows<any>(() =>
+        supabase.from('products').select('*').order('name')
+      );
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);

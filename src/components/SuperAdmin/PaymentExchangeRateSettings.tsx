@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase as supabaseClient } from '@/integrations/supabase/client';
+// Schéma SaaS legacy absent de la base actuelle : accès non typé
+const supabase: any = supabaseClient;
 import { toast } from '@/hooks/use-toast';
 import { Loader2, DollarSign, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

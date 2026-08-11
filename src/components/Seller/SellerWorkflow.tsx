@@ -49,6 +49,7 @@ import { CartSection } from './CartSection';
 import { useConfetti } from '@/hooks/useConfetti';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { fetchAllRows } from '@/lib/fetchAllRows';
 
 interface Product {
   id: string;
@@ -478,10 +479,8 @@ export const SellerWorkflow = ({ onSaleComplete, initialCart, initialCustomerNam
         query = query.in('category', authorizedCategories as any);
       }
       
-      const { data, error } = await query.order('name');
+      const data = await fetchAllRows<any>(() => query.order('name'));
 
-      if (error) throw error;
-      
       // Filter products with available stock and cast currency
       const availableProducts = (data || []).filter((product) => {
         let hasStock = false;
