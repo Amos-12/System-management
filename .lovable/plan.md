@@ -34,3 +34,11 @@ Changements :
 - Helper : `fetchAllRows(queryBuilder, pageSize = 1000)` qui reconstruit la requête avec `.range(from, to)` et concatène jusqu'à recevoir moins de `pageSize` lignes.
 - Aucun changement de schéma ni de politiques RLS n'est nécessaire.
 - Les règles de validation métier existantes (prix d'achat ≤ prix de vente, champs par catégorie) restent inchangées, seule leur présentation évolue.
+
+## 0. Préalable : erreurs de build existantes
+
+Le projet ne compile pas actuellement, pour deux raisons indépendantes de cette demande :
+- `react-i18next` / `i18next` ne sont pas installés alors que plusieurs composants les importent — à installer ;
+- `src/integrations/supabase/types.ts` correspond encore à l'ancienne base multi-tenant (`companies`, `saas_settings`, `company_id`), d'où les erreurs sur les composants SuperAdmin — les types seront régénérés depuis la base connectée.
+
+Ces deux points seront traités en premier pour que le reste du travail soit vérifiable.
