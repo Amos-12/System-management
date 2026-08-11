@@ -102,6 +102,15 @@ export const ProductManagement = () => {
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formError, setFormError] = useState<{ title: string; description: string } | null>(null);
+  const formErrorRef = useRef<HTMLDivElement | null>(null);
+
+  const showFormError = (title: string, description: string) => {
+    setFormError({ title, description });
+    setTimeout(() => {
+      formErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  };
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>(isMobile ? 'cards' : 'table');
   const [deleteDialog, setDeleteDialog] = useState<{open: boolean, productId: string | null, productName: string}>({
@@ -587,26 +596,19 @@ export const ProductManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     
     if (!user) return;
 
     if (!isAdmin) {
-      toast({
-        title: "Action non autorisée",
-        description: "Seuls les administrateurs peuvent gérer les produits",
-        variant: "destructive"
-      });
+      showFormError("Action non autorisée", "Seuls les administrateurs peuvent gérer les produits");
       return;
     }
 
     // Validation for ceramic products
     if (formData.category === 'ceramique') {
       if (!formData.dimension || !formData.surface_par_boite || !formData.prix_m2 || !formData.prix_achat_m2 || !formData.stock_boite) {
-        toast({
-          title: "Erreur de validation",
-          description: "Veuillez remplir tous les champs obligatoires pour la céramique (incluant prix d'achat)",
-          variant: "destructive"
-        });
+        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoires pour la céramique (incluant prix d'achat)");
         return;
       }
     }
@@ -614,11 +616,7 @@ export const ProductManagement = () => {
     // Validation for iron products
     if (formData.category === 'fer') {
       if (!formData.diametre || !formData.longueur_barre_ft || !formData.bars_per_ton || !formData.prix_par_barre || !formData.stock_barre) {
-        toast({
-          title: "Erreur de validation",
-          description: "Veuillez remplir tous les champs obligatoires pour le fer",
-          variant: "destructive"
-        });
+        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoires pour le fer");
         return;
       }
     }
@@ -626,11 +624,7 @@ export const ProductManagement = () => {
     // Validation for blocs
     if (formData.category === 'blocs') {
       if (!formData.bloc_type) {
-        toast({
-          title: "Erreur de validation",
-          description: "Veuillez sélectionner le type de bloc",
-          variant: "destructive"
-        });
+        showFormError("Erreur de validation", "Veuillez sélectionner le type de bloc");
         return;
       }
     }
@@ -638,11 +632,7 @@ export const ProductManagement = () => {
     // Validation for vetements
     if (formData.category === 'vetements') {
       if (!formData.vetement_taille || !formData.vetement_genre || !formData.vetement_couleur) {
-        toast({
-          title: "Erreur de validation",
-          description: "Veuillez remplir tous les champs obligatoires pour les vêtements",
-          variant: "destructive"
-        });
+        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoires pour les vêtements");
         return;
       }
     }
@@ -650,11 +640,7 @@ export const ProductManagement = () => {
     // Validation for energie
     if (formData.category === 'energie') {
       if (!formData.puissance && !formData.voltage && !formData.capacite) {
-        toast({
-          title: "Erreur de validation",
-          description: "Veuillez remplir au moins un champ technique (puissance, voltage ou capacité) pour les produits d'énergie",
-          variant: "destructive"
-        });
+        showFormError("Erreur de validation", "Veuillez remplir au moins un champ technique (puissance, voltage ou capacité) pour les produits d'énergie");
         return;
       }
     }
@@ -662,11 +648,7 @@ export const ProductManagement = () => {
     // Validation for standard products
     if (formData.category !== 'ceramique' && formData.category !== 'fer') {
       if (!formData.price || !formData.quantity) {
-        toast({
-          title: "Erreur de validation",
-          description: "Veuillez remplir le prix et la quantité",
-          variant: "destructive"
-        });
+        showFormError("Erreur de validation", "Veuillez remplir le prix et la quantité");
         return;
       }
     }
@@ -687,21 +669,13 @@ export const ProductManagement = () => {
 
       if (Number.isFinite(salePrice) && Number.isFinite(buyPrice)) {
         if (buyPrice < 0) {
-          toast({
-            title: "Erreur de validation",
-            description: "Le prix d'achat ne peut pas être négatif",
-            variant: "destructive"
-          });
+          showFormError("Erreur de validation", "Le prix d'achat ne peut pas être négatif");
           return;
         }
         if (buyPrice > salePrice) {
           const unitLabel =
             formData.category === 'ceramique' ? 'par m²' : formData.category === 'fer' ? 'par barre' : "par unité";
-          toast({
-            title: "Prix d'achat supérieur au prix de vente",
-            description: `Le prix d'achat (${unitLabel}, en ${formData.currency}) doit être inférieur ou égal au prix de vente, sinon les bénéfices seront négatifs.`,
-            variant: "destructive"
-          });
+          showFormError("Prix d'achat supérieur au prix de vente", `Le prix d'achat (${unitLabel}, en ${formData.currency}) doit être inférieur ou égal au prix de vente, sinon les bénéfices seront négatifs.`);
           return;
         }
       }
@@ -835,21 +809,35 @@ export const ProductManagement = () => {
       fetchProducts();
     } catch (error: any) {
       console.error('Error saving product:', error);
-      
-      // Check for RLS policy violation
-      if (error?.message?.includes('row-level security') || error?.message?.includes('policy')) {
-        toast({
-          title: "Action réservée aux administrateurs",
-          description: "Seuls les administrateurs peuvent gérer les produits",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Erreur",
-          description: "Impossible de sauvegarder le produit",
-          variant: "destructive"
-        });
+
+      const raw: string = error?.message || '';
+      const code: string = error?.code || '';
+      let title = "Enregistrement impossible";
+      let description = raw || "Une erreur inattendue est survenue.";
+
+      if (code === '23505' || raw.includes('duplicate key')) {
+        title = "Code-barres déjà utilisé";
+        description = "Un autre produit possède déjà ce code-barres. Modifiez-le puis réessayez.";
+      } else if (code === '22P02' || raw.includes('invalid input syntax')) {
+        title = "Valeur numérique invalide";
+        description = "Vérifiez les champs de prix, de stock et de seuil : ils doivent contenir uniquement des nombres.";
+      } else if (code === '23502' || raw.includes('null value in column')) {
+        const col = raw.match(/column "([^"]+)"/)?.[1];
+        title = "Champ obligatoire manquant";
+        description = col ? `Le champ « ${col} » est obligatoire.` : "Un champ obligatoire est vide.";
+      } else if (code === '42501' || raw.includes('row-level security') || raw.includes('policy')) {
+        title = "Action réservée aux administrateurs";
+        description = "Seuls les administrateurs peuvent gérer les produits.";
+      } else if (raw.includes('JWT') || raw.includes('token') || error?.status === 401) {
+        title = "Session expirée";
+        description = "Votre session a expiré. Reconnectez-vous puis réessayez.";
+      } else if (raw.includes('Failed to fetch') || raw.includes('NetworkError')) {
+        title = "Connexion perdue";
+        description = "Impossible de joindre le serveur. Vérifiez votre connexion internet puis réessayez.";
       }
+
+      showFormError(title, description);
+      toast({ title, description, variant: "destructive" });
     }
   };
 
@@ -979,6 +967,7 @@ export const ProductManagement = () => {
           </CardTitle>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
+            setFormError(null);
             if (!open) resetForm();
           }}>
             <DialogTrigger asChild>
@@ -999,6 +988,15 @@ export const ProductManagement = () => {
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6 pb-4">
+                <div ref={formErrorRef}>
+                  {formError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>{formError.title}</AlertTitle>
+                      <AlertDescription>{formError.description}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nom du produit *</Label>
