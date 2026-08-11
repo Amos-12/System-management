@@ -29,6 +29,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
+import { fetchAllRows } from '@/lib/fetchAllRows';
 
 interface Product {
   id: string;
@@ -341,12 +342,14 @@ export const ProductManagement = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Pagination complète : PostgREST plafonne à 1000 lignes par requête
+      const data = await fetchAllRows<any>(() =>
+        supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
+      );
 
-      if (error) throw error;
       // Cast currency to expected type (database returns string)
       setProducts((data || []).map(p => ({
         ...p,

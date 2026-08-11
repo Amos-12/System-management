@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { fetchAllRows } from '@/lib/fetchAllRows';
 
 interface StockMovement {
   id: string;
@@ -85,12 +86,9 @@ export const StockAlerts = () => {
   };
 
   const fetchLowStockProducts = async () => {
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true);
-
-    if (error) throw error;
+    const products = await fetchAllRows<any>(() =>
+      supabase.from('products').select('*').eq('is_active', true)
+    );
 
     const lowStock = (products || []).filter(
       product => product.quantity <= product.alert_threshold
