@@ -54,10 +54,10 @@ export const GlobalUsersPanel = () => {
 
       if (companiesError) throw companiesError;
 
-      const companyMap = new Map(companies?.map(c => [c.id, c.name]) || []);
-      const roleMap = new Map(roles?.map(r => [r.user_id, r]) || []);
+      const companyMap = new Map<string, string>(companies?.map((c: any) => [c.id, c.name]) || []);
+      const roleMap = new Map<string, any>(roles?.map((r: any) => [r.user_id, r]) || []);
 
-      const merged: UserWithDetails[] = (profiles || []).map(p => {
+      const merged: UserWithDetails[] = (profiles || []).map((p: any) => {
         const role = roleMap.get(p.user_id);
         return {
           user_id: p.user_id,

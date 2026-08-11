@@ -38,7 +38,7 @@ export const SuperAdminDbMonitoring = () => {
       const counts: TableCount[] = [];
 
       for (const table of tables) {
-        const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true });
+        const { count, error } = await (supabase as any).from(table).select('*', { count: 'exact', head: true });
         if (!error) counts.push({ name: table, count: count || 0 });
       }
 
