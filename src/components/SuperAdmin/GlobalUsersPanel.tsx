@@ -5,9 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase as supabaseClient } from '@/integrations/supabase/client';
-// Schéma SaaS legacy absent de la base actuelle : accès non typé
-const supabase: any = supabaseClient;
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Search, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -54,10 +52,10 @@ export const GlobalUsersPanel = () => {
 
       if (companiesError) throw companiesError;
 
-      const companyMap = new Map<string, string>(companies?.map((c: any) => [c.id, c.name]) || []);
-      const roleMap = new Map<string, any>(roles?.map((r: any) => [r.user_id, r]) || []);
+      const companyMap = new Map(companies?.map(c => [c.id, c.name]) || []);
+      const roleMap = new Map(roles?.map(r => [r.user_id, r]) || []);
 
-      const merged: UserWithDetails[] = (profiles || []).map((p: any) => {
+      const merged: UserWithDetails[] = (profiles || []).map(p => {
         const role = roleMap.get(p.user_id);
         return {
           user_id: p.user_id,

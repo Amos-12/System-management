@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase as supabaseClient } from '@/integrations/supabase/client';
-// Schéma SaaS legacy absent de la base actuelle : accès non typé
-const supabase: any = supabaseClient;
+import { supabase } from '@/integrations/supabase/client';
 
 export const FREE_PLANS = ['trial', 'free', 'gratuit', ''];
 

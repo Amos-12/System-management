@@ -22,12 +22,12 @@ const SuperAdminDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && role !== null && (!user || (role as string) !== 'super_admin')) {
+    if (!loading && role !== null && (!user || role !== 'super_admin')) {
       navigate('/auth');
     }
   }, [user, role, loading, navigate]);
 
-  if (loading || (role as string) !== 'super_admin') {
+  if (loading || role !== 'super_admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

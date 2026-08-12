@@ -6,9 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase as supabaseClient } from '@/integrations/supabase/client';
-// Schéma SaaS legacy absent de la base actuelle : accès non typé
-const supabase: any = supabaseClient;
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Search, Activity, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';

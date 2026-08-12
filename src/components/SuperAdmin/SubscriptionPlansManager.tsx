@@ -7,9 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { supabase as supabaseClient } from '@/integrations/supabase/client';
-// Schéma SaaS legacy absent de la base actuelle : accès non typé
-const supabase: any = supabaseClient;
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CreditCard, Plus, Pencil, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
