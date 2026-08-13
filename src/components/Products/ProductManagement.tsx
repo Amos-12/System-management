@@ -19,7 +19,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertTitle, AlertDescription} from '@/components/ui/alert';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Package, Plus, Edit, Trash2, AlertCircle, Search, Filter, LayoutGrid, List, Download, FileText, DollarSign, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,7 +30,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/ui/table-pagination';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import  {fetchAllRows} from '@/lib/fetchAllRows';
+import { fetchAllRows } from '@/lib/fetchAllRows';
 
 interface Product {
   id: string;
@@ -107,9 +107,9 @@ export const ProductManagement = () => {
   const formErrorRef = useRef<HTMLDivElement | null>(null);
 
   const showFormError = (title: string, description: string) => {
-    setFormError ({title, description});
+    setFormError({ title, description });
     setTimeout(() => {
-      formErrorRef.current?.scrollIntoView({behavior:'smooth', block:'center'});
+      formErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 50);
   };
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -352,12 +352,13 @@ export const ProductManagement = () => {
 
   const fetchProducts = async () => {
     try {
-      //Pagination complète : PostgREST platforme à 1000 lignes par requête 
-      const data = await fetchAllRows<any>(() => supabase
-        .from('products')
-        .select('*')
-        .order('create_at', {ascending:false})
-      ); 
+      // Pagination complète : PostgREST plafonne à 1000 lignes par requête
+      const data = await fetchAllRows<any>(() =>
+        supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
+      );
 
       // Cast currency to expected type (database returns string)
       setProducts((data || []).map(p => ({
@@ -596,20 +597,19 @@ export const ProductManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     setFormError(null);
-
+    
     if (!user) return;
 
     if (!isAdmin) {
-      showFormError("Action non autorisée", "réservée seulement aux administrateurs");
+      showFormError("Action non autorisée", "Seuls les administrateurs peuvent gérer les produits");
       return;
     }
 
     // Validation for ceramic products
     if (formData.category === 'ceramique') {
       if (!formData.dimension || !formData.surface_par_boite || !formData.prix_m2 || !formData.prix_achat_m2 || !formData.stock_boite) {
-        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoire pour la céramique (incluant le prix d'achat)");
+        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoires pour la céramique (incluant prix d'achat)");
         return;
       }
     }
@@ -617,7 +617,7 @@ export const ProductManagement = () => {
     // Validation for iron products
     if (formData.category === 'fer') {
       if (!formData.diametre || !formData.longueur_barre_ft || !formData.bars_per_ton || !formData.prix_par_barre || !formData.stock_barre) {
-        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoire pour le fer");
+        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoires pour le fer");
         return;
       }
     }
@@ -625,7 +625,7 @@ export const ProductManagement = () => {
     // Validation for blocs
     if (formData.category === 'blocs') {
       if (!formData.bloc_type) {
-        showFormError("Erreur de validation", "Veuillez selectionner le type de bloc");
+        showFormError("Erreur de validation", "Veuillez sélectionner le type de bloc");
         return;
       }
     }
@@ -633,7 +633,7 @@ export const ProductManagement = () => {
     // Validation for vetements
     if (formData.category === 'vetements') {
       if (!formData.vetement_taille || !formData.vetement_genre || !formData.vetement_couleur) {
-        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoire pour les vêtements");
+        showFormError("Erreur de validation", "Veuillez remplir tous les champs obligatoires pour les vêtements");
         return;
       }
     }
@@ -676,7 +676,7 @@ export const ProductManagement = () => {
         if (buyPrice > salePrice) {
           const unitLabel =
             formData.category === 'ceramique' ? 'par m²' : formData.category === 'fer' ? 'par barre' : "par unité";
-          showFormError("Prix d'achat supérieurau prix de vente", `Le prix d'achat (${unitLabel}, en ${formData.currency}) doit être inférieur ou égal au prix de vente, sinon les bénéfices seront négatifs.`)
+          showFormError("Prix d'achat supérieur au prix de vente", `Le prix d'achat (${unitLabel}, en ${formData.currency}) doit être inférieur ou égal au prix de vente, sinon les bénéfices seront négatifs.`);
           return;
         }
       }
@@ -809,35 +809,36 @@ export const ProductManagement = () => {
       resetForm();
       fetchProducts();
     } catch (error: any) {
-      
+      console.error('Error saving product:', error);
+
       const raw: string = error?.message || '';
       const code: string = error?.code || '';
       let title = "Enregistrement impossible";
-      let description = raw || "Une erreur inattendu est survenue.";
-      
-      if (code ==='23505' || raw.includes('duplicate key')) {
-        title = "Code-barre déjà utilisé";
-        description = "Un autre produit possède déjà ce code-barre. Modifiez-le puis réessayez";
-      }else if (code ==='22P02' || raw.includes('invalid input syntax')) {
+      let description = raw || "Une erreur inattendue est survenue.";
+
+      if (code === '23505' || raw.includes('duplicate key')) {
+        title = "Code-barres déjà utilisé";
+        description = "Un autre produit possède déjà ce code-barres. Modifiez-le puis réessayez.";
+      } else if (code === '22P02' || raw.includes('invalid input syntax')) {
         title = "Valeur numérique invalide";
         description = "Vérifiez les champs de prix, de stock et de seuil : ils doivent contenir uniquement des nombres.";
-      }else if (code === '23502' || raw.includes('null value in column')) {
+      } else if (code === '23502' || raw.includes('null value in column')) {
         const col = raw.match(/column "([^"]+)"/)?.[1];
         title = "Champ obligatoire manquant";
-        description = col ? `Le champs "${col}" est obligatoire.` : "Un champ obligatoire est vide."; 
-      }else if (code === '42501' || raw.includes ('row-level security') || raw.includes ('policy')) {
+        description = col ? `Le champ « ${col} » est obligatoire.` : "Un champ obligatoire est vide.";
+      } else if (code === '42501' || raw.includes('row-level security') || raw.includes('policy')) {
         title = "Action réservée aux administrateurs";
         description = "Seuls les administrateurs peuvent gérer les produits.";
-      } else if (raw.includes ('JWT') || raw.includes('token') || error?.status === 401) {
+      } else if (raw.includes('JWT') || raw.includes('token') || error?.status === 401) {
         title = "Session expirée";
-        description = "Votre session a expirée. Reconnectez-vous puis réessayez.";
-      }else if (raw.includes('Failed to fetch') || raw.includes('NewtorkError')) { 
+        description = "Votre session a expiré. Reconnectez-vous puis réessayez.";
+      } else if (raw.includes('Failed to fetch') || raw.includes('NetworkError')) {
         title = "Connexion perdue";
-        description = "Impossible de jouindre le serveur. Vérifiez votre connexion internet puis réessayez.";
+        description = "Impossible de joindre le serveur. Vérifiez votre connexion internet puis réessayez.";
       }
 
       showFormError(title, description);
-      toast({title, description, variant: "destructive"});
+      toast({ title, description, variant: "destructive" });
     }
   };
 
@@ -989,8 +990,8 @@ export const ProductManagement = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6 pb-4">
                 <div ref={formErrorRef}>
-                  {formError &&(
-                    <Alert variant ="destructive">
+                  {formError && (
+                    <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
                       <AlertTitle>{formError.title}</AlertTitle>
                       <AlertDescription>{formError.description}</AlertDescription>
