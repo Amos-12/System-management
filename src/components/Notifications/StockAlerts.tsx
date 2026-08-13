@@ -86,11 +86,6 @@ export const StockAlerts = () => {
   };
 
   const fetchLowStockProducts = async () => {
-    const products = await fetchAllRows<any>(() => supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-    ); 
 
     const lowStock = (products || []).filter(
       product => product.quantity <= product.alert_threshold
