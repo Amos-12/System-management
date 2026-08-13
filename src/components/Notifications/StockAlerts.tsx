@@ -86,7 +86,7 @@ export const StockAlerts = () => {
   };
 
   const fetchLowStockProducts = async () => {
-    const data = await fetchAllRows<any>(() => supabase
+    const products = await fetchAllRows<any>(() => supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
