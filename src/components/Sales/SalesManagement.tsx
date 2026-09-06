@@ -617,7 +617,7 @@ export const SalesManagement = () => {
       // Convert amount to display currency
       const htg = sale.currencies?.htg || 0;
       const usd = sale.currencies?.usd || 0;
-      const convertedAmount = displayCurrency === 'HTG' ? htg + (usd * rate) : usd + (htg / rate);
+      const convertedAmount = sale.unifiedTotal ?? (displayCurrency === 'HTG' ? htg + (usd * rate) : usd + (htg / rate));
       const amount = `${currencySymbol}${formatNumber(convertedAmount).substring(0, 12)}${currencySuffix}`;
       pdf.text(amount, 145, yPos);
       pdf.text(sale.payment_method.substring(0, 10), 175, yPos);
