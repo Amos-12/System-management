@@ -18,6 +18,8 @@ import jsPDF from 'jspdf';
 import { useCurrencyCalculations, currencyUtils } from '@/hooks/useCurrencyCalculations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { isSessionError, getFriendlyErrorMessage, redirectToLogin } from '@/lib/sessionErrors';
+import { saleCalculationUtils } from '@/hooks/useSaleCalculations';
+import { PeriodRangeFilter, PeriodRange, isInPeriod, periodRangeLabel } from '@/components/Common/PeriodRangeFilter';
 
 import { 
   AlertDialog, 
@@ -50,6 +52,10 @@ interface Sale {
     htg: number;
     usd: number;
   };
+  /** Total TTC converti dans la devise d'affichage (calcul centralisé) */
+  unifiedTotal?: number;
+  discount_amount?: number | null;
+  discount_currency?: string | null;
 }
 
 interface RevenueStats {
@@ -90,7 +96,7 @@ export const SalesManagement = () => {
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currencyFilter, setCurrencyFilter] = useState<'all' | 'HTG' | 'USD' | 'mixed'>('all');
-  const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [periodRange, setPeriodRange] = useState<PeriodRange>({ preset: 'all' });
   const [sellerFilter, setSellerFilter] = useState<string>('all');
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,35 +115,6 @@ export const SalesManagement = () => {
       setViewMode('cards');
     }
   }, [isMobile]);
-
-  // Helper function to filter by period
-  const filterByPeriod = (saleDate: Date, filter: 'all' | 'today' | 'week' | 'month'): boolean => {
-    if (filter === 'all') return true;
-    
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const saleDay = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
-    
-    if (filter === 'today') {
-      return saleDay.getTime() === today.getTime();
-    }
-    
-    if (filter === 'week') {
-      // Start of week (Monday)
-      const dayOfWeek = now.getDay();
-      const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - diffToMonday);
-      return saleDay >= startOfWeek;
-    }
-    
-    if (filter === 'month') {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      return saleDay >= startOfMonth;
-    }
-    
-    return true;
-  };
 
   const { 
     paginatedItems: paginatedSales, 
@@ -214,8 +191,8 @@ export const SalesManagement = () => {
     }
 
     // Apply period filter
-    if (periodFilter !== 'all') {
-      filtered = filtered.filter(sale => filterByPeriod(new Date(sale.created_at), periodFilter));
+    if (periodRange.preset !== 'all') {
+      filtered = filtered.filter(sale => isInPeriod(new Date(sale.created_at), periodRange));
     }
 
     // Apply seller filter
@@ -225,7 +202,7 @@ export const SalesManagement = () => {
 
     setFilteredSales(filtered);
     resetPage();
-  }, [searchTerm, currencyFilter, periodFilter, sellerFilter, sales]);
+  }, [searchTerm, currencyFilter, periodRange, sellerFilter, sales]);
 
   // Récupère TOUTES les lignes d'une table (contourne la limite de 1000 de PostgREST)
   const fetchAllRows = async <T,>(
