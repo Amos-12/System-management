@@ -539,13 +539,8 @@ export const SalesManagement = () => {
     yPos += 8;
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    const periodLabels: Record<string, string> = {
-      all: 'Toutes les ventes',
-      today: "Aujourd'hui",
-      week: 'Cette semaine',
-      month: 'Ce mois'
-    };
-    pdf.text(`Période: ${periodLabels[periodFilter]} | Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, yPos, { align: 'center' });
+    const periodText = periodRange.preset === 'all' ? 'Toutes les ventes' : periodRangeLabel(periodRange);
+    pdf.text(`Période: ${periodText} | Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, yPos, { align: 'center' });
     
     // Stats box
     yPos += 12;
@@ -745,18 +740,11 @@ export const SalesManagement = () => {
             </div>
             <div className="flex gap-2 items-center overflow-x-auto pb-1">
               {/* Period filter */}
-              <Select value={periodFilter} onValueChange={(value: 'all' | 'today' | 'week' | 'month') => setPeriodFilter(value)}>
-                <SelectTrigger className="w-[90px] sm:w-[130px] shrink-0 h-9">
-                  <Calendar className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
-                  <SelectValue placeholder="Période" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tout</SelectItem>
-                  <SelectItem value="today">Aujourd'hui</SelectItem>
-                  <SelectItem value="week">Cette semaine</SelectItem>
-                  <SelectItem value="month">Ce mois</SelectItem>
-                </SelectContent>
-              </Select>
+              <PeriodRangeFilter
+                value={periodRange}
+                onChange={setPeriodRange}
+                className="shrink-0"
+              />
               
               {/* Seller filter */}
               <Select value={sellerFilter} onValueChange={setSellerFilter}>
@@ -789,14 +777,14 @@ export const SalesManagement = () => {
               </Select>
               
               {/* Reset filters button */}
-              {(searchTerm || periodFilter !== 'all' || sellerFilter !== 'all' || currencyFilter !== 'all') && (
+              {(searchTerm || periodRange.preset !== 'all' || sellerFilter !== 'all' || currencyFilter !== 'all') && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-9 px-2.5 shrink-0 text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     setSearchTerm('');
-                    setPeriodFilter('all');
+                    setPeriodRange({ preset: 'all' });
                     setSellerFilter('all');
                     setCurrencyFilter('all');
                   }}
