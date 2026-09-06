@@ -235,11 +235,21 @@ export const SalesManagement = () => {
       // Fetch sales, items and settings in parallel for better performance
       const [salesData, allItems, settingsResult] = await Promise.all([
         fetchAllRows<any>('sales', '*', { column: 'created_at', ascending: false }),
-        fetchAllRows<any>('sale_items', 'sale_id, subtotal, currency'),
-        supabase.from('company_settings').select('tva_rate').limit(1).maybeSingle()
+        fetchAllRows<any>('sale_items', 'sale_id, subtotal, currency, profit_amount'),
+        supabase.from('company_settings').select('tva_rate, usd_htg_rate, default_display_currency').limit(1).maybeSingle()
       ]);
 
       const tvaRate = settingsResult.data?.tva_rate ?? 0;
+      const usdHtgRate = settingsResult.data?.usd_htg_rate || 132;
+      const displayCurrency = (settingsResult.data?.default_display_currency || 'HTG') as 'USD' | 'HTG';
+
+      // Regroupe les lignes d'articles par vente (pour le calcul centralisé)
+      const itemsBySale = new Map<string, any[]>();
+      allItems.forEach(item => {
+        const list = itemsBySale.get(item.sale_id) || [];
+        list.push(item);
+        itemsBySale.set(item.sale_id, list);
+      });
 
 
       // Build a map of sale_id -> currencies (HT amounts from items)
@@ -272,21 +282,29 @@ export const SalesManagement = () => {
         const rawCurrencies = saleItemsMap.get(sale.id) || { htg: 0, usd: 0 };
         const totalRaw = rawCurrencies.htg + rawCurrencies.usd;
         
-        // Apply discount proportionally to each currency
-        const discountRatio = totalRaw > 0 ? (sale.discount_amount || 0) / totalRaw : 0;
-        const htgAfterDiscount = rawCurrencies.htg * (1 - discountRatio);
-        const usdAfterDiscount = rawCurrencies.usd * (1 - discountRatio);
-        
-        // Add TVA to get TTC amounts
+        // Répartition de la remise au prorata (pour l'affichage par devise)
+        const discountRatio = totalRaw > 0
+          ? Math.min(1, (sale.discount_amount || 0) / totalRaw)
+          : 0;
         const currencies = {
-          htg: htgAfterDiscount * (1 + tvaRate / 100),
-          usd: usdAfterDiscount * (1 + tvaRate / 100)
+          htg: rawCurrencies.htg * (1 - discountRatio) * (1 + tvaRate / 100),
+          usd: rawCurrencies.usd * (1 - discountRatio) * (1 + tvaRate / 100)
         };
+
+        // Total TTC officiel : calcul centralisé (remise dans sa devise + TVA)
+        const { totalTTC } = saleCalculationUtils.calculateSaleTotal(
+          sale,
+          itemsBySale.get(sale.id) || [],
+          usdHtgRate,
+          displayCurrency,
+          tvaRate
+        );
         
         return {
           ...sale,
           profiles: { full_name: profilesMap.get(sale.seller_id) || 'N/A' },
-          currencies
+          currencies,
+          unifiedTotal: totalTTC
         };
       });
 
@@ -431,9 +449,11 @@ export const SalesManagement = () => {
     const rate = companySettingsHook?.usdHtgRate || companySettings?.usd_htg_rate || 132;
     const displayCurrency = companySettingsHook?.displayCurrency || (companySettings?.default_display_currency || 'HTG') as 'USD' | 'HTG';
     
+    let unifiedTotal = 0;
     filteredSales.forEach(sale => {
       htg += sale.currencies?.htg || 0;
       usd += sale.currencies?.usd || 0;
+      unifiedTotal += sale.unifiedTotal ?? 0;
     });
     
     // TVA is already included in currencies (TTC), so calculate HT first then TVA
@@ -442,10 +462,6 @@ export const SalesManagement = () => {
     tvaHtg = htg - htgHT;
     tvaUsd = usd - usdHT;
     
-    // Unified total converted to display currency using currencyUtils
-    const unifiedTotal = displayCurrency === 'HTG'
-      ? htg + (usd * rate)
-      : usd + (htg / rate);
     
     const unifiedTva = displayCurrency === 'HTG'
       ? tvaHtg + (tvaUsd * rate)
