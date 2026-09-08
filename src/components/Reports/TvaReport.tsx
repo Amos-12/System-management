@@ -13,6 +13,7 @@ import { TablePagination } from '@/components/ui/table-pagination';
 import { generateTvaReportPDF } from '@/lib/pdfGenerator';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCurrencyCalculations } from '@/hooks/useCurrencyCalculations';
+import { format, parseISO, startOfDay, endOfDay, startOfMonth } from 'date-fns';
 
 interface TvaSaleData {
   id: string;
@@ -44,12 +45,8 @@ const formatNumber = (amount: number): string => {
 export const TvaReport = () => {
   const [salesData, setSalesData] = useState<TvaSaleData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [dateFrom, setDateFrom] = useState(() => {
-    const date = new Date();
-    date.setDate(1); // First day of current month
-    return date.toISOString().split('T')[0];
-  });
-  const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
+  const [dateFrom, setDateFrom] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [totals, setTotals] = useState<TvaTotals>({
     totalHT_HTG: 0, totalHT_USD: 0,
     totalTVA_HTG: 0, totalTVA_USD: 0,
