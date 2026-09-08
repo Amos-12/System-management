@@ -86,8 +86,8 @@ export const TvaReport = () => {
       const { data: sales, error: salesError } = await supabase
         .from('sales')
         .select('id, created_at, customer_name, subtotal, discount_amount, total_amount')
-        .gte('created_at', `${dateFrom}T00:00:00`)
-        .lte('created_at', `${dateTo}T23:59:59`)
+        .gte('created_at', startOfDay(parseISO(dateFrom)).toISOString())
+        .lte('created_at', endOfDay(parseISO(dateTo)).toISOString())
         .order('created_at', { ascending: false });
 
       if (salesError) throw salesError;
