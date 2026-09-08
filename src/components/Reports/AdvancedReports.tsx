@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { generateAdvancedReportPDF, CompanySettings } from '@/lib/pdfGenerator';
 import * as XLSX from 'xlsx';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay, subDays } from 'date-fns';
+import { PeriodRangeFilter, PeriodRange, resolvePeriodRange } from '@/components/Common/PeriodRangeFilter';
 import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
