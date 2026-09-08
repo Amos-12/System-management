@@ -72,10 +72,15 @@ const REPORT_FILTERS = {
 };
 
 export const AdvancedReports = () => {
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-    to: new Date()
-  });
+  const [periodRange, setPeriodRange] = useState<PeriodRange>({ preset: 'month' });
+  // Bornes concrètes en heure locale (début de journée → fin de journée)
+  const dateRange = useMemo(() => {
+    const r = resolvePeriodRange(periodRange);
+    return {
+      from: r.from ?? startOfDay(subDays(new Date(), 3650)),
+      to: r.to ?? endOfDay(new Date()),
+    };
+  }, [periodRange]);
   const [reportType, setReportType] = useState<'sales' | 'products' | 'sellers'>('sales');
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -150,8 +155,8 @@ export const AdvancedReports = () => {
     try {
       setLoading(true);
       
-      const fromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const toDate = format(dateRange.to, 'yyyy-MM-dd');
+      const fromDate = startOfDay(dateRange.from).toISOString();
+      const toDate = endOfDay(dateRange.to).toISOString();
       const rate = usdHtgRate;
 
       // Build sales query with filters
