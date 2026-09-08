@@ -64,67 +64,77 @@ export const SellerDashboardStats = () => {
   const displayCurrency = saleCalc?.displayCurrency || 'HTG';
   const usdHtgRate = saleCalc?.usdHtgRate || 132;
 
+  const inFlight = useRef(false);
+
   const fetchStats = useCallback(async () => {
     if (!user || !saleCalc) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
 
     try {
-      // Fetch all sales for this seller
-      const { data: allSales, error: allError } = await supabase
-        .from('sales')
-        .select('id, created_at, total_amount, subtotal, discount_amount, discount_type, discount_value, discount_currency')
-        .eq('seller_id', user.id);
+      const now = new Date();
 
-      if (allError) throw allError;
+      // Calendar boundaries (midnight -> 23:59:59.999, weeks Monday->Sunday)
+      const todayStart = startOfDay(now);
+      const todayEnd = endOfDay(now);
+      const yesterdayStart = startOfDay(subDays(now, 1));
+      const yesterdayEnd = endOfDay(subDays(now, 1));
+      const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+      const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+      const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
+      const lastMonthStart = startOfMonth(subMonths(now, 1));
+      const lastMonthEnd = endOfMonth(subMonths(now, 1));
 
-      const saleIds = allSales?.map(s => s.id) || [];
+      // Only load the data actually needed (previous month -> now) to keep it fast
+      const windowStart = new Date(Math.min(
+        lastMonthStart.getTime(),
+        lastWeekStart.getTime(),
+        startOfDay(subDays(now, 6)).getTime()
+      ));
+
+      const [{ count: totalCount }, windowRes] = await Promise.all([
+        supabase
+          .from('sales')
+          .select('id', { count: 'exact', head: true })
+          .eq('seller_id', user.id),
+        supabase
+          .from('sales')
+          .select('id, created_at, total_amount, subtotal, discount_amount, discount_type, discount_value, discount_currency, customer_name')
+          .eq('seller_id', user.id)
+          .gte('created_at', windowStart.toISOString())
+          .order('created_at', { ascending: false }),
+      ]);
+
+      if (windowRes.error) throw windowRes.error;
+      const windowSales = (windowRes.data || []) as any[];
+
+      // Load related items in chunks (avoids oversized requests)
+      const saleIds = windowSales.map(s => s.id);
       let allSaleItems: (SaleItemForCalc & { sale_id: string; product_name: string })[] = [];
-      
-      if (saleIds.length > 0) {
+      for (let i = 0; i < saleIds.length; i += 200) {
+        const chunk = saleIds.slice(i, i + 200);
         const { data: items } = await supabase
           .from('sale_items')
           .select('sale_id, product_name, quantity, subtotal, currency, profit_amount, purchase_price_at_sale')
-          .in('sale_id', saleIds);
-        allSaleItems = (items || []) as (SaleItemForCalc & { sale_id: string; product_name: string })[];
+          .in('sale_id', chunk);
+        allSaleItems = allSaleItems.concat((items || []) as any[]);
       }
 
-      // Date calculations
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      const weekAgo = new Date(today);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-
-      const twoWeeksAgo = new Date(today);
-      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-      const monthAgo = new Date(today);
-      monthAgo.setDate(monthAgo.getDate() - 30);
-
-      const twoMonthsAgo = new Date(today);
-      twoMonthsAgo.setDate(twoMonthsAgo.getDate() - 60);
-
-      // Filter sales by period
-      const todaySales = allSales?.filter(s => new Date(s.created_at) >= today) || [];
-      const yesterdaySales = allSales?.filter(s => {
+      const between = (from: Date, to: Date) => windowSales.filter(s => {
         const d = new Date(s.created_at);
-        return d >= yesterday && d < today;
-      }) || [];
-      const weekSales = allSales?.filter(s => new Date(s.created_at) >= weekAgo) || [];
-      const lastWeekSales = allSales?.filter(s => {
-        const d = new Date(s.created_at);
-        return d >= twoWeeksAgo && d < weekAgo;
-      }) || [];
-      const monthSales = allSales?.filter(s => new Date(s.created_at) >= monthAgo) || [];
-      const lastMonthSales = allSales?.filter(s => {
-        const d = new Date(s.created_at);
-        return d >= twoMonthsAgo && d < monthAgo;
-      }) || [];
+        return d >= from && d <= to;
+      });
 
-      // Use the centralized hook for all revenue calculations
-      const totalRevenue = saleCalc.calculateRevenueTTC(allSales as SaleForCalc[] || [], allSaleItems);
+      const todaySales = between(todayStart, todayEnd);
+      const yesterdaySales = between(yesterdayStart, yesterdayEnd);
+      const weekSales = between(weekStart, weekEnd);
+      const lastWeekSales = between(lastWeekStart, lastWeekEnd);
+      const monthSales = between(monthStart, monthEnd);
+      const lastMonthSales = between(lastMonthStart, lastMonthEnd);
+
       const todayRevenue = saleCalc.calculateRevenueTTC(todaySales as SaleForCalc[], allSaleItems);
       const yesterdayRevenue = saleCalc.calculateRevenueTTC(yesterdaySales as SaleForCalc[], allSaleItems);
       const weekRevenue = saleCalc.calculateRevenueTTC(weekSales as SaleForCalc[], allSaleItems);
@@ -132,54 +142,46 @@ export const SellerDashboardStats = () => {
       const monthRevenue = saleCalc.calculateRevenueTTC(monthSales as SaleForCalc[], allSaleItems);
       const lastMonthRevenue = saleCalc.calculateRevenueTTC(lastMonthSales as SaleForCalc[], allSaleItems);
 
-      // Calculate trend data for last 7 days
+      // Trend for the last 7 calendar days (midnight -> 23:59:59)
       const trendDataCalc: TrendDataPoint[] = [];
       for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const nextDate = new Date(date);
-        nextDate.setDate(nextDate.getDate() + 1);
-        
-        const daySales = allSales?.filter(s => {
-          const d = new Date(s.created_at);
-          return d >= date && d < nextDate;
-        }) || [];
-        
-        const dayRevenue = saleCalc.calculateRevenueTTC(daySales as SaleForCalc[], allSaleItems);
-        
+        const dayStart = startOfDay(subDays(now, i));
+        const dayEnd = endOfDay(subDays(now, i));
+        const daySales = between(dayStart, dayEnd);
         trendDataCalc.push({
-          date: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
-          revenue: dayRevenue,
+          date: dayStart.toLocaleDateString('fr-FR', { weekday: 'short' }),
+          revenue: saleCalc.calculateRevenueTTC(daySales as SaleForCalc[], allSaleItems),
           sales: daySales.length
         });
       }
       setTrendData(trendDataCalc);
 
-      // Top products with unified currency conversion
-      const productStats = allSaleItems.reduce((acc: any, item) => {
-        if (!acc[item.product_name]) {
-          acc[item.product_name] = { product_name: item.product_name, quantity: 0, revenue: 0 };
-        }
-        acc[item.product_name].quantity += Number(item.quantity || 0);
-        
-        // Convert to display currency
-        const itemRevenue = displayCurrency === 'USD'
-          ? (item.currency === 'USD' ? item.subtotal : item.subtotal / usdHtgRate)
-          : (item.currency === 'USD' ? item.subtotal * usdHtgRate : item.subtotal);
-        acc[item.product_name].revenue += itemRevenue;
-        return acc;
-      }, {});
+      // Top products of the current month, converted to the display currency
+      const monthIds = new Set(monthSales.map(s => s.id));
+      const productStats = allSaleItems
+        .filter(item => monthIds.has(item.sale_id))
+        .reduce((acc: any, item) => {
+          if (!acc[item.product_name]) {
+            acc[item.product_name] = { product_name: item.product_name, quantity: 0, revenue: 0 };
+          }
+          acc[item.product_name].quantity += Number(item.quantity || 0);
+          const itemRevenue = displayCurrency === 'USD'
+            ? (item.currency === 'USD' ? item.subtotal : item.subtotal / usdHtgRate)
+            : (item.currency === 'USD' ? item.subtotal * usdHtgRate : item.subtotal);
+          acc[item.product_name].revenue += itemRevenue;
+          return acc;
+        }, {});
 
       const topProducts = Object.values(productStats || {})
         .sort((a: any, b: any) => b.revenue - a.revenue)
         .slice(0, 5);
 
-      const averageSale = allSales?.length ? totalRevenue / allSales.length : 0;
+      const averageSale = monthSales.length ? monthRevenue / monthSales.length : 0;
 
       setStats({
-        totalSales: allSales?.length || 0,
+        totalSales: totalCount || 0,
         todaySales: todaySales.length,
-        totalRevenue,
+        totalRevenue: monthRevenue,
         todayRevenue,
         weekSales: weekSales.length,
         weekRevenue,
@@ -193,17 +195,24 @@ export const SellerDashboardStats = () => {
         topProducts: topProducts as any
       });
 
+      // Recent sales derived from the same data (no extra request)
+      const recent = windowSales.slice(0, 5).map(sale => {
+        const itemsForSale = allSaleItems.filter(item => item.sale_id === sale.id);
+        const result = saleCalc.calculateSaleTotal(sale as SaleForCalc, itemsForSale);
+        return { ...sale, displayAmount: result.totalTTC };
+      });
+      setRecentSales(recent);
+
       setLastUpdate(new Date());
-      
-      // Fetch recent sales with the same hook-based calculations
-      await fetchRecentSales();
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
+      inFlight.current = false;
       setLoading(false);
       setRefreshing(false);
     }
   }, [user, saleCalc, displayCurrency, usdHtgRate]);
+
 
   const fetchRecentSales = useCallback(async () => {
     if (!user || !saleCalc) return;
