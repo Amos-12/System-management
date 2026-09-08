@@ -180,7 +180,7 @@ export const AdvancedReports = () => {
           )
         `)
         .gte('created_at', fromDate)
-        .lte('created_at', toDate + 'T23:59:59')
+        .lte('created_at', toDate)
         .order('created_at', { ascending: false });
 
       // Apply seller filter
@@ -677,41 +677,11 @@ ${reportData.paymentMethods.map(p => `${p.method},${p.count},${p.percentage.toFi
             {/* Date Range */}
             <div className="space-y-1 sm:space-y-2">
               <label className="text-xs sm:text-sm font-medium text-foreground">Période</label>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex-1 justify-start text-left font-normal h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
-                      <CalendarIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                      {format(dateRange.from, 'dd/MM/yy', { locale: fr })}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.from}
-                      onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <span className="text-muted-foreground text-xs sm:text-sm">→</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex-1 justify-start text-left font-normal h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
-                      <CalendarIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                      {format(dateRange.to, 'dd/MM/yy', { locale: fr })}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.to}
-                      onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+              <PeriodRangeFilter
+                value={periodRange}
+                onChange={setPeriodRange}
+                allLabel="Tout l'historique"
+              />
             </div>
 
             {/* Report Type */}
