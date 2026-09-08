@@ -10,6 +10,7 @@ import { SaleDetailsDialog } from '@/components/Sales/SaleDetailsDialog';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { usePagination } from '@/hooks/usePagination';
 import { PeriodRangeFilter, PeriodRange, resolvePeriodRange, periodRangeLabel } from '@/components/Common/PeriodRangeFilter';
+import { fetchAllRows } from '@/lib/fetchAllRows';
 import { 
   TrendingUp,
   Receipt,
@@ -130,34 +131,37 @@ const SellerDashboard = () => {
     if (!user || !saleCalc) return;
 
     try {
-      let query = supabase
-        .from('sales')
-        .select('id, created_at, total_amount, subtotal, discount_amount, discount_currency, discount_type, discount_value, customer_name, payment_method')
-        .eq('seller_id', user.id)
-        .order('created_at', { ascending: false });
-
-      // Apply period filter (presets ou dates personnalisées)
+      // Chargement complet (plus de plafond) avec bornes de période locales
       const { from, to } = resolvePeriodRange(periodRange);
-      if (from) query = query.gte('created_at', from.toISOString());
-      if (to) query = query.lte('created_at', to.toISOString());
-      if (periodRange.preset === 'all') {
-        query = query.limit(500);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
+      const data = await fetchAllRows<any>(() => {
+        let q = supabase
+          .from('sales')
+          .select('id, created_at, total_amount, subtotal, discount_amount, discount_currency, discount_type, discount_value, customer_name, payment_method')
+          .eq('seller_id', user.id)
+          .order('created_at', { ascending: false });
+        if (from) q = q.gte('created_at', from.toISOString());
+        if (to) q = q.lte('created_at', to.toISOString());
+        return q;
+      });
       
       if (!data || data.length === 0) {
         setSales([]);
         return;
       }
 
-      // Fetch sale items for proper calculation
-      const saleIds = data.map(s => s.id);
-      const { data: saleItems } = await supabase
-        .from('sale_items')
-        .select('sale_id, subtotal, currency, profit_amount')
-        .in('sale_id', saleIds);
+      // Fetch sale items for proper calculation (par paquets, sans plafond)
+      const saleIds = data.map((s: any) => s.id);
+      const saleItems: any[] = [];
+      for (let i = 0; i < saleIds.length; i += 200) {
+        const chunk = saleIds.slice(i, i + 200);
+        const rows = await fetchAllRows<any>(() =>
+          supabase
+            .from('sale_items')
+            .select('sale_id, subtotal, currency, profit_amount')
+            .in('sale_id', chunk)
+        );
+        saleItems.push(...rows);
+      }
 
       // Calculate proper TTC for each sale using the centralized hook
       const enrichedSales: EnrichedSale[] = data.map(sale => {
