@@ -10,6 +10,7 @@ import { SaleDetailsDialog } from '@/components/Sales/SaleDetailsDialog';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { usePagination } from '@/hooks/usePagination';
 import { PeriodRangeFilter, PeriodRange, resolvePeriodRange, periodRangeLabel } from '@/components/Common/PeriodRangeFilter';
+import { fetchAllRows } from '@/lib/fetchAllRows';
 import { 
   TrendingUp,
   Receipt,
@@ -148,12 +149,19 @@ const SellerDashboard = () => {
         return;
       }
 
-      // Fetch sale items for proper calculation
-      const saleIds = data.map(s => s.id);
-      const { data: saleItems } = await supabase
-        .from('sale_items')
-        .select('sale_id, subtotal, currency, profit_amount')
-        .in('sale_id', saleIds);
+      // Fetch sale items for proper calculation (par paquets, sans plafond)
+      const saleIds = data.map((s: any) => s.id);
+      const saleItems: any[] = [];
+      for (let i = 0; i < saleIds.length; i += 200) {
+        const chunk = saleIds.slice(i, i + 200);
+        const rows = await fetchAllRows<any>(() =>
+          supabase
+            .from('sale_items')
+            .select('sale_id, subtotal, currency, profit_amount')
+            .in('sale_id', chunk)
+        );
+        saleItems.push(...rows);
+      }
 
       // Calculate proper TTC for each sale using the centralized hook
       const enrichedSales: EnrichedSale[] = data.map(sale => {
