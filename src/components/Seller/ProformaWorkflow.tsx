@@ -645,14 +645,10 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
   };
 
   const handleAddProduct = (product: Product) => {
-    if (product.category === 'fer' || product.category === 'ceramique') {
-      setSelectedProduct(product);
-      setShowQuantityDialog(true);
-      setCustomQuantityValue('');
-      setQuantityUnit('barre');
-    } else {
-      addToCart(product, 1);
-    }
+    setSelectedProduct(product);
+    setShowQuantityDialog(true);
+    setCustomQuantityValue('');
+    setQuantityUnit('barre');
   };
 
   const handleConfirmQuantity = () => {
