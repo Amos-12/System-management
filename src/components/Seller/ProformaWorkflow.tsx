@@ -645,14 +645,10 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
   };
 
   const handleAddProduct = (product: Product) => {
-    if (product.category === 'fer' || product.category === 'ceramique') {
-      setSelectedProduct(product);
-      setShowQuantityDialog(true);
-      setCustomQuantityValue('');
-      setQuantityUnit('barre');
-    } else {
-      addToCart(product, 1);
-    }
+    setSelectedProduct(product);
+    setShowQuantityDialog(true);
+    setCustomQuantityValue('');
+    setQuantityUnit('barre');
   };
 
   const handleConfirmQuantity = () => {
@@ -679,6 +675,10 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
     } else if (selectedProduct.category === 'ceramique') {
       const actualPrice = value * (selectedProduct.prix_m2 || selectedProduct.price);
       addToCart(selectedProduct, value, { actualPrice });
+    } else {
+      const qty = selectedProduct.decimal_autorise ? value : Math.round(value);
+      if (qty <= 0) return;
+      addToCart(selectedProduct, qty);
     }
     
     setShowQuantityDialog(false);
@@ -910,13 +910,13 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
                 <Label className="text-sm">
                   {selectedProduct.category === 'ceramique' 
                     ? 'Surface (m²)' 
-                    : quantityUnit === 'tonne' 
-                      ? 'Quantité (tonnes)' 
-                      : 'Nombre de barres'}
+                    : selectedProduct.category === 'fer'
+                      ? (quantityUnit === 'tonne' ? 'Quantité (tonnes)' : 'Nombre de barres')
+                      : `Quantité (${selectedProduct.unit || 'unité'})`}
                 </Label>
                 <Input
                   type="number"
-                  step={selectedProduct.category === 'fer' && quantityUnit === 'tonne' ? '0.25' : '1'}
+                  step={selectedProduct.category === 'fer' && quantityUnit === 'tonne' ? '0.25' : (selectedProduct.decimal_autorise ? '0.01' : '1')}
                   min="0"
                   value={customQuantityValue}
                   onChange={(e) => setCustomQuantityValue(e.target.value)}
