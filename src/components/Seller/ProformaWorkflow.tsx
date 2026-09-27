@@ -675,6 +675,10 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
     } else if (selectedProduct.category === 'ceramique') {
       const actualPrice = value * (selectedProduct.prix_m2 || selectedProduct.price);
       addToCart(selectedProduct, value, { actualPrice });
+    } else {
+      const qty = selectedProduct.decimal_autorise ? value : Math.round(value);
+      if (qty <= 0) return;
+      addToCart(selectedProduct, qty);
     }
     
     setShowQuantityDialog(false);
