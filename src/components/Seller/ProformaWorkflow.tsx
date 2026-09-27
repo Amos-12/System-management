@@ -1113,7 +1113,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="w-6 text-center text-sm font-medium">{item.cartQuantity}</span>
+                      <QuantityInput item={item} />
                       <Button 
                         variant="outline" 
                         size="icon" 
@@ -1156,7 +1156,7 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="w-6 text-center text-xs font-medium">{item.cartQuantity}</span>
+                      <QuantityInput item={item} compact />
                       <Button 
                         variant="outline" 
                         size="icon" 
