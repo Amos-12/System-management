@@ -910,13 +910,13 @@ export const ProformaWorkflow = ({ onConvertToSale }: ProformaWorkflowProps) => 
                 <Label className="text-sm">
                   {selectedProduct.category === 'ceramique' 
                     ? 'Surface (m²)' 
-                    : quantityUnit === 'tonne' 
-                      ? 'Quantité (tonnes)' 
-                      : 'Nombre de barres'}
+                    : selectedProduct.category === 'fer'
+                      ? (quantityUnit === 'tonne' ? 'Quantité (tonnes)' : 'Nombre de barres')
+                      : `Quantité (${selectedProduct.unit || 'unité'})`}
                 </Label>
                 <Input
                   type="number"
-                  step={selectedProduct.category === 'fer' && quantityUnit === 'tonne' ? '0.25' : '1'}
+                  step={selectedProduct.category === 'fer' && quantityUnit === 'tonne' ? '0.25' : (selectedProduct.decimal_autorise ? '0.01' : '1')}
                   min="0"
                   value={customQuantityValue}
                   onChange={(e) => setCustomQuantityValue(e.target.value)}
