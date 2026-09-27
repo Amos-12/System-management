@@ -214,48 +214,6 @@ export const SellerDashboardStats = () => {
   }, [user, saleCalc, displayCurrency, usdHtgRate]);
 
 
-  const fetchRecentSales = useCallback(async () => {
-    if (!user || !saleCalc) return;
-
-    try {
-      const { data: salesData, error } = await supabase
-        .from('sales')
-        .select('id, created_at, total_amount, subtotal, discount_amount, discount_type, discount_value, discount_currency, customer_name')
-        .eq('seller_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      
-      if (!salesData || salesData.length === 0) {
-        setRecentSales([]);
-        return;
-      }
-
-      // Fetch sale items for these sales
-      const saleIds = salesData.map(s => s.id);
-      const { data: saleItems } = await supabase
-        .from('sale_items')
-        .select('sale_id, subtotal, currency, profit_amount')
-        .in('sale_id', saleIds);
-
-      // Calculate proper TTC for each sale using the centralized hook
-      const enrichedSales = salesData.map(sale => {
-        const itemsForSale = (saleItems || []).filter(item => item.sale_id === sale.id);
-        const result = saleCalc.calculateSaleTotal(sale as SaleForCalc, itemsForSale);
-        
-        return {
-          ...sale,
-          displayAmount: result.totalTTC
-        };
-      });
-
-      setRecentSales(enrichedSales);
-    } catch (error) {
-      console.error('Error fetching recent sales:', error);
-    }
-  }, [user, saleCalc]);
-
   useEffect(() => {
     if (user && saleCalc) {
       fetchStats();
